@@ -1,0 +1,20 @@
+@tailwind components;
+
+@layer components {
+  .wrapper {
+    @apply w-full max-w-screen-2xl mx-auto;
+  }
+  .icon-btn {
+    @apply p-2 hover:bg-slate-50 rounded-full cursor-pointer;
+  }
+  .header-link-footer {
+    @apply font-semibold text-primary text-xl xl:text-2xl;
+  }
+
+  .btn-secondary {
+    @apply bg-transparent text-black border-2  border-black hover:bg-white hover:ring-1 hover:ring-black;
+  }
+  .btn-tertiary {
+    @apply bg-white text-black hover:text-white hover:border-white hover:bg-transparent max-w-max;
+  }
+}

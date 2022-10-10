@@ -1,0 +1,25 @@
+@tailwind utilities;
+
+@layer utilities {
+  .writing-tb {
+    writing-mode: vertical-rl;
+  }
+  .flowing-gradient {
+    background: linear-gradient(-45deg, #fe8c00, #f83600);
+    background-size: 400% 400%;
+    /* background-clip: text; */
+    animation: gradient 5s ease infinite;
+  }
+
+  @keyframes gradient {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+}
