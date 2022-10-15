@@ -3,13 +3,11 @@ import React, { useState } from "react";
 import { v4 as uuid } from "uuid";
 import Categories from "./Categories";
 import SubCategories from "./SubCategories";
-
-import db from "db";
 import { Category } from "types/products";
 
-const ProductMenuHeader = () => {
+const ProductMenuHeader = ({categories}: {categories: Category[]}) => {
   const [selectedCategory, setSelectedCategory] = useState<Category>(
-    db.categories[0]
+    categories[0]
   );
 
   return (
@@ -22,7 +20,7 @@ const ProductMenuHeader = () => {
       >
         <div className="wrapper flex   ">
           <Categories
-            categories={db.categories}
+            categories={categories}
             selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
           />

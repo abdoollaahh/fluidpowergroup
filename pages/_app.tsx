@@ -1,18 +1,36 @@
 import Footer from "@/modules/Footer";
 import Header from "@/modules/Header";
-
+import {useEffect, useState} from "react";
 import CartWrapper from "context/CartWrapper";
 import { AnimatePresence, motion } from "framer-motion";
 import type { AppProps } from "next/app";
 import Head from "next/head";
 import "styles/globals.css";
+import axios from "axios";
+import { Category } from "types/products";
 
 function MyApp({ Component, pageProps, router }: AppProps) {
+
+  const [categories, setCategories] = useState<Category[]>([])
+
+  useEffect(() => {
+    const categories = async () => {
+      const cat = await axios.get(`${process.env.NEXT_PUBLIC_BASEURL}/getCategories`)
+      return cat
+    }
+    
+    categories().then((result: any) => {
+      setCategories(result.data.categories)
+    }
+    )
+    
+  }, [Component])
+  
   return (
     <div className="flex flex-col">
     
       <CartWrapper>
-        <Header />
+        <Header categories={ categories} />
       <div>
         <Head>
           <title>Fluidpower Group</title>

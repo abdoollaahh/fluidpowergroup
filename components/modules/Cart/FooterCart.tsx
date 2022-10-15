@@ -10,7 +10,7 @@ const FooterCart = ({items} : any) => {
       product_id: item.id,
       quantity: item.quantity
     }))
-    const cart = await axios.post('http://localhost:3000/api/createCart', {
+    const cart = await axios.post(`${process.env.NEXT_PUBLIC_BASEURL}/createCart`, {
       items: body
     })
     

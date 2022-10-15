@@ -9,6 +9,9 @@ type ICategoriesProps = {
 };
 
 const SubCategories = ({ subCategories }: ICategoriesProps) => {
+  if (subCategories === null || subCategories.length === 0) {
+    return null
+  }
   return (
     <div className="grid grid-rows-3 grid-cols-3  w-4/5 grid-flow-col gap-y-6 gap-x-6 pl-12 xl:pl-20 ">
       <AnimatePresence exitBeforeEnter>

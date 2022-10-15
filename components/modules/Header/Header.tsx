@@ -8,8 +8,9 @@ import ProductMenuHeader from "./MenuHeader/ProductMenuHeader/ProductMenuHeader"
 import Logo from "../Logo";
 import Cart from "../Cart";
 import { CartContext } from "context/CartWrapper";
+import { Category } from "types/products";
 
-const Header = () => {
+const Header = ({categories} : {categories: Category[]}) => {
   const [hover, setHover] = useState<string | null>(null);
   const { open: cartOpen, toggleCart, items } = useContext(CartContext);
 
@@ -66,7 +67,7 @@ const Header = () => {
         </div>
 
         <AnimatePresence exitBeforeEnter>
-          {hover === "Products" && <ProductMenuHeader />}
+          {hover === "Products" && <ProductMenuHeader categories={ categories} />}
         </AnimatePresence>
       </div>
     </HoverWrapper>

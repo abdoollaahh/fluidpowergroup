@@ -31,9 +31,9 @@ const Categories = ({
           </h2>
         </Anchor>
       ))}
-      <Anchor href="/products" className={clsx("text-xl flex font-medium ")}>
+      {/*<Anchor href="/products" className={clsx("text-xl flex font-medium ")}>
         View all
-      </Anchor>
+      </Anchor>*/}
     </div>
   );
 };
