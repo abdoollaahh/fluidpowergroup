@@ -2,9 +2,9 @@
 import swell from "./swellinit";
 
 export const getAllSeries = async (slug) => {
-  const category = await swell.get('/categories', { where: { slug } })
+  const category = await swell.get('/categories', { where: { slug }, limit: 100 })
   const id = category.results[0].id;
-  const data = await swell.get('/categories', { where: { parent_id: id } })
+  const data = await swell.get('/categories', { where: { parent_id: id }, limit: 100 })
   let seriesData = [];
   //Checking whether it is a List of series or subcategories
   if (data.results.length !== 0) {
