@@ -8,6 +8,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     })
 
     if (series !== null) {
+      console.log(series)
       const seriesDetails = {
         name: series.name,
         description: series.description !== null ? series.description.replaceAll("<br>", "") : "",

@@ -6,28 +6,27 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     const category = await swell.get('/categories', { where: { slug: req.body.data.slug }, limit: 100 })
     const id = category.results[0].id;
     const data = await swell.get('/categories', { where: { parent_id: id }, limit: 100 })
-    let seriesData = [];
+    let seriesData: any[] = [];
     //Checking whether it is a List of series or subcategories
     if (data.results.length !== 0) {
       if (data.results[0].top_id !== data.results[0].parent_id) {
-        seriesData = fillSeries(data)
+        seriesData = await fillSeries(data)
       } else {
-        data.results.forEach(async (sub : any) => {
-          const series = await swell.get('/categories', { where: { parent_id: sub.id } })
-          series.length !== 0 && seriesData.push(...fillSeries(series))
+        await data.results.forEach(async (sub: any) => {
+          const series = await swell.get('/categories', { where: { parent_id: sub.id }, limit: 100 })
+          series.length !== 0 && seriesData.push(...(await fillSeries(series)))
         })
       }
     }
-
     res.status(200).json({series: seriesData})
   } catch (err: any) {
     return res.status(400).json({message: err.message})
   }
 }
 
-const fillSeries = (seriesList: any) => {
+const fillSeries = async (seriesList: any) => {
   let seriesData: any[] = [];
-  seriesList.results.forEach((series: any) => {
+  await seriesList.results.forEach((series: any) => {
     seriesData.push({
       name: series.name,
       id: series.id,
