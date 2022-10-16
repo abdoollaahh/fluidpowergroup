@@ -9,20 +9,44 @@ import {
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { useEffect, useState } from "react";
 import { IItemCart } from "types/cart";
-import { getAllProducts } from "utils/swell/products";
-import {getSeriesDetails} from "utils/swell/series"
+import axios from "axios";
+import {useRouter} from "next/router"
 
-interface Props {
-  products: any,
-  query: string,
-  series: any
+type ISeries = {
+  name: string,
+  description: string,
+  images: string[]
 }
 
-const ProductPage = ({ products, query, series }: Props) => {
+const ProductPage = () => {
+  const router = useRouter()
+  const id = router.query.id
   const [items, setItems] = useState<IItemCart[]>([])
+  const [series, setSeries] = useState <ISeries>()
   useEffect(() => {
-    setItems(products)
-  }, [products, query])
+    const products = async () => {
+      const prod = await axios.post(`${process.env.NEXT_PUBLIC_BASEURL}/getProducts`, {data: {id}})
+      return prod
+    }
+    
+    const seriesDetails = async () => {
+      const details = await axios.post(`${process.env.NEXT_PUBLIC_BASEURL}/getSeriesDetails`, {data: {id}})
+      return details
+    }
+
+    products().then((result: any) => {
+      setItems(result.data.products)
+    }
+    )
+
+    seriesDetails().then((result: any) => {
+      setSeries(result.data.series)
+    })
+  }, [id])
+
+  if (series == null ) {
+    return null
+  }
 
   return (
       <div className="pt-10 pb-12  lg:pt-14 lg:pb-20 flex flex-col gap-10 sm:gap-16">
@@ -44,18 +68,5 @@ const ProductPage = ({ products, query, series }: Props) => {
       </div>
   );
 };
-
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const products = await getAllProducts(context.query.id)
-  const series = await getSeriesDetails(context.query.id)
-  return {
-    props: {
-      query: context.query.id,
-      products,
-      series
-    }
-    
-  }
-}
 
 export default ProductPage;

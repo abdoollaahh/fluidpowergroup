@@ -1,19 +1,24 @@
 import withLayout from "@/hoc/withLayout";
 import { ProductSlider } from "@/views/Catalogue";
-import {getAllCategories} from "../utils/swell/category.js"
-import { GetServerSideProps, InferGetServerSidePropsType, NextPage } from "next";
 import React, { useEffect, useState } from "react";
+import axios from "axios"
 import { Category } from "types/products";
 
-interface Props {
-  categories? : any
-}
+const CataloguePage = () => {
+  const [categories, setCategories] = useState<Category[]>([])
 
-const CataloguePage: React.FC<Props> = (props: Props) => {
-  const [categories, setCategories] = useState([])
   useEffect(() => {
-    setCategories(props.categories)
-  }, [props])
+    const categories = async () => {
+      const cat = await axios.get(`${process.env.NEXT_PUBLIC_BASEURL}/getCategories`)
+      return cat
+    }
+    
+    categories().then((result: any) => {
+      setCategories(result.data.categories)
+    }
+    )
+    
+  }, [])
   if (categories === null || categories === undefined) return null;
 
   return (
@@ -38,12 +43,5 @@ const CataloguePage: React.FC<Props> = (props: Props) => {
     </div>
   );
 };
-
-export const getServerSideProps: GetServerSideProps = async() => {
-  const categories = await getAllCategories();
-  return {
-    props: {categories}
-  }
-}
 
 export default (CataloguePage);
