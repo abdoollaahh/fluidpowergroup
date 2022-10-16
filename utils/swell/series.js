@@ -29,8 +29,8 @@ export const getSeriesDetails = async (id) => {
   
   const seriesDetails = {
     name: series.name,
-    description: series.description.replaceAll("<br>", ""),
-    images: series.images.map(image => image.file.url)
+    description: series.description !== null ? series.description.replaceAll("<br>", "") : "",
+    images: series.images !== null ? series.images.map(image => image.file.url) : ["https://images.unsplash.com/photo-1588345921523-c2dcdb7f1dcd?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80"]
   }
 
   return seriesDetails
