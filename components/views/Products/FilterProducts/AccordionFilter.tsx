@@ -65,7 +65,7 @@ const AccordionFilter = ({
                 {subCategory.title}
               </Anchor>
             ))}
-            <Anchor
+            {/*<Anchor
               className={clsx(
                 "text-lg font-semibold bg-gradient-to-r text-transparent bg-clip-text from-amber-600 to-black",
                 { "pointer-events-none text-gray-400": selected }
@@ -73,7 +73,7 @@ const AccordionFilter = ({
               href={`/products?category=${category.slug}`}
             >
               View All
-            </Anchor>
+              </Anchor>*/}
           </motion.div>
         )}
       </AnimatePresence>

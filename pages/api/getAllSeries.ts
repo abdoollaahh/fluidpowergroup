@@ -13,7 +13,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         seriesData = await fillSeries(data)
       } else {
         await data.results.forEach(async (sub: any) => {
-          const series = await swell.get('/categories', { where: { parent_id: sub.id }, limit: 100 })
+          const series = await swell.get('/categories', { where: { parent_id: sub.id }, limit: 25 })
           series.length !== 0 && seriesData.push(...(await fillSeries(series)))
         })
       }
