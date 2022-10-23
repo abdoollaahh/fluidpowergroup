@@ -25,12 +25,13 @@ const ProductPage = () => {
   const [series, setSeries] = useState <ISeries>()
   useEffect(() => {
     const products = async () => {
-      const prod = await axios.post(`${process.env.NEXT_PUBLIC_BASEURL}/getProducts`, {data: {id}})
+      const prod = await axios.post(`${process.env.NEXT_PUBLIC_BASEURL}/getProducts`, { data: { id } })
+      console.log(prod)
       return prod
     }
     
     const seriesDetails = async () => {
-      const details = await axios.post(`${process.env.NEXT_PUBLIC_BASEURL}/getSeriesDetails`, {data: {id}})
+      const details = await axios.post(`${process.env.NEXT_PUBLIC_BASEURL}/getSeriesDetails`, { data: { id } })
       return details
     }
 
@@ -55,8 +56,8 @@ const ProductPage = () => {
             <ImageProduct images={ series.images} />
             <DescriptionProduct series={series}/>
           </div>
-        </div>
-        <TableProduct items={items} setItems={setItems} />
+      </div>
+      {items.length !==0 &&<TableProduct items={items} setItems={setItems} />}
         <div className="max-w-2xl lg:max-w-full w-full mx-auto ">
           <OrderSummaryProduct
             items={items}

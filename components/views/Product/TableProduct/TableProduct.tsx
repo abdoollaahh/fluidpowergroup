@@ -1,5 +1,6 @@
 import Counter from "@/modules/Counter";
 import { IItemCart } from "types/cart";
+import {useState, useEffect} from "react"
 
 type ITableProductProps = {
   items: IItemCart[];
@@ -7,8 +8,59 @@ type ITableProductProps = {
 };
 
 const TableProduct = ({ items, setItems }: ITableProductProps) => {
+
+  if (Object.keys(items[0].attributes).length === 0) {
+    return null;
+  }
+
+
   return (
     <div className=" wrapper  px-8 md:px-12 overflow-scroll">
+      <table className="table-auto w-full border  select-none  ">
+        <thead>
+          <tr className="text-xl text-left">
+            <th className="font-semibold py-2">Part Number</th>
+            {Object.entries(items[0].attributes).map(([key, value]) => (
+              <th className="font-semibold " key={key}>{key}</th>
+            ))}
+            <th className="font-semibold ">Price</th>
+            <th className="font-semibold ">Available Stock</th>
+            <th className="font-semibold ">Quantity</th>
+        </tr>
+        </thead>
+        <tbody>
+        {items.map((item) => (
+            <tr key={item.id}>
+            <td className="whitespace-nowrap">{item.name}</td>
+            {Object.entries(item.attributes).map(([key, value]) =>
+              (<td className="whitespace-nowrap" key = {key}>{value}</td>))}
+              <td>{item.price}</td>
+              <td>{item.stock}</td>
+              <td className=" w-28 ">
+                {item.stock === 0 ? (
+                  "Sold Out"
+                ) : (
+                  <Counter
+                    limit={item.stock}
+                    count={item.quantity}
+                    setCount={(val: number) => {
+                      setItems(
+                        items.map((itemToAdd) =>
+                          itemToAdd.id === item.id
+                            ? { ...item, quantity: val }
+                            : itemToAdd
+                        )
+                      );
+                    }}
+                  />
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+       </table>
+    </div>)
+    {/*<div className=" wrapper  px-8 md:px-12 overflow-scroll">
       <table className="table-auto w-full border  select-none  ">
         <thead>
           <tr className="text-xl text-left">
@@ -77,8 +129,7 @@ const TableProduct = ({ items, setItems }: ITableProductProps) => {
           ))}
         </tbody>
       </table>
-    </div>
-  );
+                  </div>*/}
 };
 
 export default TableProduct;
