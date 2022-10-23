@@ -32,8 +32,14 @@ const TableProduct = ({ items, setItems }: ITableProductProps) => {
         {items.map((item) => (
             <tr key={item.id}>
             <td className="whitespace-nowrap">{item.name}</td>
-            {Object.entries(item.attributes).map(([key, value]) =>
-              (<td className="whitespace-nowrap" key = {key}>{value}</td>))}
+            {Object.entries(item.attributes).map(([key, value]) => {
+              if (typeof (value) === "string") {
+                return (<td className="whitespace-nowrap" key = {key}>{value}</td>)
+              } else {
+                return (<td className="whitespace-nowrap" key={key}>{ "-"}</td>)
+              }
+            }
+              )}
               <td>{item.price}</td>
               <td>{item.stock}</td>
               <td className=" w-28 ">
