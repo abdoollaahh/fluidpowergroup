@@ -9,7 +9,7 @@ type ITableProductProps = {
 
 const TableProduct = ({ items, setItems }: ITableProductProps) => {
 
-  if (Object.keys(items[0].attributes).length === 0) {
+  if (items.length === 0) {
     return null;
   }
 
