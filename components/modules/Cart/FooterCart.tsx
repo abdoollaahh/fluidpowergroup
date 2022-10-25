@@ -1,7 +1,7 @@
 import axios from "axios"
 import {useRouter} from "next/router"
 
-const FooterCart = ({items} : any) => {
+const FooterCart = ({items, handleClose} : any) => {
 
   const router = useRouter();
 
@@ -21,7 +21,7 @@ const FooterCart = ({items} : any) => {
 
   return (
     <div className="border p-4 flex flex-col gap-4">
-      <button className="rounded-sm">Continue Shopping</button>
+      <button className="rounded-sm" onClick={handleClose}>Continue Shopping</button>
       <button className="rounded-sm btn-secondary" onClick={checkout}>Go to Checkout</button>
     </div>
   );

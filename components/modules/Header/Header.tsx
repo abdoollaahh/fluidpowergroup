@@ -59,9 +59,9 @@ const Header = ({categories} : {categories: Category[]}) => {
 
               <Cart open={cartOpen} handleClose={toggleCart} />
 
-              <div className="icon-btn">
+              {/*<div className="icon-btn">
                 <FiUser />
-              </div>
+                </div>*/}
             </div>
           </div>
         </div>

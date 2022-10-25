@@ -9,7 +9,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     await sortedCategories.forEach(async (category: any) => {
       const subCategories = await swell.get('/categories', { where: { parent_id: category.id } })
       await subCategories.results.forEach(async (sub: any) => {
-        await category.subCategories.push({ title: sub.name, slug: sub.slug, id: sub.id, category: category.slug })
+        await category.subCategories.push({ title: sub.name, slug: sub.slug, id: sub.id, category: category.slug, image: sub.images !== null && sub.images[0] !== undefined && sub.images[0].file.url })
       })
     })
 

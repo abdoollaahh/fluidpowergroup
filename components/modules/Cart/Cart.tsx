@@ -45,7 +45,7 @@ const Cart = ({ open, handleClose }: ICart) => {
                 items.map((item, i) => <ItemCart key={i} item={item} />)
               )}
             </div>
-            {isEmpty || <FooterCart items={ items} />}
+            {isEmpty || <FooterCart handleClose={handleClose} items={ items} />}
           </motion.div>
         </motion.div>
       )}

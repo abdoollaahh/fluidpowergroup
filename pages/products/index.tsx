@@ -1,10 +1,10 @@
 import withLayout from "@/hoc/withLayout";
 import { FilterProducts, GridProducts, HeaderProducts } from "@/views/Products";
-import { GetServerSideProps} from "next";
 import { useEffect, useState } from "react";
 import Header from "@/modules/Header";
 import { useRouter } from "next/router";
 import axios from "axios"
+import Loading from "@/modules/Loading"
 
 
 const ProductsPage = () => {
@@ -35,7 +35,7 @@ const ProductsPage = () => {
   }, [slug])
 
   if (categories.length === 0 || series.length === 0) {
-    return null
+    return <Loading />
   }
 
   return (

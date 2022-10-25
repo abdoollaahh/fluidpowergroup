@@ -43,7 +43,7 @@ const ItemDesignHome = ({ title }: ItemDesignHomeProps) => {
             )}
           </AnimatePresence>
         </LayoutGroup>
-        <button className="btn-tertiary py-1.5">Learn More </button>
+        {/*<button className="btn-tertiary py-1.5">Learn More </button>*/}
       </motion.div>
       <Image
         src="https://images.unsplash.com/photo-1502014822147-1aedfb0676e0?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80"

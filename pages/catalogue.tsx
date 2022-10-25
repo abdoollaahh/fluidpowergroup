@@ -3,6 +3,7 @@ import { ProductSlider } from "@/views/Catalogue";
 import React, { useEffect, useState } from "react";
 import axios from "axios"
 import { Category } from "types/products";
+import Loading from "@/modules/Loading"
 
 const CataloguePage = () => {
   const [categories, setCategories] = useState<Category[]>([])
@@ -19,7 +20,7 @@ const CataloguePage = () => {
     )
     
   }, [])
-  if (categories === null || categories === undefined) return null;
+  if (categories === null || categories === undefined) return <Loading />;
 
   return (
     <div className="wrapper px-8 md:px-12  flex flex-col gap-10 mb-32">

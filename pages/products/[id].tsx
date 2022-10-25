@@ -6,11 +6,11 @@ import {
   OrderSummaryProduct,
   TableProduct,
 } from "@/views/Product";
-import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { useEffect, useState } from "react";
 import { IItemCart } from "types/cart";
 import axios from "axios";
-import {useRouter} from "next/router"
+import { useRouter } from "next/router"
+import Loading from "@/modules/Loading"
 
 type ISeries = {
   name: string,
@@ -46,8 +46,8 @@ const ProductPage = () => {
   }, [id])
 
   if (series == null ) {
-    return null
-  }
+    return <Loading />
+  } 
 
   return (
       <div className="pt-10 pb-12  lg:pt-14 lg:pb-20 flex flex-col gap-10 sm:gap-16">

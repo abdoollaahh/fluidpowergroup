@@ -27,14 +27,19 @@ const DescriptionProduct = ({ series } : {series: any}) => {
       </div>
           */}
       <ul className="flex flex-col gap-2.5">
-        {series.description.split(".").map((line: string, i: number) => {
+        {series.description.length !== 0 &&
+          <li className="flex items-center gap-1 text-lg xl:text-xl">
+            <FiCheck /> {series.description}
+          </li>
+        }
+        {/*series.description.split(".").map((line: string, i: number) => {
           if (line.length !== 0) {
             return (<li className="flex items-center gap-2 text-lg xl:text-xl" key={i}>
               <FiCheck /> {line}
             </li>
             )
           }
-        })}
+        })*/}
         
       </ul>
 
