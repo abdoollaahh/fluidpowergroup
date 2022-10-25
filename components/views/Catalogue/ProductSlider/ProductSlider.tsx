@@ -29,11 +29,11 @@ const ProductSlider = ({
       <motion.div className=" flex sm:hidden  flex-col   shrink-0 w-full    justify-center gap-4 ">
         <h2 className="text-3xl font-semibold">{title}</h2>
         <div>{description}</div>
-        <Anchor href={btn.href}>
+        {/*<Anchor href={btn.href}>
           <button className="bg-transparent text-black border-2 mt-2 border-black hover:bg-black hover:text-white max-w-max py-2">
             {btn.title}
           </button>
-        </Anchor>
+        </Anchor>*/}
       </motion.div>
 
       <div className=" absolute h-full sm:flex right-0 top-0 p-6 hidden ">
@@ -53,11 +53,11 @@ const ProductSlider = ({
         >
           <h2 className="text-3xl font-semibold">{title}</h2>
           <div className="font-light">{description}</div>
-          <Anchor href={btn.href}>
+          {/*<Anchor href={btn.href}>
             <button className="bg-transparent text-black border-2 mt-2 border-black hover:bg-black hover:text-white max-w-max py-2">
               {btn.title}
             </button>
-          </Anchor>
+          </Anchor>*/}
         </motion.div>
 
         {products.map((product, i) => (
