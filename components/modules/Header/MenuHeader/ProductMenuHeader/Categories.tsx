@@ -17,7 +17,7 @@ const Categories = ({
   return (
     <div className="flex flex-col gap-6  w-1/5 border-r z-10 text-black">
       {categories.map((category: Category) => (
-        <Anchor href={`/products?category=${category.subCategories[0].slug}`} key={category.id}>
+        <Anchor href={`/products?category=${category.subCategories[0]?.slug}`} key={category.id}>
           <h2
             className={clsx(
               "text-xl flex font-light items-center gap-1 cursor-pointer",
