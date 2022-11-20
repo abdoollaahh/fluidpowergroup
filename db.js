@@ -89,7 +89,7 @@ export default {
         {
           title: "Swage Ferrules A",
           slug: "swage-ferrules-a",
-          category: "swage-ferrules",
+          category: "swage-ferrule",
 
           id: "de7kdksf9-366c-lsdl43c2-b8-b22b987356",
         },
