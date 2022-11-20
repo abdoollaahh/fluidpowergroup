@@ -4,9 +4,10 @@ import swell from "utils/swell/swellinit";
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     const products = await swell.get('/products', { limit: 1000 })
-    const selectedProducts = await products.results.filter((product: any) => { return product.category_index !== undefined && product.category_index.id[0] == req.body.data.id})
+    const selectedProducts = await products.results.filter((product: any) => { return product.category_index !== undefined && product.category_index.id[0] == req.body.data.id })
+    const sortedProductsasc = await selectedProducts.sort((a: any, b: any) => Number(new Date(a.date_created)) - Number(new Date(b.date_created)))
     let productList: any[] = []
-    await selectedProducts.forEach((product: any) => {
+    await sortedProductsasc.forEach((product: any) => {
       productList.push({
         id: product.id,
         name: product.name,

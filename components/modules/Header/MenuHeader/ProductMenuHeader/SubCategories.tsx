@@ -18,11 +18,11 @@ const SubCategories = ({ subCategories }: ICategoriesProps) => {
         {subCategories.map((subCategory) => (
           <Anchor
             key={subCategory.id}
-            href={`/products?subcategory=${subCategory.slug}`}
+            href={`/products?subcategory=${subCategory?.slug}`}
             className="hover:no-underline"
           >
             <motion.div
-              key={subCategory.id}
+              key={subCategory?.id}
               initial={{ x: -50, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: 50, opacity: 0 }}
@@ -32,7 +32,7 @@ const SubCategories = ({ subCategories }: ICategoriesProps) => {
               <div className=" group-hover:scale-105 transition-all  duration-200 rounded-xl w-20 h-20 p-2  border">
                 <div className="relative  w-full h-full   ">
                   <Image
-                    src={subCategory.image || "/product-3.png"}
+                    src={subCategory?.image || "/product-3.png"}
                     layout="fill"
                     objectFit="contain"
                     alt="Site logo"
@@ -40,7 +40,7 @@ const SubCategories = ({ subCategories }: ICategoriesProps) => {
                 </div>
               </div>
               <h3 className="text-lg xl:text-xl group-hover:underline underline-offset-4  font-light py-1 px-4">
-                {subCategory.title}
+                {subCategory?.title}
               </h3>
             </motion.div>
           </Anchor>

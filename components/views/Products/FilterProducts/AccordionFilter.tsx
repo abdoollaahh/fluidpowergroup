@@ -53,10 +53,10 @@ const AccordionFilter = ({
           >
             {category.subCategories.map((subCategory) => (
               <Anchor
-                href={`/products?subcategory=${subCategory.slug}`}
+                href={`/products?subcategory=${subCategory?.slug}`}
                 className={clsx(
                   "text-xl ",
-                  selectedSubCategory === subCategory.slug
+                  selectedSubCategory === subCategory?.slug
                     ? "font-semibold"
                     : "font-light"
                 )}
