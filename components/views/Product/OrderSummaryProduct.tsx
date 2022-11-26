@@ -2,8 +2,8 @@ import { CartContext } from "context/CartWrapper";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { useContext, useMemo } from "react";
 import { IItemCart } from "types/cart";
-import axios from "axios"
-import {useRouter} from "next/router"
+import axios from "axios";
+import { useRouter } from "next/router";
 
 type IOrderSummaryProductProps = {
   items: IItemCart[];
@@ -40,16 +40,19 @@ const OrderSummaryProduct = ({
   const checkout = async () => {
     const body = items.map((item: any) => ({
       product_id: item.id,
-      quantity: item.quantity
-    }))
-    const cart = await axios.post(`${process.env.NEXT_PUBLIC_BASEURL}/createCart`, {
-      items: body
-    })
-    
+      quantity: item.quantity,
+    }));
+    const cart = await axios.post(
+      `${process.env.NEXT_PUBLIC_BASEURL}/createCart`,
+      {
+        items: body,
+      }
+    );
+
     if (cart.status === 200) {
-      router.push(cart.data.checkout_url)
+      router.push(cart.data.checkout_url);
     }
-  }
+  };
 
   return (
     <AnimatePresence exitBeforeEnter>
@@ -95,7 +98,9 @@ const OrderSummaryProduct = ({
               </div>
 
               <div className="flex w-full gap-4 mt-2">
-                <button className="min-w-max w-1/2" onClick={checkout}>Checkout</button>
+                <button className="min-w-max w-1/2" onClick={checkout}>
+                  Checkout
+                </button>
                 <button
                   className="btn-secondary w-1/2"
                   onClick={handleAddToCart}
