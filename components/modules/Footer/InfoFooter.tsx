@@ -14,7 +14,7 @@ const InfoFooter = () => {
       </div>
       <div className=" text-lg flex   gap-2 text-center sm:text-left">
         <FiMapPin className="mt-1 hidden sm:block" />
-        <div>Unit 7, Newman Street, Wangaratta VIC 3677</div>
+        <div>Unit 6, 13 Newman Street, Wangaratta VIC 3677</div>
       </div>
     </div>
   );

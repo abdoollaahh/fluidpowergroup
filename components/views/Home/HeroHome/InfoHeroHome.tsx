@@ -14,7 +14,7 @@ const InfoHeroHome = () => {
         fugiat, alias itaque aut pariatur quia, nemo quasi dolorem recusandae?
       </h2>
       <Anchor href="/catalogue" className="hover:no-underline">
-        <button className="max-w-max pl-6 pr-4  lg:pl-8 lg:pr-6 flex items-center gap-2 mt-4 text-lg lg:text-xl">
+        <button className="max-w-max pl-6 pr-4  lg:pl-8 lg:pr-6 flex items-center gap-2 mt-4 text-lg lg:text-xl hover:text-yellow-400">
           Browse Products <FiChevronRight className="text-2xl" />
         </button>
       </Anchor>

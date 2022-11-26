@@ -3,7 +3,7 @@ const siteLinks = [
   { title: "Services", href: "/#services" },
   { title: "Design", href: "/#design" },
   { title: "About", href: "/about" },
-  { title: "Contact", href: "/contact" },
+  { title: "Contact Us", href: "/contact" },
 ];
 
 export default siteLinks;

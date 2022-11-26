@@ -1,6 +1,6 @@
 import Counter from "@/modules/Counter";
 import { IItemCart } from "types/cart";
-import {useState, useEffect} from "react"
+import { useState, useEffect } from "react";
 
 type ITableProductProps = {
   items: IItemCart[];
@@ -8,41 +8,48 @@ type ITableProductProps = {
 };
 
 const TableProduct = ({ items, setItems }: ITableProductProps) => {
-
   if (items.length === 0) {
     return null;
   }
 
-
   return (
     <div className=" wrapper  px-8 md:px-12 overflow-scroll">
-      <table className="table-auto w-full border  select-none  ">
+      <table className="table-auto w-full border select-none  ">
         <thead>
-          <tr className="text-xl text-left">
+          <tr className="text-xl bg-[#191919] text-yellow-400 text-left">
             <th className="font-semibold py-2">Part Number</th>
             {Object.entries(items[0].attributes).map(([key, value]) => (
-              <th className="font-semibold " key={key}>{key}</th>
+              <th className="font-semibold " key={key}>
+                {key}
+              </th>
             ))}
             <th className="font-semibold ">Price</th>
             <th className="font-semibold ">Available Stock</th>
             <th className="font-semibold ">Quantity</th>
-        </tr>
+          </tr>
         </thead>
         <tbody>
-        {items.map((item) => (
+          {items.map((item) => (
             <tr key={item.id}>
-            <td className="whitespace-nowrap">{item.name}</td>
-            {Object.entries(item.attributes).map(([key, value]) => {
-              if (typeof (value) === "string") {
-                return (<td className="whitespace-nowrap" key = {key}>{value}</td>)
-              } else {
-                return (<td className="whitespace-nowrap" key={key}>{ "-"}</td>)
-              }
-            }
-              )}
+              <td className="whitespace-nowrap ">{item.name}</td>
+              {Object.entries(item.attributes).map(([key, value]) => {
+                if (typeof value === "string") {
+                  return (
+                    <td className="whitespace-nowrap" key={key}>
+                      {value}
+                    </td>
+                  );
+                } else {
+                  return (
+                    <td className="whitespace-nowrap " key={key}>
+                      {"-"}
+                    </td>
+                  );
+                }
+              })}
               <td>{item.price}</td>
               <td>{item.stock}</td>
-              <td className=" w-28 ">
+              <td className=" w-28">
                 {item.stock === 0 ? (
                   "Sold Out"
                 ) : (
@@ -64,9 +71,11 @@ const TableProduct = ({ items, setItems }: ITableProductProps) => {
             </tr>
           ))}
         </tbody>
-       </table>
-    </div>)
-    {/*<div className=" wrapper  px-8 md:px-12 overflow-scroll">
+      </table>
+    </div>
+  );
+  {
+    /*<div className=" wrapper  px-8 md:px-12 overflow-scroll">
       <table className="table-auto w-full border  select-none  ">
         <thead>
           <tr className="text-xl text-left">
@@ -135,7 +144,8 @@ const TableProduct = ({ items, setItems }: ITableProductProps) => {
           ))}
         </tbody>
       </table>
-                  </div>*/}
+                  </div>*/
+  }
 };
 
 export default TableProduct;
