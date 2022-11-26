@@ -7,9 +7,9 @@ const DescriptionProduct = ({ series } : {series: any}) => {
         <h1 className="text-2xl md:text-3xl xl:text-4xl font-semibold">
           {series.name}
         </h1>
-        <h2 className="text-xl lg:text-2xl bg-gradient-to-r text-black/60 font-semibold">
+        {/*<h2 className="text-xl lg:text-2xl bg-gradient-to-r text-black/60 font-semibold">
           Description for the Series
-        </h2>
+        </h2>*/}
       </div>
 
       {/*<div className="flex gap-4">
@@ -29,7 +29,8 @@ const DescriptionProduct = ({ series } : {series: any}) => {
       <ul className="flex flex-col gap-2.5">
         {series.description.length !== 0 &&
           <li className="flex items-center gap-1 text-lg xl:text-xl">
-            <FiCheck /> {series.description}
+            <div dangerouslySetInnerHTML={{__html: series.description}}>
+            </div>
           </li>
         }
         {/*series.description.split(".").map((line: string, i: number) => {

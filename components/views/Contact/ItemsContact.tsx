@@ -5,21 +5,21 @@ const ItemsContact = () => {
   const contactOptions = [
     {
       label: "General Queries",
-      href: "mailto:office@abc.com",
+      href: "mailto:admin@fluidpowergroup.com.au",
       icon: FiMail,
-      title: "office@abc.com",
+      title: "admin@fluidpowergroup.com.au",
     },
     {
       label: "Product Queries",
-      href: "mailto:info@abc.com",
+      href: "mailto:info@fluidpowergroup.com.au",
       icon: FiMail,
-      title: "info@abc.com",
+      title: "info@fluidpowergroup.com.au",
     },
     {
       label: "Sales",
-      href: "tel:12345675645",
+      href: "tel:61409517333",
       icon: FiPhone,
-      title: "+12345675645",
+      title: "+61409517333",
     },
   ];
 

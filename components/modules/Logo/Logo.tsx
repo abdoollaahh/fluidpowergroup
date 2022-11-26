@@ -9,7 +9,7 @@ type ILogoProps = {
 const Logo = ({ type = "header" }: ILogoProps) => {
   return (
     <Anchor href="/">
-      <div className="relative h-14 w-40 bg-transparent">
+      <div className="relative h-[70px] w-[200px] bg-transparent">
         <Image
           src={`https://fluidpowergroup.s3.ap-southeast-2.amazonaws.com/logo-${type}.png`}
           layout="fill"

@@ -17,8 +17,8 @@ const LocationAbout = () => {
 
           <div className="absolute top-0 left-0 p-8 sm:p-16 flex items-center h-full">
             <div className=" bg-white p-8 sm:p-12 font-light shadow-xl rounded-2xl text-2xl sm:text-3xl">
-              Unit 7, <br /> 13 Newman Street, <br /> Wangratta, <br /> Victoria
-              367, Austrailia
+              Unit 6, <br /> 13 Newman Street, <br /> Wangaratta, <br /> Victoria
+              3677, Austrailia
               <br />
             </div>
           </div>

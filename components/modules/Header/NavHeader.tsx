@@ -26,7 +26,7 @@ const NavHeader = () => {
           <a
             href={page.href}
             className={clsx(
-              "text-lg capitalize hover:no-underline py-3 px-3 rounded-lg hover:bg-slate-50 font-medium"
+              "text-lg capitalize hover:no-underline py-3 px-3 rounded-lg hover:bg-slate-50 font-medium "
             )}
           >
             {page.title}
