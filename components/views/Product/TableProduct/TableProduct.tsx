@@ -7,6 +7,32 @@ type ITableProductProps = {
   setItems: (val: any) => void;
 };
 
+const formathead = (title: string) => {
+  const stringElements = title.split("_");
+  if (stringElements.length === 1) {
+    return `${title.charAt(0).toUpperCase()}${title.slice(1)}`
+  }
+  let string = "";
+  stringElements.forEach((word, i) => {
+    if (i !== stringElements.length - 1) {
+      if (word === "id" || word == "od") {
+        string = string + word.split("")[0].toUpperCase() + "." + word.split("")[1].toUpperCase() + " "
+      } else {
+        string = string + word.charAt(0).toUpperCase() + word.slice(1) + " " 
+      }
+    } else {
+      if (word === "id" || word == "od") {
+        string = string + word.split("")[0].toUpperCase() + "." + word.split("")[1].toUpperCase() 
+      } else if (word.length === 1) {
+        string = string + '"' + word.toUpperCase() + '"'
+      }else {
+        string = string + "(" + word + ")"
+      }
+    }
+  })
+  return string;
+}
+
 const TableProduct = ({ items, setItems }: ITableProductProps) => {
   if (items.length === 0) {
     return null;
@@ -20,7 +46,7 @@ const TableProduct = ({ items, setItems }: ITableProductProps) => {
             <th className="font-semibold py-2">Part Number</th>
             {Object.entries(items[0].attributes).map(([key, value]) => (
               <th className="font-semibold " key={key}>
-                {key}
+                {formathead(key)}
               </th>
             ))}
             <th className="font-semibold ">Price</th>
@@ -47,7 +73,7 @@ const TableProduct = ({ items, setItems }: ITableProductProps) => {
                   );
                 }
               })}
-              <td>{item.price}</td>
+              <td>{`$${item.price}`}</td>
               <td>{item.stock}</td>
               <td className=" w-28">
                 {item.stock === 0 ? (

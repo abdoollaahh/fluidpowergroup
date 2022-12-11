@@ -15,7 +15,10 @@ function MyApp({ Component, pageProps, router }: AppProps) {
 
   useEffect(() => {
     const categories = async () => {
-      const cat = await axios.get(`${process.env.NEXT_PUBLIC_BASEURL}/getCategories`)
+      let cat
+      do {
+        cat = await axios.get(`${process.env.NEXT_PUBLIC_BASEURL}/getCategories`)
+      } while(cat.data.categories[0].subCategories.length === 0)
       return cat
     }
     

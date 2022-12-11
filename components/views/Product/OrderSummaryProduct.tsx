@@ -93,7 +93,7 @@ const OrderSummaryProduct = ({
                 <div className="w-full border"></div>
                 <div className="flex justify-between gap-8 sm:text-xl">
                   <div>Total</div>
-                  <div>${salesTax + totalPrice + 2.75}</div>
+                  <div>${(salesTax + totalPrice + 2.75).toFixed(2)}</div>
                 </div>
               </div>
 
