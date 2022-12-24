@@ -65,9 +65,9 @@ const ProductsHeroHome = (props: Props) => {
           animate="center"
           exit="exit"
         >
-          <div className="relative p-2 w-full h-full -z-20">
+          <div className="relative p-4 w-full h-full -z-20">
             <Image
-              src="https://images.unsplash.com/photo-1515630771457-09367d0ae038?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1770&q=80"
+              src="/image1.jpeg"
               layout="fill"
               objectFit="cover"
               placeholder="blur"

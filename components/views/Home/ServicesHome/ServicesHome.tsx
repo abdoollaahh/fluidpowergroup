@@ -18,7 +18,7 @@ const ServicesHome = () => {
             </div>
           </div>
 
-          {db.services.map((item, index) => (
+          {db.services_Bending.map((item, index) => (
             <div
               className="w-full p-7 sm:p-10  text-yellow-500 flex sm:flex-row flex-col  gap-4 sm:gap-10 border-yellow-600  border-t-2 h-full hover:bg-[#151515] hover:shadow-lg hover:shadow-yellow-400/50 hover:text-yellow-400 cursor-pointer transition-all duration-200"
               key={index}
@@ -29,10 +29,97 @@ const ServicesHome = () => {
               <div className="flex flex-col gap-2 w-full">
                 <div className="text-2xl sm:text-3xl font-semibold">{item}</div>
                 <div className="text-xl text-yellow-600 sm:text-2xl font-light opacity-75">
-                  Loren ipsum dolor sit amet consectetur adipisicing elit. Vel
-                  rem vitae ad repellat nemo cum iusto eaque distinctio sequi
-                  sint.
+                  •Fully CNC Bending Machine <br></br>• Hydraulic Tube Bending
+                  upto 28mm Diameter Tube <br></br>• Bend Radius as tight as
+                  TWICE the Outside Diameter <br></br>• Our machines accept STL
+                  (Tube 3D Model) & XYZ points <br></br>• Accuracy upto ± 0.5mm
+                  & 0.150 <br></br>• Bending capability of Metric as well as
+                  Imperial Tubes
                 </div>
+              </div>
+            </div>
+          ))}
+          {db.services_Flaring.map((item, index) => (
+            <div
+              className="w-full p-7 sm:p-10  text-yellow-500 flex sm:flex-row flex-col  gap-4 sm:gap-10 border-yellow-600  border-t-2 h-full hover:bg-[#151515] hover:shadow-lg hover:shadow-yellow-400/50 hover:text-yellow-400 cursor-pointer transition-all duration-200"
+              key={index}
+            >
+              <div className="w-full h-48 sm:h-28  sm:w-48 bg-slate-200/20 border border-slate-200/10">
+                {/* <Image /> */}
+              </div>
+              <div className="flex flex-col gap-2 w-full">
+                <div className="text-2xl sm:text-3xl font-semibold">{item}</div>
+                <div className="text-xl text-yellow-600 sm:text-2xl font-light opacity-75">
+                  • JIC 370 Flaring of Imperial Tubes <br></br>• JIC 370 Flaring
+                  of Metric Tubes with JIC Nuts & Sleeves <br></br>• Tubes range
+                  from 3/8” to 1” OR 10mm to 28mm <br></br>• Our Machines are
+                  the most updated and produce clean flares with high accuracy
+                </div>
+              </div>
+            </div>
+          ))}
+          {db.services_Pressure.map((item, index) => (
+            <div
+              className="w-full p-7 sm:p-10  text-yellow-500 flex sm:flex-row flex-col  gap-4 sm:gap-10 border-yellow-600  border-t-2 h-full hover:bg-[#151515] hover:shadow-lg hover:shadow-yellow-400/50 hover:text-yellow-400 cursor-pointer transition-all duration-200"
+              key={index}
+            >
+              <div className="w-full h-48 sm:h-28  sm:w-48 bg-slate-200/20 border border-slate-200/10">
+                {/* <Image /> */}
+              </div>
+              <div className="flex flex-col gap-2 w-full">
+                <div className="text-2xl sm:text-3xl font-semibold">{item}</div>
+                <div className="text-xl text-yellow-600 sm:text-2xl font-light opacity-75">
+                  • Pressure Testing upto 15,000psi <br></br>• Hydrostatic
+                  Pressure Testing of; • Hydraulic Valves • Hydraulic Hoses •
+                  Hydraulic Tubes • Hydraulic Manifold • Hydraulic Cylinders
+                </div>
+              </div>
+            </div>
+          ))}
+          {db.services_Assembly.map((item, index) => (
+            <div
+              className="w-full p-7 sm:p-10  text-yellow-500 flex sm:flex-row flex-col  gap-4 sm:gap-10 border-yellow-600  border-t-2 h-full hover:bg-[#151515] hover:shadow-lg hover:shadow-yellow-400/50 hover:text-yellow-400 cursor-pointer transition-all duration-200"
+              key={index}
+            >
+              <div className="w-full h-48 sm:h-28  sm:w-48 bg-slate-200/20 border border-slate-200/10">
+                {/* <Image /> */}
+              </div>
+              <div className="flex flex-col gap-2 w-full">
+                <div className="text-2xl sm:text-3xl font-semibold">{item}</div>
+                <div className="text-xl text-yellow-600 sm:text-2xl font-light opacity-75">
+                  • We are equipped with the latest machines <br></br>• Hose
+                  Crimping Upto 2” Hose <br></br>• Multi-Braid Hose Crimping{" "}
+                  <br></br>• We have the capacity of handling large quantity of
+                  hose crimping and packing
+                </div>
+              </div>
+            </div>
+          ))}
+          {db.services_Cutting.map((item, index) => (
+            <div
+              className="w-full p-7 sm:p-10  text-yellow-500 flex sm:flex-row flex-col  gap-4 sm:gap-10 border-yellow-600  border-t-2 h-full hover:bg-[#151515] hover:shadow-lg hover:shadow-yellow-400/50 hover:text-yellow-400 cursor-pointer transition-all duration-200"
+              key={index}
+            >
+              <div className="w-full h-48 sm:h-28  sm:w-48 bg-slate-200/20 border border-slate-200/10">
+                {/* <Image /> */}
+              </div>
+              <div className="flex flex-col gap-2 w-full">
+                <div className="text-2xl sm:text-3xl font-semibold">{item}</div>
+                <div className="text-xl text-yellow-600 sm:text-2xl font-light opacity-75"></div>
+              </div>
+            </div>
+          ))}
+          {db.services_Metal.map((item, index) => (
+            <div
+              className="w-full p-7 sm:p-10  text-yellow-500 flex sm:flex-row flex-col  gap-4 sm:gap-10 border-yellow-600  border-t-2 h-full hover:bg-[#151515] hover:shadow-lg hover:shadow-yellow-400/50 hover:text-yellow-400 cursor-pointer transition-all duration-200"
+              key={index}
+            >
+              <div className="w-full h-48 sm:h-28  sm:w-48 bg-slate-200/20 border border-slate-200/10">
+                {/* <Image /> */}
+              </div>
+              <div className="flex flex-col gap-2 w-full">
+                <div className="text-2xl sm:text-3xl font-semibold">{item}</div>
+                <div className="text-xl text-yellow-600 sm:text-2xl font-light opacity-75"></div>
               </div>
             </div>
           ))}
