@@ -3,7 +3,7 @@ import Image from "next/image";
 const TeamAbout = () => {
   return (
     <div className="flex flex-col gap-8">
-      <h2 className="text-4xl font-semibold">Meet the team</h2>
+      {/*<h2 className="text-4xl font-semibold">Meet the team</h2>
 
       <div className="grid grid-cols-4 gap-8">
         {Array(2)
@@ -25,10 +25,10 @@ const TeamAbout = () => {
               <div className="">
                 <h3 className="text-3xl">Dan Newman</h3>
                 <h4 className="text-xl text-black/50 ">Co-Founder</h4>
-              </div>
+          </div>
             </div>
           ))}
-      </div>
+          </div>*/}
     </div>
   );
 };

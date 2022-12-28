@@ -27,7 +27,7 @@ const OrderSummaryProduct = ({
     [items]
   );
 
-  const salesTax = 0.16 * totalPrice;
+  const salesTax = 0.1 * totalPrice;
 
   const handleAddToCart = () => {
     window.scroll({ behavior: "smooth", top: 0, left: 0 });
@@ -76,24 +76,26 @@ const OrderSummaryProduct = ({
                       <div>
                         {item.quantity} x {item.name}
                       </div>
-                      <div>${item.quantity * item.price}</div>
+                      <div>${(item.quantity * item.price).toFixed(2)}</div>
                     </div>
                   ))}
 
                   <div className="flex justify-between gap-8 italic">
-                    <div>Sales Tax (16%) </div>
-                    <div>${salesTax}</div>
+                    <div>GST (10%) </div>
+                    <div>${salesTax.toFixed(2)}</div>
                   </div>
-                  <div className="flex justify-between gap-8 italic">
+                  {/*
+                 <div className="flex justify-between gap-8 italic">
                     <div>Delivery Charges</div>
                     <div>$2.75</div>
                   </div>
+                 */}
                 </div>
 
                 <div className="w-full border"></div>
                 <div className="flex justify-between gap-8 sm:text-xl">
                   <div>Total</div>
-                  <div>${(salesTax + totalPrice + 2.75).toFixed(2)}</div>
+                  <div>${(salesTax + totalPrice).toFixed(2)}</div>
                 </div>
               </div>
 
