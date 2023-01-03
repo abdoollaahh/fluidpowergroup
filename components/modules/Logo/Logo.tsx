@@ -11,7 +11,7 @@ const Logo = ({ type = "header" }: ILogoProps) => {
     <Anchor href="/">
       <div className="relative h-[70px] w-[200px] bg-transparent">
         <Image
-          src={`https://fluidpowergroup.s3.ap-southeast-2.amazonaws.com/logo-${type}.png`}
+          src={"/logo.png"}
           layout="fill"
           objectFit="contain"
           alt="Site logo"
