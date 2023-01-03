@@ -24,7 +24,7 @@ const ServicesHome = () => {
               key={index}
             >
               <div className="w-full h-48 sm:h-28  sm:w-48 bg-slate-200/20 border border-slate-200/10 ">
-                {<img src="Image1.jpeg" />}
+                {<img src="./tubeBending.png" />}
               </div>
               <div className="flex flex-col gap-2 w-full">
                 <div className="text-2xl sm:text-3xl font-semibold">{item}</div>
@@ -45,7 +45,7 @@ const ServicesHome = () => {
               key={index}
             >
               <div className="w-full h-48 sm:h-28  sm:w-48 bg-slate-200/20 border border-slate-200/10">
-                {/* <Image /> */}
+                {<img src="./tubeFlaring.png" />}
               </div>
               <div className="flex flex-col gap-2 w-full">
                 <div className="text-2xl sm:text-3xl font-semibold">{item}</div>
@@ -64,7 +64,7 @@ const ServicesHome = () => {
               key={index}
             >
               <div className="w-full h-48 sm:h-28  sm:w-48 bg-slate-200/20 border border-slate-200/10">
-                {/* <Image /> */}
+                {<img src="pressureTesting.png" />}
               </div>
               <div className="flex flex-col gap-2 w-full">
                 <div className="text-2xl sm:text-3xl font-semibold">{item}</div>
@@ -82,7 +82,7 @@ const ServicesHome = () => {
               key={index}
             >
               <div className="w-full h-48 sm:h-28  sm:w-48 bg-slate-200/20 border border-slate-200/10">
-                {/* <Image /> */}
+                {<img src="hoseAssembly.png" />}
               </div>
               <div className="flex flex-col gap-2 w-full">
                 <div className="text-2xl sm:text-3xl font-semibold">{item}</div>
@@ -101,7 +101,7 @@ const ServicesHome = () => {
               key={index}
             >
               <div className="w-full h-48 sm:h-28  sm:w-48 bg-slate-200/20 border border-slate-200/10">
-                {/* <Image /> */}
+                {<img src="laserCutting.jpg" />}
               </div>
               <div className="flex flex-col gap-2 w-full">
                 <div className="text-2xl sm:text-3xl font-semibold">{item}</div>
@@ -115,7 +115,7 @@ const ServicesHome = () => {
               key={index}
             >
               <div className="w-full h-48 sm:h-28  sm:w-48 bg-slate-200/20 border border-slate-200/10">
-                {/* <Image /> */}
+                {<img src="metalBending.png" />}
               </div>
               <div className="flex flex-col gap-2 w-full">
                 <div className="text-2xl sm:text-3xl font-semibold">{item}</div>

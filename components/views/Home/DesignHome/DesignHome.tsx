@@ -1,4 +1,5 @@
 import ItemDesignHome from "./ItemDesignHome";
+import { ItemDesignsHome } from "./ItemDesignHome";
 
 import db from "db";
 
@@ -16,8 +17,11 @@ const DesignHome = () => {
         {/* <button className="btn-secondary py-2 max-w-max">View All</button> */}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 xl:grid-cols-6 grid-flow-row  gap-8 mt-8">
-          {db.design.map((item, i) => (
+          {db.design_Hydraulic.map((item, i) => (
             <ItemDesignHome key={i} title={item} />
+          ))}
+          {db.design_Drafting.map((item, i) => (
+            <ItemDesignsHome key={i} title={item} />
           ))}
         </div>
       </div>

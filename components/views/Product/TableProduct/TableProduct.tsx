@@ -10,28 +10,37 @@ type ITableProductProps = {
 const formathead = (title: string) => {
   const stringElements = title.split("_");
   if (stringElements.length === 1) {
-    return `${title.charAt(0).toUpperCase()}${title.slice(1)}`
+    return `${title.charAt(0).toUpperCase()}${title.slice(1)}`;
   }
   let string = "";
   stringElements.forEach((word, i) => {
     if (i !== stringElements.length - 1) {
       if (word === "id" || word == "od") {
-        string = string + word.split("")[0].toUpperCase() + "." + word.split("")[1].toUpperCase() + " "
+        string =
+          string +
+          word.split("")[0].toUpperCase() +
+          "." +
+          word.split("")[1].toUpperCase() +
+          " ";
       } else {
-        string = string + word.charAt(0).toUpperCase() + word.slice(1) + " " 
+        string = string + word.charAt(0).toUpperCase() + word.slice(1) + " ";
       }
     } else {
       if (word === "id" || word == "od") {
-        string = string + word.split("")[0].toUpperCase() + "." + word.split("")[1].toUpperCase() 
+        string =
+          string +
+          word.split("")[0].toUpperCase() +
+          "." +
+          word.split("")[1].toUpperCase();
       } else if (word.length === 1) {
-        string = string + '"' + word.toUpperCase() + '"'
-      }else {
-        string = string + "(" + word + ")"
+        string = string + '"' + word.toUpperCase() + '"';
+      } else {
+        string = string + "(" + word + ")";
       }
     }
-  })
+  });
   return string;
-}
+};
 
 const TableProduct = ({ items, setItems }: ITableProductProps) => {
   if (items.length === 0) {
@@ -57,7 +66,7 @@ const TableProduct = ({ items, setItems }: ITableProductProps) => {
         <tbody>
           {items.map((item) => (
             <tr key={item.id}>
-              <td className="whitespace-nowrap ">{item.name}</td>
+              <td className="whitespace-nowrap font-bold ">{item.name}</td>
               {Object.entries(item.attributes).map(([key, value]) => {
                 if (typeof value === "string") {
                   return (
@@ -73,7 +82,7 @@ const TableProduct = ({ items, setItems }: ITableProductProps) => {
                   );
                 }
               })}
-              <td>{`$${item.price}`}</td>
+              <td className="font-bold">{`$${item.price}`}</td>
               <td>{item.stock}</td>
               <td className=" w-28">
                 {item.stock === 0 ? (

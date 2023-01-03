@@ -7,6 +7,8 @@ export default {
   services_Cutting: ["LASER Metal Cutting"],
   services_Metal: ["Metal Bending"],
   design: ["Hydraulic System Design", "Design & Drafting"],
+  design_Hydraulic: ["Hydraulic System Design"],
+  design_Drafting: ["Design & Drafting"],
   categories: [
     {
       title: "Hoses",
