@@ -12,8 +12,7 @@ const Home: NextPage = () => {
       <DesignHome />
 
       {/* <BannerHome /> */}
-
-   </div>
+    </div>
   );
 };
 

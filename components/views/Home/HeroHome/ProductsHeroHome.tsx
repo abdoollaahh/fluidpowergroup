@@ -1,3 +1,4 @@
+import index from "@/modules/Loading";
 import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
@@ -7,10 +8,12 @@ import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 type Props = {};
 
 const ProductsHeroHome = (props: Props) => {
-  const images = useMemo(
-    () => ["/product-1.png", "/product-2.png", "/product-3.png"],
+  /*const images = useMemo(
+    () => ["/frontA.png", "/frontB.png", "/frontC.png", "/frontD.png"],
     []
   );
+*/
+  const images = ["/frontA.png", "/frontB.png", "/frontC.png", "/frontD.png"];
 
   const [selectedImage, setSelectedImage] = useState(images[0]);
 
@@ -67,7 +70,7 @@ const ProductsHeroHome = (props: Props) => {
         >
           <div className="relative p-4 w-full h-full -z-20">
             <Image
-              src="/image1.jpeg"
+              src={images[0]}
               layout="fill"
               objectFit="cover"
               placeholder="blur"
