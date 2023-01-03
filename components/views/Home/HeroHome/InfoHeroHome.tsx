@@ -2,15 +2,12 @@ import Anchor from "@/modules/Anchor";
 import React from "react";
 import { FiChevronRight } from "react-icons/fi";
 
-const Colorful = ({ children }) => {
-  return <span className="text-yellow-400">{children}</span>;
-};
-
 const InfoHeroHome = () => {
   return (
     <div className="md:w-1/2  h-full flex flex-col  justify-center    gap-4 items-center text-center md:text-left md:items-start ">
       <h1 className="text-3xl sm:text-4xl xl:text-4xl font-semibold">
-        Welcome to <Colorful>FluidPower Group</Colorful>
+        Welcome to{" "}
+        <span className="text-yellow-400 font-bold">FluidPower Group</span>
       </h1>
       <h2 className="text-lg">
         A growing hydraulics company investing in talented personnel & new
