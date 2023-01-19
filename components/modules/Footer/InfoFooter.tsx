@@ -1,10 +1,12 @@
 import { FiMail, FiMapPin } from "react-icons/fi";
-import Logo from "../Logo";
 
 const InfoFooter = () => {
   return (
     <div className="flex flex-col gap-4  items-center md:items-start ">
-      <Logo type="footer" />
+      <img
+        className="relative h-[90px] w-[220px] bg-transparent"
+        src="/logoFooter.png"
+      />
 
       <div className=" text-lg flex items-center gap-2">
         <FiMail className=" hidden sm:block" />{" "}

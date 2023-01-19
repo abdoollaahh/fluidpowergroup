@@ -4,6 +4,7 @@ import { useContext } from "react";
 import { FiX } from "react-icons/fi";
 import { IItemCart } from "types/cart";
 import Counter from "../Counter";
+import { DescriptionProduct } from "@/views/Product";
 
 type IItemCartProps = { item: IItemCart };
 
@@ -23,7 +24,7 @@ const ItemCart = ({ item }: IItemCartProps) => {
           </div>
         </div>
         <div className="flex flex-col text-xl font-light gap-1 ">
-          <h3>Hydraulic Hose</h3>
+          <h3>{item.name}</h3>
           <h4 className="text-base ">{item.name}</h4>
           <div className="w-24">
             <Counter
