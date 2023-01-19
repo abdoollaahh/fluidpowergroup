@@ -1,7 +1,7 @@
 import Anchor from "@/modules/Anchor";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { useRef } from "react";
+import { MutableRefObject, useRef } from "react";
 import { FiChevronRight } from "react-icons/fi";
 import { useScroll } from "react-use";
 import { Product, SubCategory } from "types/products";
@@ -21,7 +21,7 @@ const ProductSlider = ({
   products,
   btn,
 }: IProductSliderProps) => {
-  const scrollRef = useRef(null);
+  const scrollRef = useRef<any>(null);
   const { x } = useScroll(scrollRef);
 
   return (
@@ -38,7 +38,14 @@ const ProductSlider = ({
 
       <div className=" absolute h-full sm:flex right-0 top-0 p-6 hidden ">
         <div className=" w-12 h-12  flex items-center justify-center text-2xl   shadow-xl ring ring-slate-50 hover:ring-slate-300 rounded-full z-50 cursor-pointer bg-white mt-[80px]">
-          <FiChevronRight />
+          <FiChevronRight
+            onClick={() => {
+              scrollRef.current.scrollBy({
+                left: 500,
+                behavior: "smooth",
+              });
+            }}
+          />
         </div>
       </div>
       <div
