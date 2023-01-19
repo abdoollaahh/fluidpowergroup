@@ -9,6 +9,7 @@ export const CartContext = createContext<{
   addItem: (item: IItemCart) => void;
   deleteItem: (item: IItemCart) => void;
   updateItem: (item: IItemCart) => void;
+  setCart: (cart: ICart) => void;
 }>({
   toggleCart: () => {},
   items: [],
@@ -16,6 +17,7 @@ export const CartContext = createContext<{
   addItem: () => {},
   deleteItem: () => {},
   updateItem: () => {},
+  setCart: () => {},
 });
 
 type ICartWrapperProps = {
@@ -25,11 +27,15 @@ type ICartWrapperProps = {
 const CartWrapper = ({ children }: ICartWrapperProps) => {
   const [cart, setCart] = useState<ICart>({ open: false, items: [] });
 
+  console.log(cart);
+
   const toggleCart = () => {
     setCart({ ...cart, open: !cart.open });
   };
 
   const addItem = (item: IItemCart) => {
+    console.log(item, "ADD");
+
     setCart({ open: true, items: cart.items.concat(item) });
   };
 
@@ -57,6 +63,7 @@ const CartWrapper = ({ children }: ICartWrapperProps) => {
         addItem,
         deleteItem,
         updateItem,
+        setCart,
         open: cart.open,
       }}
     >

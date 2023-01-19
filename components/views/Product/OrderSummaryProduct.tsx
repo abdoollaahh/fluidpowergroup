@@ -20,7 +20,7 @@ const OrderSummaryProduct = ({
     [items]
   );
   const router = useRouter();
-  const { addItem } = useContext(CartContext);
+  const { addItem, setCart } = useContext(CartContext);
 
   const totalPrice = useMemo(
     () => items.reduce((prev, curr) => prev + curr.price * curr.quantity, 0),
@@ -32,7 +32,9 @@ const OrderSummaryProduct = ({
   const handleAddToCart = () => {
     window.scroll({ behavior: "smooth", top: 0, left: 0 });
 
-    itemsAdded.forEach((item) => addItem(item));
+    console.log(itemsAdded);
+
+    setCart({ open: true, items: itemsAdded });
 
     handleClear();
   };
