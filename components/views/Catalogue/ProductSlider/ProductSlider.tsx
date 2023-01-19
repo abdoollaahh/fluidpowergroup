@@ -77,8 +77,8 @@ const ProductSlider = ({
             key={i}
             className="hover:no-underline z-10 min-w-full sm:min-w-max "
           >
-            <div className="flex flex-col w-full  group   cursor-pointer   ">
-              <motion.div className="sm:w-64  w-full pt-[100%]  relative transition-all  duration-500   bg-white rounded-3xl border ">
+            <div className="flex flex-col w-full  group   cursor-pointer   sm:w-56">
+              <motion.div className="  w-full pt-[100%]  relative transition-all  duration-500   bg-white rounded-3xl border ">
                 <Image
                   layout="fill"
                   src={product.image || "/product-4.png"}
@@ -88,8 +88,8 @@ const ProductSlider = ({
                   alt="product"
                 />
               </motion.div>
-              <div className="text-xl px-3 py-1.5 font-light  flex justify-between gap-12">
-                <h3 className="text-2xl">{product.title}</h3>
+              <div className="text-xl px-3 py-1.5 font-light  flex justify-center  text-center  gap-12  whitespace-pre">
+                <h3 className="text-2xl font-medium">{product.title}</h3>
                 {product.price && <h3>{product.price}</h3>}
               </div>
             </div>
