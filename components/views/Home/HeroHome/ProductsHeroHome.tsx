@@ -70,7 +70,7 @@ const ProductsHeroHome = (props: Props) => {
         >
           <div className="relative p-4 w-full h-full -z-20">
             <Image
-              src={images[0]}
+              src={selectedImage}
               layout="fill"
               objectFit="cover"
               placeholder="blur"

@@ -1,6 +1,5 @@
-import Footer from "@/modules/Footer";
-import { BannerHome, DesignHome, HeroHome, ServicesHome } from "@/views/Home";
-import BestSellersHome from "@/views/Home/BestSellersHome/BestSellersHome";
+import { DesignHome, HeroHome, ServicesHome } from "@/views/Home";
+
 import type { NextPage } from "next";
 
 const Home: NextPage = () => {
