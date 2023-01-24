@@ -7,7 +7,7 @@ const LocationAbout = () => {
 
       <div className="text-2xl w-full ">
         <div className="relative h-80 sm:h-96 rounded-2xl overflow-hidden border">
-          <a href="https://goo.gl/maps/aEdpKFHyST5ohygGA" target="_blank">
+          <a href="https://goo.gl/maps/aEdpKFHyST5ohygGA" target="_blank" rel="noreferrer">
             <Image
               layout="fill"
               objectFit="cover"
