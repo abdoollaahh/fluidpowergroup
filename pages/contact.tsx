@@ -11,9 +11,8 @@ const ContactPage: NextPage = () => {
 
         <ItemsContact />
       </div>
-      <BannerHome />
     </div>
   );
 };
 
-export default (ContactPage);
+export default ContactPage;

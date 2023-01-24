@@ -17,7 +17,7 @@ const AboutPage: NextPage = () => {
           <HeroAbout />
         </div>
       </div>
-      <HighlightsAbout />
+      {/*<HighlightsAbout /> */}
       <div className="wrapper px-8 md:px-12 pt-8 pb-12 sm:pt-12 sm:pb-20 flex flex-col gap-12">
         <TeamAbout />
         <LocationAbout />
@@ -26,4 +26,4 @@ const AboutPage: NextPage = () => {
   );
 };
 
-export default (AboutPage);
+export default AboutPage;

@@ -4,10 +4,11 @@ const ServicesHome = () => {
   return (
     <div className="bg-[#191919]" id="services">
       <div className="w-full wrapper    text-black flex">
+        {/*
         <div className="flex  min-h-max   text-yellow-600 border-yellow-600 border-r-2 border writing-tb text-2xl font-semibold p-1 sm:p-2 items-center justify-center">
           Services{" "}
         </div>
-
+  */}
         <div className="h-full w-full ">
           <div className="flex flex-col gap-4 p-8 ">
             <div className="text-2xl sm:text-3xl font-semibold  text-yellow-600">
