@@ -4,6 +4,7 @@ export interface Category {
   slug: string;
   image?: string;
   subCategories: SubCategory[];
+  description : string
 }
 
 export interface SubCategory {
@@ -12,6 +13,7 @@ export interface SubCategory {
   image?: string;
   slug: string;
   category: string;
+  description: string;
 }
 
 export interface Product extends SubCategory {

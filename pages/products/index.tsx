@@ -45,7 +45,7 @@ const ProductsPage = () => {
 
   return (
     <div className="wrapper px-8 md:px-12   py-12 min-h-screen flex flex-col items-center gap-12  ">
-      <HeaderProducts />
+      <HeaderProducts categories={categories} slug={slug}/>
 
       <div className="grid grid-cols-12  w-full space-y-8 sm:space-y-0 sm:space-x-12 ">
         <FilterProducts categories={categories} />
