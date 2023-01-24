@@ -65,7 +65,7 @@ const TableProduct = ({ items, setItems }: ITableProductProps) => {
         </thead>
         <tbody>
           {items.map((item) => (
-            <tr className=" hover:bg-yellow-50" key={item.id}>
+            <tr className=" hover:bg-yellow-200" key={item.id}>
               <td className="whitespace-nowrap font-bold">{item.name}</td>
               {Object.entries(item.attributes).map(([key, value]) => {
                 if (typeof value === "string") {
