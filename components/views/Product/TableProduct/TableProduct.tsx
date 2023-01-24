@@ -48,7 +48,7 @@ const TableProduct = ({ items, setItems }: ITableProductProps) => {
   }
 
   return (
-    <div className=" wrapper  px-8 md:px-12 overflow-scroll">
+    <div className=" wrapper  px-8 md:px-12  overflow-scroll">
       <table className="table-auto w-full border select-none  ">
         <thead>
           <tr className="text-xl bg-[#191919] text-yellow-400 text-left">
@@ -65,8 +65,8 @@ const TableProduct = ({ items, setItems }: ITableProductProps) => {
         </thead>
         <tbody>
           {items.map((item) => (
-            <tr key={item.id}>
-              <td className="whitespace-nowrap font-bold ">{item.name}</td>
+            <tr className=" hover:bg-yellow-50" key={item.id}>
+              <td className="whitespace-nowrap font-bold">{item.name}</td>
               {Object.entries(item.attributes).map(([key, value]) => {
                 if (typeof value === "string") {
                   return (
@@ -76,7 +76,7 @@ const TableProduct = ({ items, setItems }: ITableProductProps) => {
                   );
                 } else {
                   return (
-                    <td className="whitespace-nowrap " key={key}>
+                    <td className="whitespace-nowrap  " key={key}>
                       {"-"}
                     </td>
                   );
