@@ -36,9 +36,8 @@ const ItemDesignHome = ({ title }: ItemDesignHomeProps) => {
                 animate={{ y: 0, opacity: 1, transition: { duration: 0.3 } }}
                 exit={{ y: 50, opacity: 0, transition: { duration: 0.05 } }}
               >
-                Lorem, ipsum dolor sit amet consectetur adipisicing elit.
-                Incidunt possimus, accusamus id similique unde saepe quia, error
-                temporibus nam exercitationem.
+                We can design, build and install the right hydraulic systems
+                according to your needs.
               </motion.div>
             )}
           </AnimatePresence>
@@ -46,7 +45,7 @@ const ItemDesignHome = ({ title }: ItemDesignHomeProps) => {
         {/*<button className="btn-tertiary py-1.5">Learn More </button>*/}
       </motion.div>
       <Image
-        src="/hydraulicSystemDesign.jpg"
+        src="/hydraulicSystemDesign.jpeg"
         placeholder="blur"
         alt="item"
         layout="fill"
@@ -81,9 +80,9 @@ const ItemDesignsHome = ({ title }: ItemDesignHomeProps) => {
                 animate={{ y: 0, opacity: 1, transition: { duration: 0.3 } }}
                 exit={{ y: 50, opacity: 0, transition: { duration: 0.05 } }}
               >
-                Lorem, ipsum dolor sit amet consectetur adipisicing elit.
-                Incidunt possimus, accusamus id similique unde saepe quia, error
-                temporibus nam exercitationem.
+                Our engineers can bring your ideas to life.<br></br>We are using
+                the latest 3D softwares for our design and drafting.<br></br>
+                Talk to us if you want anything to build.
               </motion.div>
             )}
           </AnimatePresence>
@@ -91,7 +90,7 @@ const ItemDesignsHome = ({ title }: ItemDesignHomeProps) => {
         {/*<button className="btn-tertiary py-1.5">Learn More </button>*/}
       </motion.div>
       <Image
-        src="/drafting.jpg"
+        src="/drafting.jpeg"
         placeholder="blur"
         alt="item"
         layout="fill"

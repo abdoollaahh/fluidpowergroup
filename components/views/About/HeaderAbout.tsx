@@ -9,8 +9,9 @@ const HeaderAbout = () => {
         ring assembly, pressure testing and hose crimping are our main services.
         <br></br>
         <br></br>We design and build hydraulic systems and circuits according to
-        your needs and requirements We are also into design and drafting
-        services. Bring us your idea and we will shape it into a reality
+        your needs and requirements.<br></br>
+        <br></br>We are also into design and drafting services. Bring us your
+        idea and we will shape it into a reality.
       </main>
     </div>
   );

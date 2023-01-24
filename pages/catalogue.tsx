@@ -37,7 +37,7 @@ const CataloguePage = () => {
               href: `/products?category=${category.slug}`,
             }}
             key={i}
-            description="uidem at officiis explicabo, fugit delectus, voluptate solut recusandae cumque. Praesentium non quidem nisi delectus!"
+            description={category.title}
           />
         ))}
       </div>

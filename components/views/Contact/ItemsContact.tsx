@@ -19,7 +19,7 @@ const ItemsContact = () => {
       label: "Sales",
       href: "tel:61409517333",
       icon: FiPhone,
-      title: "+61409517333",
+      title: "+61 409 517 333",
     },
   ];
 

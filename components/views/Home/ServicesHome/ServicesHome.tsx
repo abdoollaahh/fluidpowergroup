@@ -33,7 +33,7 @@ const ServicesHome = () => {
                   upto 28mm Diameter Tube <br></br>• Bend Radius as tight as
                   TWICE the Outside Diameter <br></br>• Our machines accept STL
                   (Tube 3D Model) & XYZ points <br></br>• Accuracy upto ± 0.5mm
-                  & 0.150 <br></br>• Bending capability of Metric as well as
+                  & 0.15° <br></br>• Bending capability of Metric as well as
                   Imperial Tubes
                 </div>
               </div>
@@ -50,10 +50,12 @@ const ServicesHome = () => {
               <div className="flex flex-col gap-2 w-full">
                 <div className="text-2xl sm:text-3xl font-semibold">{item}</div>
                 <div className="text-xl text-yellow-600 sm:text-2xl font-light opacity-75">
-                  • JIC 370 Flaring of Imperial Tubes <br></br>• JIC 370 Flaring
+                  • JIC 37° Flaring of Imperial Tubes <br></br>• JIC 37° Flaring
                   of Metric Tubes with JIC Nuts & Sleeves <br></br>• Tubes range
                   from 3/8” to 1” OR 10mm to 28mm <br></br>• Our Machines are
                   the most updated and produce clean flares with high accuracy
+                  <br></br>• Metric Tubes Cutting Ring Assembly<br></br>• ORFS
+                  Ends Assembly
                 </div>
               </div>
             </div>
@@ -105,6 +107,10 @@ const ServicesHome = () => {
               </div>
               <div className="flex flex-col gap-2 w-full">
                 <div className="text-2xl sm:text-3xl font-semibold">{item}</div>
+                <div className="text-xl text-yellow-600 sm:text-2xl font-light opacity-75">
+                  • We are equipped with the latest LASER cutting machines that
+                  can cut upto 12mm Stainless Steel and 16mm Carbon Steel
+                </div>
                 <div className="text-xl text-yellow-600 sm:text-2xl font-light opacity-75"></div>
               </div>
             </div>
@@ -119,6 +125,10 @@ const ServicesHome = () => {
               </div>
               <div className="flex flex-col gap-2 w-full">
                 <div className="text-2xl sm:text-3xl font-semibold">{item}</div>
+                <div className="text-xl text-yellow-600 sm:text-2xl font-light opacity-75">
+                  • We have the capability of bending complex shapes, long
+                  lengths and upto 16mm thick plates
+                </div>
                 <div className="text-xl text-yellow-600 sm:text-2xl font-light opacity-75"></div>
               </div>
             </div>

@@ -1,11 +1,11 @@
 /* eslint-disable import/no-anonymous-default-export */
 export default {
   services_Bending: ["Tube Bending"],
-  services_Flaring: ["Tube Flaring"],
+  services_Flaring: ["Tube Flaring & Cutting Ring Assembly"],
   services_Pressure: ["Pressure Testing"],
   services_Assembly: ["Hose Assembly"],
-  services_Cutting: ["LASER Metal Cutting"],
-  services_Metal: ["Metal Bending"],
+  services_Cutting: ["LASER Sheet Metal Cutting"],
+  services_Metal: ["Sheet-Metal Press Bending"],
   design: ["Hydraulic System Design", "Design & Drafting"],
   design_Hydraulic: ["Hydraulic System Design"],
   design_Drafting: ["Design & Drafting"],
