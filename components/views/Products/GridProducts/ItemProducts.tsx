@@ -5,15 +5,16 @@ import Image from "next/image";
 const ItemProducts = ({ item }: { item: any }) => {
   
   const getDescriptions = (description: string) => {
-    const stripped = description.replace(/(<([^>]+)>)/ig, "").replace(/&nbsp;/g, "");
-    const str = `${stripped.substring(0, 100)}${stripped.length > 100 ? "..." : ""}`;
-    return str;
+    //get text before first break tag
+    const text = description.split("<br>")[0];
+    const stripped = text.replace(/(<([^>]+)>)/ig, "").replace(/&nbsp;/g, "");
+    return stripped + "...";
   }
 
   return (
     <Anchor href={`/products/${item.id}`}>
-      <div className="flex flex-col w-full  max-w-sm    mx-auto group    cursor-pointer  ">
-        <motion.div className="w-full  pt-[100%]  relative  transition-all duration-500 border rounded-2xl">
+      <div className="flex flex-col w-full  max-w-sm    mx-auto group    cursor-pointer border-slate-800 border-[1px] p-4 h-full shadow-md">
+        <motion.div className="w-full  pt-[100%]  relative  transition-all duration-500">
           <Image
             layout="fill"
             src={item.image}

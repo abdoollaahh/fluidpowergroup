@@ -35,7 +35,6 @@ const ProductsPage = () => {
     });
 
     series().then((result: any) => {
-      console.log(result.data.series)
       setSeries(result.data.series);
     });
   }, [slug]);

@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { FiCheck, FiSquare } from "react-icons/fi";
 
-const DescriptionProduct = ({ series } : {series: any}) => {
+const DescriptionProduct = ({ series, items }: { series: any, items: any }) => {
+  const [more, setMore] = useState(false);
   return (
     <div className="col-span-full lg:col-span-6  xl:col-span-5   lg:px-12 flex flex-col gap-8 justify-center ">
       <div className="flex flex-col gap-2">
@@ -43,10 +45,18 @@ const DescriptionProduct = ({ series } : {series: any}) => {
         })*/}
         
       </ul>
-
-      <button>Learn More</button>
+      {
+        items && items.description && items.description.length !== 0 && (
+          <div className="flex flex-col gap-2.5">
+            {<div dangerouslySetInnerHTML={{__html: items.description}}>
+            </div>
+            }
+          </div>
+        )
+      }
+      <button onClick={() => { items.description && setMore(!more) }}>{more ? "Show Less" : "Learn More"}</button>
     </div>
-  );
+  ); 
 };
 
 export default DescriptionProduct;

@@ -54,7 +54,7 @@ const ProductPage = () => {
         <div className="max-w-2xl lg:max-w-full w-full mx-auto mb-4">
           <div className="grid grid-cols-12 h-full   space-y-6 lg:space-y-0 space-x-0 lg:space-x-6      mx-auto  wrapper   px-8 md:px-12 overflow-hidden">
             <ImageProduct images={ series.images} />
-            <DescriptionProduct series={series}/>
+            <DescriptionProduct items = {items[0]} series={series}/>
           </div>
       </div>
       {items.length !==0 &&<TableProduct items={items} setItems={setItems} />}

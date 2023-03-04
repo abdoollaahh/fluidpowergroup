@@ -1,5 +1,5 @@
 import NavHeader from "./NavHeader";
-import { FiUser, FiShoppingCart } from "react-icons/fi";
+import { FiUser, FiShoppingCart, FiSearch } from "react-icons/fi";
 import Snackbar from "./Snackbar/Snackbar";
 import { useContext, useState } from "react";
 import HoverWrapper from "context/HoverWrapper";
@@ -9,6 +9,7 @@ import Logo from "../Logo";
 import Cart from "../Cart";
 import { CartContext } from "context/CartWrapper";
 import { Category } from "types/products";
+import { BsSearch } from "react-icons/bs";
 
 const Header = ({categories} : {categories: Category[]}) => {
   const [hover, setHover] = useState<string | null>(null);
@@ -23,15 +24,15 @@ const Header = ({categories} : {categories: Category[]}) => {
               <Cart open={cartOpen} handleClose={toggleCart} />
 
               <div
-                className="icon-btn relative   lg:hidden text-2xl"
-                onClick={toggleCart}
+                className="relative flex items-center  lg:hidden text-2xl"
               >
                 {items.length > 0 && (
                   <div className="absolute top-0 right-0 text-xs py-0.5 px-2 bg-black text-white rounded-full ">
                     {items.length}
                   </div>
                 )}
-                <FiShoppingCart className="text-3xl" />
+                <FiSearch className="text-3xl mr-2 hover:bg-slate-100 hover:cursor-pointer rounded-full h-full"/>
+                <FiShoppingCart onClick={toggleCart} className="text-3xl" />
               </div>
             </div>
 
@@ -43,18 +44,19 @@ const Header = ({categories} : {categories: Category[]}) => {
               <NavHeader />
             </div>
 
-            <div className="lg:w-full w-1/5 justify-end flex lg:hidden ">
+            <div className="lg:w-full w-1/5 justify-end flex lg:hidden items-center">
               <Snackbar />
             </div>
 
             <div className="w-full text-2xl gap-2 justify-end hidden lg:flex">
-              <div className="icon-btn relative" onClick={toggleCart}>
+              <div className="flex relative">
                 {items.length > 0 && (
                   <div className="absolute top-0 right-0 text-xs py-0.5 px-2 bg-black text-white rounded-full ">
                     {items.length}
                   </div>
                 )}
-                <FiShoppingCart />
+                <FiSearch className="text-3xl mr-5 hover:bg-slate-100 hover:cursor-pointer rounded-full h-full w-full p-2"/>
+                <FiShoppingCart onClick={toggleCart} className="text-3xl hover:bg-slate-100 hover:cursor-pointer rounded-full h-full w-full p-2" />
               </div>
 
               <Cart open={cartOpen} handleClose={toggleCart} />
