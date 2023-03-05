@@ -46,7 +46,7 @@ const DescriptionProduct = ({ series, items }: { series: any, items: any }) => {
         
       </ul>
       {
-        items && items.description && items.description.length !== 0 && (
+        items && items.description && items.description.length !== 0 && more && (
           <div className="flex flex-col gap-2.5">
             {<div dangerouslySetInnerHTML={{__html: items.description}}>
             </div>

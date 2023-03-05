@@ -14,6 +14,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         price: product.price,
         stock: product.stock_level | 0,
         attributes: product.attributes,
+        description: product.description,
         /*id_inch: product.attributes.id_inch ? product.attributes.id_inch : "-",
         id_mm: product.attributes.id_mm ? product.attributes.id_mm : "-",
         od_mm: product.attributes.od_mm ? product.attributes.od_mm : "-",
