@@ -49,7 +49,7 @@ const ProductsPage = () => {
 
       <div className="grid grid-cols-12  w-full space-y-8 sm:space-y-0 sm:space-x-12 ">
         <FilterProducts categories={categories} />
-        <GridProducts seriesList={series} />
+        <GridProducts seriesList={series} showDescription={true} />
       </div>
     </div>
   );
