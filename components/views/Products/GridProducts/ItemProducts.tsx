@@ -2,7 +2,7 @@ import Anchor from "@/modules/Anchor";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
-const ItemProducts = ({ item }: { item: any }) => {
+const ItemProducts = ({ item, showDescription }: { item: any, showDescription: false }) => {
   
   const getDescriptions = (description: string) => {
     //get text before first break tag
@@ -26,13 +26,13 @@ const ItemProducts = ({ item }: { item: any }) => {
           />
         </motion.div>
         <div className="text-xl px-3 py-1.5 font-light flex justify-center gap-12">
-          <h3 className="text-xl font-semibold"><b>{item.name}</b></h3>
+          <h3 className="text-xl font-semibold"><b>{item.name || item.title}</b></h3>
         </div>
-        <div className="text-center">
+        {showDescription && <div className="text-center">
           <span className="text-xs font-semibold text-slate-700">
             {item.description && getDescriptions(item.description)}
           </span>
-        </div>
+        </div>}
       </div>
     </Anchor>
   );

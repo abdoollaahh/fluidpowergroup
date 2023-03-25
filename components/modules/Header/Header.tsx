@@ -2,6 +2,7 @@ import NavHeader from "./NavHeader";
 import { FiUser, FiShoppingCart, FiSearch } from "react-icons/fi";
 import Snackbar from "./Snackbar/Snackbar";
 import { useContext, useState } from "react";
+import { useRouter } from "next/router";
 import HoverWrapper from "context/HoverWrapper";
 import { AnimatePresence } from "framer-motion";
 import ProductMenuHeader from "./MenuHeader/ProductMenuHeader/ProductMenuHeader";
@@ -15,6 +16,7 @@ const Header = ({categories} : {categories: Category[]}) => {
   const [hover, setHover] = useState<string | null>(null);
   const { open: cartOpen, toggleCart, items } = useContext(CartContext);
 
+  const router = useRouter();
   return (
     <HoverWrapper hook={{ hover, setHover }}>
       <div className="w-full" onMouseLeave={() => setHover(null)}>
@@ -55,7 +57,7 @@ const Header = ({categories} : {categories: Category[]}) => {
                     {items.length}
                   </div>
                 )}
-                <FiSearch className="text-3xl mr-5 hover:bg-slate-100 hover:cursor-pointer rounded-full h-full w-full p-2"/>
+                <FiSearch onClick={() => {router.push("/products/search")}} className="text-3xl mr-5 hover:bg-slate-100 hover:cursor-pointer rounded-full h-full w-full p-2"/>
                 <FiShoppingCart onClick={toggleCart} className="text-3xl hover:bg-slate-100 hover:cursor-pointer rounded-full h-full w-full p-2" />
               </div>
 

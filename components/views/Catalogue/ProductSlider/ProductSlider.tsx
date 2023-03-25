@@ -77,8 +77,8 @@ const ProductSlider = ({
             key={i}
             className="hover:no-underline z-10 min-w-full sm:min-w-max "
           >
-            <div className="flex flex-col w-full  group   cursor-pointer   sm:w-56">
-              <motion.div className="  w-full pt-[100%]  relative transition-all  duration-500   bg-white rounded-3xl border ">
+            <div className="flex flex-col w-full  group   cursor-pointer   sm:w-56 border-slate-800 border-[1px] p-4 h-full shadow-md">
+              <motion.div className="  w-full pt-[100%]  relative transition-all  duration-500   bg-white ">
                 <Image
                   layout="fill"
                   src={product.image || "/product-4.png"}
