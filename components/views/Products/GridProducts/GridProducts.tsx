@@ -1,10 +1,10 @@
 import SortProducts from "./SortProducts/SortProducts";
 import ItemProducts from "./ItemProducts";
-
+import { motion } from "framer-motion";
 
 type Props = {
-  seriesList: any,
-  showDescription: any
+  seriesList: any;
+  showDescription: any;
 };
 
 const GridProducts = ({ seriesList, showDescription }: Props) => {
@@ -13,8 +13,12 @@ const GridProducts = ({ seriesList, showDescription }: Props) => {
       <SortProducts />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {seriesList.map((item: any) => (
-          <ItemProducts item={item} key={item.id} showDescription={showDescription} />
-          ))}
+          <ItemProducts
+            item={item}
+            key={item.id}
+            showDescription={showDescription}
+          />
+        ))}
       </div>
     </div>
   );

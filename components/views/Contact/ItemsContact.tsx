@@ -5,15 +5,15 @@ const ItemsContact = () => {
   const contactOptions = [
     {
       label: "General Queries",
-      href: "mailto:admin@fluidpowergroup.com.au",
-      icon: FiMail,
-      title: "admin@fluidpowergroup.com.au",
-    },
-    {
-      label: "Product Queries",
       href: "mailto:info@fluidpowergroup.com.au",
       icon: FiMail,
       title: "info@fluidpowergroup.com.au",
+    },
+    {
+      label: "Product Queries",
+      href: "mailto:parts@fluidpowergroup.com.au",
+      icon: FiMail,
+      title: "parts@fluidpowergroup.com.au",
     },
     {
       label: "Sales",
