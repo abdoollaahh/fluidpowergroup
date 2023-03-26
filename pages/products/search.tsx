@@ -49,19 +49,32 @@ const Search = () => {
   const [categories, setCategories] = useState<searchParams[]>([]);
   const [data, setData] = useState<any>([]);
   const [filteredData, setFilteredData] = useState<any>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const categories = async () => {
+const categories = async () => {
       const cat = await axios.get(
         `${process.env.NEXT_PUBLIC_BASEURL}/getAllProducts`
       );
-      return cat;
+      if (cat.data.categories.length !== 0) {
+        if (cat.data.categories[0].subCategories.length !== 0) {
+          if(cat.data.categories[0].subCategories[0].series.length !== 0) {
+            return cat;  
+          } else {
+            await categories()
+          }
+        } else {
+          await categories()
+        }
+
+      } else {
+        await categories()
+      }
     };
 
     categories().then((result: any) => {
       setData(result.data.categories);
-      console.log(result.data.categories);
+      setLoading(false)
     });
   }, []);
 
@@ -168,6 +181,12 @@ const Search = () => {
     },
     exit: { opacity: 0, y: -100, transition: { duration: 0.3 } },
   };
+
+  if (loading) {
+    return (
+      <Loading />
+    )
+  }
 
   return (
     <div className="px-8 md:px-12   py-12 min-h-screen">
