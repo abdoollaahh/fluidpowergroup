@@ -18,7 +18,7 @@ const SEARCHPARAMETERS = [
     product: "Hose Fittings",
     categories: ["BSP", "JIC", "Metric", "ORFS", "Ferrules"],
     subCategories: [
-      "MALE STRAIGHT",
+      " MALE STRAIGHT",
       "FEMALE STRAIGHT",
       "45\u00B0",
       "90\u00B0",
@@ -164,7 +164,9 @@ const categories = async () => {
           foundCategory.series.forEach((series: any) => {
             category.subCategories.forEach((subCat) => {
               if ((series.description.toLowerCase()).includes(subCat.toLowerCase())) {
-                newFilteredData.push(series);
+                if (!newFilteredData.includes(series)) {
+                 newFilteredData.push(series); 
+                }
               }
             });
           });
