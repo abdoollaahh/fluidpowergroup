@@ -33,7 +33,7 @@ const Header = ({categories} : {categories: Category[]}) => {
                     {items.length}
                   </div>
                 )}
-                <FiSearch className="text-3xl mr-2 hover:bg-slate-100 hover:cursor-pointer rounded-full h-full"/>
+                <FiSearch onClick={() => {router.push("/products/search")}} className="text-3xl mr-2 hover:bg-slate-100 hover:cursor-pointer rounded-full h-full"/>
                 <FiShoppingCart onClick={toggleCart} className="text-3xl" />
               </div>
             </div>

@@ -163,7 +163,7 @@ const categories = async () => {
         if (category.subCategories.length > 0) {
           foundCategory.series.forEach((series: any) => {
             category.subCategories.forEach((subCat) => {
-              if (series.description.includes(subCat)) {
+              if ((series.description.toLowerCase()).includes(subCat.toLowerCase())) {
                 newFilteredData.push(series);
               }
             });
