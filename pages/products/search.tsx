@@ -73,6 +73,7 @@ const categories = async () => {
     };
 
     categories().then((result: any) => {
+      console.log(result)
       setData(result.data.categories);
       setLoading(false)
     });

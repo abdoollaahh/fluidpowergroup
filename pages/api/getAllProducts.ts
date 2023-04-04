@@ -18,6 +18,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         const series = await swell.get('/categories', { where: { parent_id: sub.id } })
         await series.results.forEach(async (serie: any) => {
           await sub.series.push({
+            id: serie.id,
             title: serie.name,
             slug: serie.slug,
             category: category.slug,
