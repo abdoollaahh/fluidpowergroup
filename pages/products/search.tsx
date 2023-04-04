@@ -50,6 +50,7 @@ const Search = () => {
   const [data, setData] = useState<any>([]);
   const [filteredData, setFilteredData] = useState<any>([]);
   const [loading, setLoading] = useState(true);
+  const [retry, setRetry] = useState(false);
 
   useEffect(() => {
 const categories = async () => {
@@ -73,11 +74,14 @@ const categories = async () => {
     };
 
     categories().then((result: any) => {
-      console.log(result)
+      if (result === undefined) {
+        setRetry(true)
+        return
+      }
       setData(result.data.categories);
       setLoading(false)
     });
-  }, []);
+  }, [retry]);
 
   // useEffect(() => {
   //       const series = async () => {
