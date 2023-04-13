@@ -53,33 +53,32 @@ const Search = () => {
   const [retry, setRetry] = useState(false);
 
   useEffect(() => {
-const categories = async () => {
+    const categories = async () => {
       const cat = await axios.get(
         `${process.env.NEXT_PUBLIC_BASEURL}/getAllProducts`
       );
       if (cat.data.categories.length !== 0) {
         if (cat.data.categories[0].subCategories.length !== 0) {
-          if(cat.data.categories[0].subCategories[0].series.length !== 0) {
-            return cat;  
+          if (cat.data.categories[0].subCategories[0].series.length !== 0) {
+            return cat;
           } else {
-            await categories()
+            await categories();
           }
         } else {
-          await categories()
+          await categories();
         }
-
       } else {
-        await categories()
+        await categories();
       }
     };
 
     categories().then((result: any) => {
       if (result === undefined) {
-        setRetry(true)
-        return
+        setRetry(true);
+        return;
       }
       setData(result.data.categories);
-      setLoading(false)
+      setLoading(false);
     });
   }, [retry]);
 
@@ -163,9 +162,11 @@ const categories = async () => {
         if (category.subCategories.length > 0) {
           foundCategory.series.forEach((series: any) => {
             category.subCategories.forEach((subCat) => {
-              if ((series.description.toLowerCase()).includes(subCat.toLowerCase())) {
+              if (
+                series.description.toLowerCase().includes(subCat.toLowerCase())
+              ) {
                 if (!newFilteredData.includes(series)) {
-                 newFilteredData.push(series); 
+                  newFilteredData.push(series);
                 }
               }
             });
@@ -190,14 +191,12 @@ const categories = async () => {
   };
 
   if (loading) {
-    return (
-      <Loading />
-    )
+    return <Loading />;
   }
 
   return (
-    <div className="px-8 md:px-12   py-12 min-h-screen">
-      <div className="text-[4rem] md:text-[6rem] lg:text-[8rem] xl:text-[10rem] font-bold text-slate-200/50">
+    <div className="px-8 md:px-12 py-12 min-h-screen">
+      <div className="text-[4rem] md:text-[6rem] lg:text-[8rem] xl:text-[10rem] font-bold text-slate-200/50 md:mx-10 ">
         Search
       </div>
       <div className="wrapper flex flex-col gap-12 items-center px-10">
@@ -251,7 +250,7 @@ const categories = async () => {
                                   className={`border-2 rounded-xl mr-4 px-4 py-1 flex justify-center items-center my-2 hover:cursor-pointer
                                   ${
                                     checkCategory(product.product, category)
-                                      ? "border-primary text-primary"
+                                      ? "border-slate-700 text-slate-700 bg-primary"
                                       : "border-slate-700"
                                   }
                                   `}
@@ -281,7 +280,7 @@ const categories = async () => {
                                       product.product,
                                       subCategory
                                     )
-                                      ? "border-primary text-primary"
+                                      ? "border-slate-700 text-slate-700 bg-primary"
                                       : "border-slate-700"
                                   }
                                   `}
@@ -310,7 +309,7 @@ const categories = async () => {
                                     className={`border-2 rounded-xl mr-4 mt-2 px-4 py-1 flex justify-center items-center hover:cursor-pointer
                                     ${
                                       checkSubCategory(product.product, params)
-                                        ? "border-primary text-primary"
+                                        ? "border-slate-700 text-slate-700 bg-primary"
                                         : "border-slate-700"
                                     }`}
                                     key={index}

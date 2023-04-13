@@ -11,8 +11,9 @@ import Cart from "../Cart";
 import { CartContext } from "context/CartWrapper";
 import { Category } from "types/products";
 import { BsSearch } from "react-icons/bs";
+import Link from "next/link";
 
-const Header = ({categories} : {categories: Category[]}) => {
+const Header = ({ categories }: { categories: Category[] }) => {
   const [hover, setHover] = useState<string | null>(null);
   const { open: cartOpen, toggleCart, items } = useContext(CartContext);
 
@@ -25,16 +26,19 @@ const Header = ({categories} : {categories: Category[]}) => {
             <div className="w-1/5 lg:hidden flex items-center justify-start">
               <Cart open={cartOpen} handleClose={toggleCart} />
 
-              <div
-                className="relative flex items-center  lg:hidden text-2xl"
-              >
+              <div className="relative flex items-center  lg:hidden text-2xl">
                 {items.length > 0 && (
                   <div className="absolute top-0 right-0 text-xs py-0.5 px-2 bg-black text-white rounded-full ">
                     {items.length}
                   </div>
                 )}
-                <FiSearch onClick={() => {router.push("/products/search")}} className="text-3xl mr-2 hover:bg-slate-100 hover:cursor-pointer rounded-full h-full"/>
-                <FiShoppingCart onClick={toggleCart} className="text-3xl" />
+                <FiSearch
+                  onClick={() => {
+                    router.push("/products/search");
+                  }}
+                  className="text-xl mr-2 hover:bg-slate-100 hover:cursor-pointer rounded-full h-full"
+                />
+                <FiShoppingCart onClick={toggleCart} className="text-xl p-3" />
               </div>
             </div>
 
@@ -57,8 +61,17 @@ const Header = ({categories} : {categories: Category[]}) => {
                     {items.length}
                   </div>
                 )}
-                <FiSearch onClick={() => {router.push("/products/search")}} className="text-3xl mr-5 hover:bg-slate-100 hover:cursor-pointer rounded-full h-full w-full p-2"/>
-                <FiShoppingCart onClick={toggleCart} className="text-3xl hover:bg-slate-100 hover:cursor-pointer rounded-full h-full w-full p-2" />
+                <FiSearch
+                  onClick={() => {
+                    router.push("/products/search");
+                  }}
+                  className=" relative text-4xl text-primary mr-5  hover:text-slate-700 hover:cursor-pointer rounded-full h-full w-full p-2"
+                />
+
+                <FiShoppingCart
+                  onClick={toggleCart}
+                  className="text-xl hover:text-primary hover:cursor-pointer font-bold  h-full w-full p-2"
+                />
               </div>
 
               <Cart open={cartOpen} handleClose={toggleCart} />
@@ -71,7 +84,9 @@ const Header = ({categories} : {categories: Category[]}) => {
         </div>
 
         <AnimatePresence exitBeforeEnter>
-          {hover === "Products" && <ProductMenuHeader categories={ categories} />}
+          {hover === "Products" && (
+            <ProductMenuHeader categories={categories} />
+          )}
         </AnimatePresence>
       </div>
     </HoverWrapper>
