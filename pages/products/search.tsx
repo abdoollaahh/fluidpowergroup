@@ -16,20 +16,20 @@ type searchParams = {
 const SEARCHPARAMETERS = [
   {
     product: "Hose Fittings",
-    categories: ["BSP", "JIC", "Metric", "ORFS", "Ferrules"],
+    categories: ["BSP", "JIC", "METRIC", "ORFS", "FERRULES"],
     subCategories: [
-      " MALE STRAIGHT",
-      "FEMALE STRAIGHT",
+      " Male Straight",
+      "Female Straight",
       "45\u00B0",
       "90\u00B0",
-      "BANJO",
+      "Banjo",
     ],
   },
   {
     product: "Hydraulic Adaptors",
-    categories: ["BSP", "JIC", "Metric", "ORFS", "Stainless Adaptors"],
-    subCategories: ["MALE x MALE", "MALE x FEMALE"],
-    extraParams: ["STRAIGHT", "45\u00B0", "90\u00B0", "TEE"],
+    categories: ["BSP", "JIC", "METRIC", "ORFS", "STAINLESS ADAPTORS"],
+    subCategories: ["Male x Male", "Male x Female"],
+    extraParams: ["Straight", "45\u00B0", "90\u00B0", "TEE"],
   },
   {
     product: "Hydraulic Hoses",
@@ -41,6 +41,11 @@ const SEARCHPARAMETERS = [
     categories: ["Carbon Steel", "Stainless Steel"],
     subCategories: ["Metric", "Imperial"],
   },
+  {
+    product: "Miscellaneous",
+    categories: ["Tube Clamps", "Quick Release Couplings", "Ball Valves", "Hose Protections", "Hydraulic Valves"],
+    subCategories: [],
+  }
 ];
 
 const Search = () => {
@@ -51,6 +56,7 @@ const Search = () => {
   const [filteredData, setFilteredData] = useState<any>([]);
   const [loading, setLoading] = useState(true);
   const [retry, setRetry] = useState(false);
+  const [open, setOpen] = useState<String>("");
 
   useEffect(() => {
     const categories = async () => {
@@ -157,7 +163,7 @@ const Search = () => {
       const found = data.find((cat: any) => cat.title === category.title);
       category.categories.forEach((cat) => {
         const foundCategory = found.subCategories.find(
-          (c: any) => c.title === cat
+          (c: any) => c.title.toLowerCase() === cat.toLowerCase()
         );
         if (category.subCategories.length > 0) {
           foundCategory.series.forEach((series: any) => {
@@ -218,11 +224,12 @@ const Search = () => {
                       } else {
                         setTitles([...titles, product.product]);
                       }
+                      setOpen(product.product);
                     }}
                   >
                     <span
                       className={`text-lg font-bold ${
-                        titles.includes(product.product)
+                        open === product.product
                           ? "text-primary"
                           : "text-slate-700"
                       } cursor-pointer`}
@@ -230,7 +237,7 @@ const Search = () => {
                       {product.product}
                     </span>
                   </div>
-                  {titles.includes(product.product) && (
+                  {open === product.product && (
                     <AnimatePresence>
                       <div>
                         <motion.div
