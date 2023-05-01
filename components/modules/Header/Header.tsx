@@ -61,13 +61,21 @@ const Header = ({ categories }: { categories: Category[] }) => {
                     {items.length}
                   </div>
                 )}
-                <FiSearch
+                <button
+                  onClick={() => {
+                    router.push("/products/search");
+                  }}
+                  className="py-2 bg-yellow-400 hover:text-yellow-400 shadow-sm border font-semibold hover:border-yellow-400 text-black text-sm rounded-lg mx-5"
+                >
+                  Search
+                </button>
+                {/*<FiSearch
                   onClick={() => {
                     router.push("/products/search");
                   }}
                   className=" relative text-4xl text-primary mr-5  hover:text-slate-700 hover:cursor-pointer rounded-full h-full w-full p-2"
                 />
-
+                */}
                 <FiShoppingCart
                   onClick={toggleCart}
                   className="text-xl hover:text-primary hover:cursor-pointer font-bold  h-full w-full p-2"
