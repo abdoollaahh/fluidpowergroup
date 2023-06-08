@@ -8,9 +8,10 @@ import Loading from "@/modules/Loading";
 import { AnimatePresence, motion } from "framer-motion";
 
 type searchParams = {
-  title: string;
-  categories: string[];
-  subCategories: string[];
+  title: string | null;
+  categories: string | null;
+  subCategories: string | null;
+  extraParams?: string | null;
 };
 
 const SEARCHPARAMETERS = [
@@ -50,8 +51,8 @@ const SEARCHPARAMETERS = [
 
 const Search = () => {
   const router = useRouter();
-  const [titles, setTitles] = useState<String[]>([]);
-  const [categories, setCategories] = useState<searchParams[]>([]);
+  const [titles, setTitles] = useState<String>("");
+  const [categories, setCategories] = useState<searchParams>({title: null, categories: null, subCategories: null, extraParams: null});
   const [data, setData] = useState<any>([]);
   const [filteredData, setFilteredData] = useState<any>([]);
   const [loading, setLoading] = useState(true);
@@ -102,88 +103,80 @@ const Search = () => {
   //   });
   // }, [slug]);
 
-  const checkCategory = (product: string, category: string) => {
-    const found = categories.find((cat) => cat.title === product);
-    if (found) {
-      return found.categories.includes(category);
-    }
-    return false;
-  };
+  // const checkCategory = (product: string, category: string) => {
+  //   const found = categories.find((cat) => cat.title === product);
+  //   if (found) {
+  //     return found.categories.includes(category);
+  //   }
+  //   return false;
+  // };
 
-  const checkSubCategory = (product: string, subCategory: string) => {
-    const found = categories.find((cat) => cat.title === product);
-    if (found) {
-      return found.subCategories.includes(subCategory);
-    }
-    return false;
-  };
+  // const checkSubCategory = (product: string, subCategory: string) => {
+  //   const found = categories.find((cat) => cat.title === product);
+  //   if (found) {
+  //     return found.subCategories.includes(subCategory);
+  //   }
+  //   return false;
+  // };
 
-  const addCategory = (product: string, category: string) => {
-    const found = categories.find((cat) => cat.title === product);
-    if (found) {
-      if (found.categories.includes(category)) {
-        found.categories = found.categories.filter((cat) => cat !== category);
-      } else {
-        found.categories.push(category);
-      }
-    } else {
-      categories.push({
-        title: product,
-        categories: [category],
-        subCategories: [],
-      });
-    }
-    setCategories([...categories]);
-  };
+  // const addCategory = (product: string, category: string) => {
+  //   const found = categories.find((cat) => cat.title === product);
+  //   if (found) {
+  //     if (found.categories.includes(category)) {
+  //       found.categories = found.categories.filter((cat) => cat !== category);
+  //     } else {
+  //       found.categories.push(category);
+  //     }
+  //   } else {
+  //     categories.push({
+  //       title: product,
+  //       categories: [category],
+  //       subCategories: [],
+  //     });
+  //   }
+  //   setCategories([...categories]);
+  // };
 
-  const addSubCategory = (product: string, subCategory: string) => {
-    const found = categories.find((cat) => cat.title === product);
-    if (found) {
-      if (found.subCategories.includes(subCategory)) {
-        found.subCategories = found.subCategories.filter(
-          (cat) => cat !== subCategory
-        );
-      } else {
-        found.subCategories.push(subCategory);
-      }
-    } else {
-      categories.push({
-        title: product,
-        categories: [],
-        subCategories: [subCategory],
-      });
-    }
-    setCategories([...categories]);
-  };
+  // const addSubCategory = (product: string, subCategory: string) => {
+  //   const found = categories.find((cat) => cat.title === product);
+  //   if (found) {
+  //     if (found.subCategories.includes(subCategory)) {
+  //       found.subCategories = found.subCategories.filter(
+  //         (cat) => cat !== subCategory
+  //       );
+  //     } else {
+  //       found.subCategories.push(subCategory);
+  //     }
+  //   } else {
+  //     categories.push({
+  //       title: product,
+  //       categories: [],
+  //       subCategories: [subCategory],
+  //     });
+  //   }
+  //   setCategories([...categories]);
+  // };
 
   useEffect(() => {
     let newFilteredData: any[] = [];
 
-    categories.forEach((category) => {
-      const found = data.find((cat: any) => cat.title === category.title);
-      category.categories.forEach((cat) => {
-        const foundCategory = found.subCategories.find(
-          (c: any) => c.title.toLowerCase() === cat.toLowerCase()
-        );
-        if (category.subCategories.length > 0) {
-          foundCategory.series.forEach((series: any) => {
-            category.subCategories.forEach((subCat) => {
-              if (
-                series.description.toLowerCase().includes(subCat.toLowerCase())
-              ) {
-                if (!newFilteredData.includes(series)) {
-                  newFilteredData.push(series);
-                }
-              }
-            });
-          });
-        } else {
-          newFilteredData.push(...foundCategory.series);
+    if (categories.title !== null && categories.categories !== null) {
+      data.forEach((product: any) => {
+        if (product.title === categories.title) {
+          product.subCategories.forEach((cat: any) => {
+            if (cat.title.toLowerCase() === categories.categories?.toLowerCase()) {
+              newFilteredData = [...newFilteredData, ...cat.series];
+              if (categories.subCategories)
+                newFilteredData = newFilteredData.filter(series => series.description.toLowerCase().includes(categories.subCategories?.toLowerCase()))
+              if (categories.extraParams)
+                newFilteredData = newFilteredData.filter(series => series.description.toLowerCase().includes(categories.extraParams?.toLowerCase()))
+            }
+          })
         }
       });
-    });
-    console.log(newFilteredData);
-    setFilteredData(newFilteredData);
+    }
+    
+    setFilteredData(newFilteredData)
   }, [categories]);
 
   const variants = {
@@ -217,13 +210,13 @@ const Search = () => {
                   <div
                     className="w-[30%] max-w-[200px]"
                     onClick={() => {
-                      if (titles.includes(product.product)) {
-                        setTitles(
-                          titles.filter((title) => title !== product.product)
-                        );
-                      } else {
-                        setTitles([...titles, product.product]);
-                      }
+                      setTitles(product.product);
+                      setCategories({
+                        title: product.product,
+                        categories: null,
+                        subCategories: null,
+                        extraParams: null,
+                      });
                       setOpen(product.product);
                     }}
                   >
@@ -256,14 +249,17 @@ const Search = () => {
                                 <div
                                   className={`border-2 rounded-xl mr-4 px-4 py-1 flex justify-center items-center my-2 hover:cursor-pointer
                                   ${
-                                    checkCategory(product.product, category)
+                                    categories.categories === category
                                       ? "border-slate-700 text-slate-700 bg-primary"
                                       : "border-slate-700"
                                   }
                                   `}
                                   key={index}
                                   onClick={() => {
-                                    addCategory(product.product, category);
+                                    setCategories({
+                                      ...categories,
+                                      categories: category,
+                                    })
                                   }}
                                 >
                                   {category}
@@ -283,20 +279,17 @@ const Search = () => {
                                     className={`
                                   border-2 rounded-xl mr-4 mt-2 px-4 py-1 flex justify-center items-center hover:cursor-pointer
                                   ${
-                                    checkSubCategory(
-                                      product.product,
-                                      subCategory
-                                    )
+                                      categories.subCategories === subCategory
                                       ? "border-slate-700 text-slate-700 bg-primary"
                                       : "border-slate-700"
                                   }
                                   `}
                                     key={index}
                                     onClick={() => {
-                                      addSubCategory(
-                                        product.product,
-                                        subCategory
-                                      );
+                                      setCategories({
+                                        ...categories,
+                                        subCategories: subCategory,
+                                      })
                                     }}
                                   >
                                     {subCategory}
@@ -315,13 +308,16 @@ const Search = () => {
                                   <div
                                     className={`border-2 rounded-xl mr-4 mt-2 px-4 py-1 flex justify-center items-center hover:cursor-pointer
                                     ${
-                                      checkSubCategory(product.product, params)
+                                      categories.extraParams === params
                                         ? "border-slate-700 text-slate-700 bg-primary"
                                         : "border-slate-700"
                                     }`}
                                     key={index}
                                     onClick={() => {
-                                      addSubCategory(product.product, params);
+                                      setCategories({
+                                        ...categories,
+                                        extraParams: params,
+                                      })
                                     }}
                                   >
                                     {params}
