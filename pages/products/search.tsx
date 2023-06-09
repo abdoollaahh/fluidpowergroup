@@ -167,9 +167,9 @@ const Search = () => {
             if (cat.title.toLowerCase() === categories.categories?.toLowerCase()) {
               newFilteredData = [...newFilteredData, ...cat.series];
               if (categories.subCategories)
-                newFilteredData = newFilteredData.filter(series => series.description.toLowerCase().includes(categories.subCategories?.toLowerCase()))
+                newFilteredData = newFilteredData.filter(series => series.description?.toLowerCase().includes(categories.subCategories?.toLowerCase()))
               if (categories.extraParams)
-                newFilteredData = newFilteredData.filter(series => series.description.toLowerCase().includes(categories.extraParams?.toLowerCase()))
+                newFilteredData = newFilteredData.filter(series => series.description?.toLowerCase().includes(categories.extraParams?.toLowerCase()))
             }
           })
         }
