@@ -29,8 +29,7 @@ const SEARCHPARAMETERS = [
   {
     product: "Hydraulic Adaptors",
     categories: ["BSP", "JIC", "METRIC", "ORFS", "STAINLESS ADAPTORS"],
-    subCategories: ["Male x Male", "Male x Female"],
-    extraParams: ["Straight", "45\u00B0", "90\u00B0", "TEE"],
+    subCategories: ["Straight", "45\u00B0", "90\u00B0", "TEE"],
   },
   {
     product: "Hydraulic Hoses",
@@ -44,7 +43,7 @@ const SEARCHPARAMETERS = [
   },
   {
     product: "Miscellaneous",
-    categories: ["Tube Clamps", "Quick Release Couplings", "Ball Valves", "Hose Protections", "Hydraulic Valves"],
+    categories: ["Tube Clamps", "Quick Release Couplers", "Ball Valves", "Hose Protections", "Hydraulic Valves"],
     subCategories: [],
   }
 ];
@@ -163,13 +162,12 @@ const Search = () => {
     if (categories.title !== null && categories.categories !== null) {
       data.forEach((product: any) => {
         if (product.title === categories.title) {
+          console.log(product.subCategories)
           product.subCategories.forEach((cat: any) => {
             if (cat.title.toLowerCase() === categories.categories?.toLowerCase()) {
               newFilteredData = [...newFilteredData, ...cat.series];
               if (categories.subCategories)
-                newFilteredData = newFilteredData.filter(series => series.description?.toLowerCase().includes(categories.subCategories?.toLowerCase()))
-              if (categories.extraParams)
-                newFilteredData = newFilteredData.filter(series => series.description?.toLowerCase().includes(categories.extraParams?.toLowerCase()))
+                newFilteredData = newFilteredData.filter(series => series.description?.toLowerCase().includes(categories.subCategories?.replace("\u00B0", '').toLowerCase()))
             }
           })
         }
@@ -298,34 +296,6 @@ const Search = () => {
                               )}
                             </div>
                           </div>
-                          {product.extraParams && (
-                            <div className="mt-2">
-                              <span className="text-md font-bold text-black">
-                                {"Parameters"}
-                              </span>
-                              <div className="flex mt-2 flex-wrap mb-5">
-                                {product.extraParams.map((params, index) => (
-                                  <div
-                                    className={`border-2 rounded-xl mr-4 mt-2 px-4 py-1 flex justify-center items-center hover:cursor-pointer
-                                    ${
-                                      categories.extraParams === params
-                                        ? "border-slate-700 text-slate-700 bg-primary"
-                                        : "border-slate-700"
-                                    }`}
-                                    key={index}
-                                    onClick={() => {
-                                      setCategories({
-                                        ...categories,
-                                        extraParams: params,
-                                      })
-                                    }}
-                                  >
-                                    {params}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
                         </motion.div>
                       </div>
                     </AnimatePresence>
