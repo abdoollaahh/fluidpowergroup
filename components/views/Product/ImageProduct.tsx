@@ -1,16 +1,14 @@
-import clsx from "clsx";
-import { AnimatePresence, motion } from "framer-motion";
-import Image from "next/image";
-import { useState } from "react";
-import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import clsx from 'clsx';
+import { AnimatePresence, motion } from 'framer-motion';
+import Image from 'next/image';
+import { useState } from 'react';
+import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 type Props = {
-  images: string[]
+  images: string[];
 };
 
-const ImageProduct = ({images}: Props) => {
-  //const images = ["/product-1.png", "/product-2.png", "/product-3.png"];
-
+const ImageProduct = ({ images }: Props) => {
   const [selectedImage, setSelectedImage] = useState(images[0]);
 
   const [direction, setDirection] = useState(true);
@@ -35,7 +33,7 @@ const ImageProduct = ({images}: Props) => {
   const imageIndex = images.indexOf(selectedImage);
 
   return (
-    <div className="relative col-span-full lg:col-span-6 xl:col-span-7 w-full border rounded-3xl h-full pt-[100%] lg:pt-0 lg:aspect-auto     ">
+    <div className="relative col-span-full lg:col-span-6 xl:col-span-7 w-full border rounded-3xl h-full pt-[100%] lg:pt-0 lg:aspect-auto">
       <AnimatePresence exitBeforeEnter>
         <div className="absolute top-0 left-0 h-full w-full p-16">
           <motion.div
@@ -48,8 +46,7 @@ const ImageProduct = ({images}: Props) => {
             }}
             initial="enter"
             animate="center"
-            exit="exit"
-          >
+            exit="exit">
             <Image
               src={selectedImage}
               alt=""
@@ -70,8 +67,7 @@ const ImageProduct = ({images}: Props) => {
                   images.length
               ]
             );
-          }}
-        >
+          }}>
           <FiChevronLeft className="text-3xl text-black/60 group-hover:text-black group-hover:scale-110 transition-all duration-200 " />
         </div>
       </div>
@@ -83,8 +79,7 @@ const ImageProduct = ({images}: Props) => {
             setSelectedImage(
               images[(images.indexOf(selectedImage) + 1) % images.length]
             );
-          }}
-        >
+          }}>
           <FiChevronRight className="text-3xl text-black/60 group-hover:text-black group-hover:scale-110 transition-all duration-200 " />
         </div>
       </div>
@@ -97,11 +92,10 @@ const ImageProduct = ({images}: Props) => {
               setSelectedImage(item);
             }}
             className={clsx(
-              "w-3 aspect-square rounded-full cursor-pointer",
-              item === selectedImage ? "bg-black/60" : "bg-slate-200"
+              'w-3 aspect-square rounded-full cursor-pointer',
+              item === selectedImage ? 'bg-black/60' : 'bg-slate-200'
             )}
-            key={i}
-          ></div>
+            key={i}></div>
         ))}
       </div>
     </div>

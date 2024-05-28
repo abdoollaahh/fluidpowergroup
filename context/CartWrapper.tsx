@@ -1,6 +1,6 @@
-import { createContext, useState } from "react";
-import { ICart, IItemCart } from "types/cart";
-import { Children } from "types/general";
+import { createContext, useState } from 'react';
+import { ICart, IItemCart } from 'types/cart';
+import { Children } from 'types/general';
 
 export const CartContext = createContext<{
   items: IItemCart[];
@@ -27,32 +27,31 @@ type ICartWrapperProps = {
 const CartWrapper = ({ children }: ICartWrapperProps) => {
   const [cart, setCart] = useState<ICart>({ open: false, items: [] });
 
-  console.log(cart);
-
   const toggleCart = () => {
-    setCart({ ...cart, open: !cart.open });
+    setCart((prevCart) => ({ ...prevCart, open: !prevCart.open }));
   };
 
   const addItem = (item: IItemCart) => {
-    console.log(item, "ADD");
-
-    setCart({ open: true, items: cart.items.concat(item) });
+    setCart((prevCart) => ({
+      open: true,
+      items: [...prevCart.items, item],
+    }));
   };
 
   const deleteItem = (item: IItemCart) => {
-    setCart({
-      ...cart,
-      items: cart.items.filter((itemCart) => itemCart.id !== item.id),
-    });
+    setCart((prevCart) => ({
+      ...prevCart,
+      items: prevCart.items.filter((itemCart) => itemCart.id !== item.id),
+    }));
   };
 
   const updateItem = (item: IItemCart) => {
-    setCart({
-      ...cart,
-      items: cart.items.map((itemCart) =>
+    setCart((prevCart) => ({
+      ...prevCart,
+      items: prevCart.items.map((itemCart) =>
         itemCart.id !== item.id ? itemCart : item
       ),
-    });
+    }));
   };
 
   return (
@@ -65,8 +64,7 @@ const CartWrapper = ({ children }: ICartWrapperProps) => {
         updateItem,
         setCart,
         open: cart.open,
-      }}
-    >
+      }}>
       {children}
     </CartContext.Provider>
   );
