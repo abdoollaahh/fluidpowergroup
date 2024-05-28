@@ -27,7 +27,7 @@ const OrderSummaryProduct = ({
   );
 
   const salesTax = 0.1 * totalPrice;
-  const deliveryCharges = 12.5;
+  const deliveryCharges = 12.95;
 
   const handleAddToCart = () => {
     window.scroll({ behavior: 'smooth', top: 0, left: 0 });
@@ -87,8 +87,8 @@ const OrderSummaryProduct = ({
                   </div>
 
                   <div className="flex justify-between gap-8 italic">
-                    <div>Delivery Charges</div>
-                    <div>$12.5</div>
+                    <div>Shipping Cost</div>
+                    <div>$12.95</div>
                   </div>
                 </div>
 
