@@ -1,9 +1,9 @@
-import { CartContext } from 'context/CartWrapper';
-import Image from 'next/image';
-import { useContext } from 'react';
-import { FiX } from 'react-icons/fi';
-import { IItemCart } from 'types/cart';
-import Counter from '../Counter';
+import { CartContext } from "context/CartWrapper";
+import Image from "next/image";
+import { useContext } from "react";
+import { FiX } from "react-icons/fi";
+import { IItemCart } from "types/cart";
+import Counter from "../Counter";
 
 type IItemCartProps = { item: IItemCart };
 
@@ -16,11 +16,11 @@ const ItemCart = ({ item }: IItemCartProps) => {
   return (
     <div className="p-5 border-b flex gap-4 justify-between select-none">
       <div className="flex gap-4 flex-grow">
-        <div className="bg-slate-100 w-20 aspect-square p-2 min-w-fit">
+        <div className="bg-white w-20 aspect-square p-2 min-w-fit">
           <div className="relative w-full h-full">
             <Image
               layout="fill"
-              src="/product-1.png"
+              src="/cartImage.jpeg"
               alt="product"
               objectFit="contain"
             />
@@ -46,7 +46,8 @@ const ItemCart = ({ item }: IItemCartProps) => {
           className="text-2xl rounded-full cursor-pointer"
           onClick={() => {
             deleteItem(item);
-          }}>
+          }}
+        >
           <FiX />
         </div>
         <h4 className="text-lg ">${totalPrice.toFixed(2)}</h4>

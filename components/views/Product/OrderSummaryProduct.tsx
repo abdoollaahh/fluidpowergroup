@@ -1,9 +1,9 @@
-import { CartContext } from 'context/CartWrapper';
-import { AnimatePresence, motion } from 'framer-motion';
-import { useContext, useMemo } from 'react';
-import { IItemCart } from 'types/cart';
-import axios from 'axios';
-import { useRouter } from 'next/router';
+import { CartContext } from "context/CartWrapper";
+import { AnimatePresence, motion } from "framer-motion";
+import { useContext, useMemo } from "react";
+import { IItemCart } from "types/cart";
+import axios from "axios";
+import { useRouter } from "next/router";
 
 type IOrderSummaryProductProps = {
   items: IItemCart[];
@@ -27,10 +27,9 @@ const OrderSummaryProduct = ({
   );
 
   const salesTax = 0.1 * totalPrice;
-  const deliveryCharges = 12.95;
 
   const handleAddToCart = () => {
-    window.scroll({ behavior: 'smooth', top: 0, left: 0 });
+    window.scroll({ behavior: "smooth", top: 0, left: 0 });
 
     itemsAdded.forEach((item) => {
       addItem(item);
@@ -63,7 +62,8 @@ const OrderSummaryProduct = ({
           className="wrapper px-8 md:px-12"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1, transition: { duration: 0.6 } }}
-          exit={{ opacity: 0, transition: { duration: 0.4 } }}>
+          exit={{ opacity: 0, transition: { duration: 0.4 } }}
+        >
           <div className="w-full flex flex-col sm:items-end">
             <div className="flex flex-col gap-6 max-w-md w-full">
               <h2 className="text-3xl sm:text-4xl font-semibold">
@@ -85,19 +85,12 @@ const OrderSummaryProduct = ({
                     <div>GST (10%) </div>
                     <div>${salesTax.toFixed(2)}</div>
                   </div>
-
-                  <div className="flex justify-between gap-8 italic">
-                    <div>Shipping Cost</div>
-                    <div>$12.95</div>
-                  </div>
                 </div>
 
                 <div className="w-full border"></div>
                 <div className="flex justify-between gap-8 sm:text-xl">
                   <div>Total</div>
-                  <div>
-                    ${(salesTax + deliveryCharges + totalPrice).toFixed(2)}
-                  </div>
+                  <div>${(salesTax + totalPrice).toFixed(2)}</div>
                 </div>
               </div>
 
@@ -107,7 +100,8 @@ const OrderSummaryProduct = ({
                 </button>
                 <button
                   className="btn-secondary w-1/2"
-                  onClick={handleAddToCart}>
+                  onClick={handleAddToCart}
+                >
                   Add to cart
                 </button>
               </div>
