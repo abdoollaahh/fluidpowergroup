@@ -39,19 +39,29 @@ const OrderSummaryProduct = ({
   };
 
   const checkout = async () => {
+    // Ensure handleAddToCart runs first
+    handleAddToCart();
+
+    // Proceed with checkout after items are added to the cart
     const body = items.map((item: any) => ({
       product_id: item.id,
       quantity: item.quantity,
     }));
-    const cart = await axios.post(
-      `${process.env.NEXT_PUBLIC_BASEURL}/createCart`,
-      {
-        items: body,
-      }
-    );
 
-    if (cart.status === 200) {
-      router.push(cart.data.checkout_url);
+    try {
+      const cart = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASEURL}/createCart`,
+        {
+          items: body,
+        }
+      );
+
+      if (cart.status === 200) {
+        router.push(cart.data.checkout_url);
+      }
+    } catch (error) {
+      console.error("Error during checkout:", error);
+      // Optionally, you could show an alert or some error UI here
     }
   };
 
