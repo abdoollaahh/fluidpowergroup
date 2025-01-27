@@ -12,13 +12,27 @@ console.log('Serverless Function Started');
 // Middleware setup
 app.use(express.json({ limit: '50mb' }));
 app.use(cors({
-  origin: [
-    process.env.LOCAL_DEV_URL,
-    process.env.API_BASE_URL,
-    'https://fluidpowergroup.com.au'
-  ],
-  methods: ['GET', 'POST']
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      process.env.LOCAL_DEV_URL,
+      process.env.API_BASE_URL,
+      'http://localhost:19006', // Add your local development origin here
+      'https://fluidpowergroup.com.au' // Your production domain
+    ];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true); // Allow requests from allowed origins
+    } else {
+      callback(new Error('Not allowed by CORS')); // Reject requests from other origins
+    }
+  },
+  methods: ['GET', 'POST', 'OPTIONS'], // Include OPTIONS for preflight requests
+  allowedHeaders: ['Content-Type', 'x-api-key'], // Include any custom headers you use
 }));
+
+// Preflight request handler (add this line here)
+app.options('*', cors(), (req, res) => {
+  res.sendStatus(204); // Respond with 'No Content' for preflight requests
+});
 
 // Authorization middleware
 const authMiddleware = (req, res, next) => {
