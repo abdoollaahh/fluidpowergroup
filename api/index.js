@@ -18,31 +18,14 @@ const validClientKeys = {
 };
 
 // Middleware setup
-app.use(express.json({ limit: '50mb' }));
 app.use(cors({
     origin: (origin, callback) => {
-        const allowedOrigins = [
-            process.env.LOCAL_DEV_URL,
-            process.env.API_BASE_URL,
-            'http://localhost:3000',
-            'http://localhost:19006',
-            'https://fluidpowergroup.com.au'
-        ];
-        
-        // Regex pattern for Vercel preview URLs
-        const vercelPreviewPattern = /^https:\/\/fluidpowergroup-[a-z0-9]+-fluidpower\.vercel\.app$/;
-
-        if (!origin || 
-            allowedOrigins.includes(origin) || 
-            vercelPreviewPattern.test(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
+        callback(null, true); // Allow all origins
     },
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'x-api-key', 'x-server-key'],
 }));
+
 
 app.options('*', cors(), (req, res) => {
     res.sendStatus(204);
