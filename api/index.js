@@ -28,7 +28,13 @@ app.use(cors({
             'http://localhost:19006',
             'https://fluidpowergroup.com.au'
         ];
-        if (!origin || allowedOrigins.includes(origin)) {
+        
+        // Regex pattern for Vercel preview URLs
+        const vercelPreviewPattern = /^https:\/\/fluidpowergroup-[a-z0-9]+-fluidpower\.vercel\.app$/;
+
+        if (!origin || 
+            allowedOrigins.includes(origin) || 
+            vercelPreviewPattern.test(origin)) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
