@@ -33,6 +33,10 @@ app.options('*', cors(), (req, res) => {
 
 // Enhanced authorization middleware
 const authMiddleware = (req, res, next) => {
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(204); // Allow preflight requests
+    }
+
     const clientKey = req.headers['x-api-key'];
     const serverKey = req.headers['x-server-key'];
 
