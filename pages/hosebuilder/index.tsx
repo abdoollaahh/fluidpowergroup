@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import Head from 'next/head';
+import getConfig from 'next/config';
+const { publicRuntimeConfig } = getConfig();
 
 declare global {
   interface Window {
@@ -9,11 +11,11 @@ declare global {
 
 const HoseBuilder = () => {
   useEffect(() => {
-    window.__PUBLIC_PATH__ = '/hosebuilder/static/';
+    window.__PUBLIC_PATH__ = publicRuntimeConfig.staticFolder || '/hosebuilder/static/';
     
     const scripts = [
-      '/hosebuilder/static/js/234.6cde9696.js',
-      '/hosebuilder/static/js/main.ef275e83.js'
+      '/hosebuilder/static/js/234.4df82505.js',
+      '/hosebuilder/static/js/main.726556e0.js'
     ];
 
     const loadScriptSequentially = async (scripts: string[]) => {
