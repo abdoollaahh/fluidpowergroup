@@ -18,6 +18,7 @@ const validClientKeys = {
 };
 
 // Middleware setup
+app.use(express.json({ limit: '50mb' }));
 app.use(cors({
     origin: (origin, callback) => {
         callback(null, true); // Allow all origins
