@@ -20,24 +20,45 @@ const validClientKeys = {
 // Middleware setup
 app.use(express.json({ limit: '50mb' }));
 app.use(cors({
-    origin: (origin, callback) => {
-        callback(null, true); // Allow all origins
-    },
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'x-api-key', 'x-server-key'],
+  origin: (origin, callback) => {
+      const allowedOrigins = [
+          process.env.LOCAL_DEV_URL,
+          process.env.API_BASE_URL,
+          'http://localhost:3000',
+          'http://localhost:19006',
+          'https://fluidpowergroup.com.au'
+      ];
+      
+      // Regex pattern for Vercel preview URLs
+      const vercelPreviewPattern = /^https:\/\/fluidpowergroup-[a-z0-9]+-fluidpower\.vercel\.app$/;
+
+      // For preflight requests, allow them without checking origin
+      if (origin === undefined) {
+          callback(null, true);
+          return;
+      }
+
+      // Check if origin is allowed
+      if (allowedOrigins.includes(origin) || vercelPreviewPattern.test(origin)) {
+          callback(null, true);
+      } else {
+          callback(new Error('Not allowed by CORS'));
+      }
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'x-api-key', 'x-server-key'],
 }));
 
-
+// Keep the existing OPTIONS handling
 app.options('*', cors(), (req, res) => {
-    res.sendStatus(204);
+  res.sendStatus(204);
 });
 
-// Enhanced authorization middleware
+// Keep the existing authMiddleware with preflight handling
 const authMiddleware = (req, res, next) => {
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(204); // Allow preflight requests
-    }
-
+  if (req.method === 'OPTIONS') {
+      return res.sendStatus(204); // Allow preflight requests
+  }
     const clientKey = req.headers['x-api-key'];
     const serverKey = req.headers['x-server-key'];
 
@@ -215,7 +236,7 @@ app.post('/api/send-email', authMiddleware, async (req, res) => {
 
 // Development server
 if (process.env.NODE_ENV !== 'production') {
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 3001;
   app.listen(port, () => {
     console.log(`Development server running on port ${port}`);
     if (!process.env.EXPO_PUBLIC_BREVO_API_KEY) {
