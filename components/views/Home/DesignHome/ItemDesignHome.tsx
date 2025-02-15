@@ -6,6 +6,7 @@ import {
 } from "framer-motion";
 import Image from "next/image";
 import { useState } from "react";
+import { useCallback } from "react";
 
 interface ItemDesignHomeProps {
   title: string;
@@ -45,12 +46,19 @@ const ItemDesignHome = ({ title }: ItemDesignHomeProps) => {
         {/*<button className="btn-tertiary py-1.5">Learn More </button>*/}
       </motion.div>
       <Image
-        src={`${process.env.NEXT_PUBLIC_BASE_URL || ''}/hydraulicSystemDesign.jpeg`}
+        src="/hydraulicSystemDesign.jpeg"
         alt="Hydraulic System Design"
         layout="fill"
         priority
         quality={100}
         objectFit="cover"
+        onError={useCallback((e: any) => {
+          console.error('Image load error:', e);
+          // Optionally set a fallback
+          e.target.src = '/fallback.png';
+        }, [])}
+        loading="eager"
+        sizes="(max-width: 768px) 100vw, 50vw"
       />
     </div>
   );
@@ -91,13 +99,20 @@ const ItemDesignsHome = ({ title }: ItemDesignHomeProps) => {
         {/*<button className="btn-tertiary py-1.5">Learn More </button>*/}
       </motion.div>
       <Image
-        src={`${process.env.NEXT_PUBLIC_BASE_URL || ''}/drafting.jpeg`}
-        alt="Design and Drafting"
-        layout="fill"
-        priority
-        quality={100}
-        objectFit="cover"
-      />
+          src="/drafting.jpeg"
+          alt="Design and Drafting"
+          layout="fill"
+          priority
+          quality={100}
+          objectFit="cover"
+          onError={useCallback((e: any) => {
+            console.error('Image load error:', e);
+            // Optionally set a fallback
+            e.target.src = '/fallback.png';
+          }, [])}
+          loading="eager"
+          sizes="(max-width: 768px) 100vw, 50vw"
+        />
     </div>
   );
 };
