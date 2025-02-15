@@ -6,9 +6,6 @@ import {
 } from "framer-motion";
 import Image from "next/image";
 import { useState } from "react";
-import { useCallback } from "react";
-import hydraulicSystemImage from '../../../public/hydraulicSystemDesign.jpeg';
-import draftingImage from '../../../public/drafting.jpeg';
 
 interface ItemDesignHomeProps {
   title: string;
@@ -48,12 +45,11 @@ const ItemDesignHome = ({ title }: ItemDesignHomeProps) => {
         {/*<button className="btn-tertiary py-1.5">Learn More </button>*/}
       </motion.div>
       <Image
-        src={hydraulicSystemImage}
-        alt="Hydraulic System Design"
+        src="/hydraulicSystemDesign.jpeg"
+        placeholder="blur"
+        alt="item"
         layout="fill"
-        priority
-        quality={100}
-        objectFit="cover"
+        blurDataURL="https://images.unsplash.com/photo-1502014822147-1aedfb0676e0?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80"
       />
     </div>
   );
@@ -94,12 +90,11 @@ const ItemDesignsHome = ({ title }: ItemDesignHomeProps) => {
         {/*<button className="btn-tertiary py-1.5">Learn More </button>*/}
       </motion.div>
       <Image
-        src={draftingImage}
-        alt="Design and Drafting"
+        src="/drafting.jpeg"
+        placeholder="blur"
+        alt="item"
         layout="fill"
-        priority
-        quality={100}
-        objectFit="cover"
+        blurDataURL="https://images.unsplash.com/photo-1502014822147-1aedfb0676e0?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80"
       />
     </div>
   );
