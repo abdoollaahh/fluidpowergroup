@@ -17,7 +17,7 @@ const HeaderProducts = ({
         (prev: SubCategory[], curr) => prev.concat(curr.subCategories),
         []
       ),
-    []
+      [categories] // Add categories to dependency array
   );
 
   return (
