@@ -86,7 +86,7 @@ const Search = () => {
       setData(result.data.categories);
       setLoading(false);
     });
-  }, [retry]);
+  }, [retry, data]);
 
   // useEffect(() => {
   //       const series = async () => {
@@ -175,7 +175,7 @@ const Search = () => {
     }
     
     setFilteredData(newFilteredData)
-  }, [categories]);
+  }, [categories, data]);
 
   const variants = {
     initial: { opacity: 0, x: -100 },
