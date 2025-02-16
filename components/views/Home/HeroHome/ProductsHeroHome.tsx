@@ -13,7 +13,12 @@ const ProductsHeroHome = (props: Props) => {
     []
   );
 */
-  const images = ["/frontA.png", "/frontB.png", "/frontC.png", "/frontD.png"];
+const images = useMemo(() => [
+  `${process.env.NEXT_PUBLIC_BASE_URL || ''}/frontA.png`,
+  `${process.env.NEXT_PUBLIC_BASE_URL || ''}/frontB.png`,
+  `${process.env.NEXT_PUBLIC_BASE_URL || ''}/frontC.png`,
+  `${process.env.NEXT_PUBLIC_BASE_URL || ''}/frontD.png`
+], []); // Empty dependency array since these values never change
 
   const [selectedImage, setSelectedImage] = useState(images[0]);
 
@@ -69,12 +74,13 @@ const ProductsHeroHome = (props: Props) => {
           exit="exit"
         >
           <div className="relative p-4 w-full h-full -z-20">
-            <Image
+          <Image
               src={selectedImage}
               layout="fill"
               objectFit="cover"
-              placeholder="blur"
-              blurDataURL="https://images.unsplash.com/photo-1515630771457-09367d0ae038?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1770&q=80"
+              priority
+              quality={100}
+              loader={({ src }) => src}
               alt="hero"
             />
           </div>
