@@ -17,7 +17,9 @@ const LocationAbout = () => {
               objectFit="cover"
               objectPosition={"center"}
               alt="Map"
-              src="/map.png"
+              src={`${process.env.NEXT_PUBLIC_BASE_URL || ''}/map.png`}
+              loader={({ src }) => src}
+              quality={100}
             />
           </a>
 
