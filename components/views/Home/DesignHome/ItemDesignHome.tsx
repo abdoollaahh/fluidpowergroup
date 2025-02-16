@@ -45,11 +45,13 @@ const ItemDesignHome = ({ title }: ItemDesignHomeProps) => {
         {/*<button className="btn-tertiary py-1.5">Learn More </button>*/}
       </motion.div>
       <Image
-        src="/hydraulicSystemDesign.jpeg"
-        placeholder="blur"
-        alt="item"
+        src={`${process.env.NEXT_PUBLIC_BASE_URL || ''}/hydraulicSystemDesign.jpeg`}
+        alt="Hydraulic System Design"
         layout="fill"
-        blurDataURL="https://images.unsplash.com/photo-1502014822147-1aedfb0676e0?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80"
+        objectFit="cover"
+        priority
+        quality={100}
+        loader={({ src }) => src}  // Adding the same loader that worked for logo
       />
     </div>
   );
@@ -90,11 +92,13 @@ const ItemDesignsHome = ({ title }: ItemDesignHomeProps) => {
         {/*<button className="btn-tertiary py-1.5">Learn More </button>*/}
       </motion.div>
       <Image
-        src="/drafting.jpeg"
-        placeholder="blur"
-        alt="item"
+        src={`${process.env.NEXT_PUBLIC_BASE_URL || ''}/drafting.jpeg`}
+        alt="Design and Drafting"
         layout="fill"
-        blurDataURL="https://images.unsplash.com/photo-1502014822147-1aedfb0676e0?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=870&q=80"
+        objectFit="cover"
+        priority
+        quality={100}
+        loader={({ src }) => src}  // Adding the same loader that worked for logo
       />
     </div>
   );
