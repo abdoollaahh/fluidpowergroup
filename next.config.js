@@ -7,7 +7,19 @@ const nextConfig = {
       "images.unsplash.com",
       "cdn.schema.io"
     ],
+    unoptimized: true
   },
+  async rewrites() {
+    return [
+      {
+        source: '/static/media/:path*',
+        destination: '/hosebuilder/static/media/:path*'
+      }
+    ]
+  },
+  // This ensures static files are served from the correct location
+  basePath: '',
+  assetPrefix: '',
 };
 
-module.exports = nextConfig;
+module.exports = nextConfig

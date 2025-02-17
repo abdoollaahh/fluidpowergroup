@@ -48,10 +48,12 @@ const ImageProduct = ({ images }: Props) => {
             animate="center"
             exit="exit">
             <Image
-              src={selectedImage}
+              src={`${process.env.NEXT_PUBLIC_BASE_URL || ''}${selectedImage}`}
               alt=""
               layout="fill"
               objectFit="contain"
+              loader={({ src }) => src}
+              quality={100}
             />
           </motion.div>
         </div>

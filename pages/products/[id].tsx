@@ -25,12 +25,17 @@ const ProductPage = () => {
   const [series, setSeries] = useState<ISeries>();
   useEffect(() => {
     const products = async () => {
-      const prod = await axios.post(
-        `${process.env.NEXT_PUBLIC_BASEURL}/getProducts`,
-        { data: { id } }
-      );
-      console.log(prod);
-      return prod;
+      try {
+        const prod = await axios.post(
+          `${process.env.NEXT_PUBLIC_BASEURL}/getProducts`,
+          { data: { id } }
+        );
+        console.log('API Response:', prod.data);  // Add this logging
+        return prod;
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        return undefined;
+      }
     };
 
     const seriesDetails = async () => {

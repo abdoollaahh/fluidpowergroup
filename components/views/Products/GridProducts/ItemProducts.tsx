@@ -15,14 +15,14 @@ const ItemProducts = ({ item, showDescription }: { item: any, showDescription: f
     <Anchor href={`/products/${item.id}`}>
       <div className="flex flex-col w-full  max-w-sm    mx-auto group    cursor-pointer border-slate-800 border-[1px] p-4 h-full shadow-md">
         <motion.div className="w-full  pt-[100%]  relative  transition-all duration-500">
-          <Image
+        <Image
             layout="fill"
-            src={item.image}
-            blurDataURL={item.image}
-            placeholder="blur"
+            src={`${process.env.NEXT_PUBLIC_BASE_URL || ''}${item.image}`}
             alt={item.slug}
             className="scale-75 group-hover:scale-[0.8] transition-all"
             objectFit="contain"
+            loader={({ src }) => src}
+            quality={100}
           />
         </motion.div>
         <div className="text-xl px-3 py-1.5 font-light flex justify-center gap-12">

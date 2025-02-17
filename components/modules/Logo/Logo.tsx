@@ -9,12 +9,15 @@ type ILogoProps = {
 const Logo = ({ type = "header" }: ILogoProps) => {
   return (
     <Anchor href="/">
-      <div className="relative h-[90px] w-[220px] bg-transparent">
+      <div className="relative h-[90px] w-[220px]">
         <Image
-          src={"/logo.png"}
+          src={`${process.env.NEXT_PUBLIC_BASE_URL || ''}/logo.png`}
+          alt="Site logo"
           layout="fill"
           objectFit="contain"
-          alt="Site logo"
+          priority
+          quality={100}
+          loader={({ src }) => src} // Add this line
         />
       </div>
     </Anchor>
