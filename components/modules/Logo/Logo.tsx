@@ -17,7 +17,7 @@ const Logo = ({ type = "header" }: ILogoProps) => {
           objectFit="contain"
           priority
           quality={100}
-          loader={({ src }) => src} // Add this line
+          unoptimized
         />
       </div>
     </Anchor>
