@@ -3,8 +3,6 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 
 const ItemProducts = ({ item, showDescription }: { item: any, showDescription: false }) => {
-
-  console.log('Product:', item.name, 'Image URL:', item.image);
   
   const getDescriptions = (description: string) => {
     //get text before first break tag
@@ -15,6 +13,11 @@ const ItemProducts = ({ item, showDescription }: { item: any, showDescription: f
 
   return (
     <Anchor href={`/products/${item.id}`}>
+    {console.log("PRODUCT DATA ---->", {
+      name: item.name,
+      imageUrl: item.image,
+      fullItem: item
+    })}
       <div className="flex flex-col w-full  max-w-sm    mx-auto group    cursor-pointer border-slate-800 border-[1px] p-4 h-full shadow-md">
         <motion.div className="w-full  pt-[100%]  relative  transition-all duration-500">
           <Image
