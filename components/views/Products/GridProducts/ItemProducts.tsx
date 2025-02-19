@@ -15,6 +15,7 @@ const ItemProducts = ({ item, showDescription }: { item: any, showDescription: f
     <Anchor href={`/products/${item.id}`}>
       <div className="flex flex-col w-full  max-w-sm    mx-auto group    cursor-pointer border-slate-800 border-[1px] p-4 h-full shadow-md">
         <motion.div className="w-full  pt-[100%]  relative  transition-all duration-500">
+        {console.log('Visible image paths:', item.image)}
         <Image
             layout="fill"
             src={`${process.env.NEXT_PUBLIC_BASE_URL || ''}${item.image}`}
@@ -23,6 +24,9 @@ const ItemProducts = ({ item, showDescription }: { item: any, showDescription: f
             objectFit="contain"
             unoptimized
             quality={100}
+            onError={(e) => {
+                console.log('Image failed to load:', e.currentTarget.src);
+            }}
           />
         </motion.div>
         <div className="text-xl px-3 py-1.5 font-light flex justify-center gap-12">
