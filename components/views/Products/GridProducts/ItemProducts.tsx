@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 
 const ItemProducts = ({ item, showDescription }: { item: any, showDescription: false }) => {
+  console.log('Raw item data:', item);
   
   const getDescriptions = (description: string) => {
     //get text before first break tag
