@@ -11,6 +11,14 @@ const ItemProducts = ({ item, showDescription }: { item: any, showDescription: f
     return stripped + "...";
   }
 
+  // Add new function to handle image sources
+  const getImageSrc = (imagePath: string) => {
+    if (imagePath?.includes('cdn.schema.io')) {
+      return imagePath;
+    }
+    return `${process.env.NEXT_PUBLIC_BASE_URL || ''}${imagePath}`;
+  };
+
   return (
     <Anchor href={`/products/${item.id}`}>
       <div className="flex flex-col w-full  max-w-sm    mx-auto group    cursor-pointer border-slate-800 border-[1px] p-4 h-full shadow-md">
@@ -18,7 +26,7 @@ const ItemProducts = ({ item, showDescription }: { item: any, showDescription: f
         {console.log('Visible image paths:', item.image)}
         <Image
             layout="fill"
-            src={`${process.env.NEXT_PUBLIC_BASE_URL || ''}${item.image}`}
+            src={getImageSrc(item.image)}
             alt={item.slug}
             className="scale-75 group-hover:scale-[0.8] transition-all"
             objectFit="contain"
