@@ -52,7 +52,7 @@ const ImageProduct = ({ images }: Props) => {
               alt=""
               layout="fill"
               objectFit="contain"
-              loader={({ src }) => src}
+              unoptimized
               quality={100}
             />
           </motion.div>

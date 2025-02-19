@@ -21,7 +21,7 @@ const ItemProducts = ({ item, showDescription }: { item: any, showDescription: f
             alt={item.slug}
             className="scale-75 group-hover:scale-[0.8] transition-all"
             objectFit="contain"
-            loader={({ src }) => src}
+            unoptimized
             quality={100}
           />
         </motion.div>
