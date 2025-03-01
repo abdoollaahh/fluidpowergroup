@@ -1,6 +1,6 @@
 const siteLinks = [
   { title: "Products", href: "/catalogue" },
-  { title: "Buy", href: "/hosebuilder" },
+  { title: "Buy", href: "/buy" },
   { title: "Services", href: "/#services" },
   { title: "Design", href: "/#design" },
   { title: "About", href: "/about" },
