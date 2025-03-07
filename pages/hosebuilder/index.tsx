@@ -14,8 +14,8 @@ const HoseBuilder = () => {
     window.__PUBLIC_PATH__ = publicRuntimeConfig.staticFolder || '/hosebuilder/static/';
     
     const scripts = [
-      '/hosebuilder/static/js/234.c5a2ab25.js',
-      '/hosebuilder/static/js/main.4cf7662f.js'
+      '/hosebuilder/static/js/52.74ea38c5.js',
+      '/hosebuilder/static/js/main.bbc81f25.js'
     ];
 
     const loadScriptSequentially = async (scripts: string[]) => {
