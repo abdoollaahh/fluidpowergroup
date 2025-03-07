@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Redirecting...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+    }
+    
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+      padding: 0 20px;
+    }
+    
+    .logo {
+      max-width: 400px;
+      width: 80%;
+      margin-bottom: 40px;
+    }
+    
+    h2 {
+      font-size: 32px;
+      color: #333;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    
+    p {
+      font-size: 20px;
+      color: #555;
+      margin-bottom: 20px;
+      text-align: center;
+      line-height: 1.4;
+    }
+    
+    .manual-redirect {
+      margin-top: 40px;
+      font-size: 16px;
+      color: #666;
+    }
+    
+    .manual-redirect a {
+      color: #0066cc;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    
+    .manual-redirect a:hover {
+      text-decoration: underline;
+    }
+    
+    /* For mobile screens */
+    @media (max-width: 600px) {
+      h2 {
+        font-size: 28px;
+      }
+      
+      p {
+        font-size: 18px;
+      }
+    }
+  </style>
+  <script>
+    // Debug function to help trace issues
+    function debug(message, data) {
+      console.log(`[PayPal Redirect] ${message}`, data || '');
+    }
+
+    window.onload = function() {
+      debug('Page loaded');
+      
+      // Get the success parameter from the URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const isSuccess = urlParams.get('success') === 'true';
+      
+      debug('Payment success status:', isSuccess);
+      
+      // Check for order data in session storage
+      try {
+        const orderData = sessionStorage.getItem('pendingOrderData');
+        debug('Order data in storage:', orderData ? 'Found' : 'Not found');
+        
+        if (!orderData) {
+          debug('WARNING: No order data found, checkout flow may be incomplete');
+        }
+      } catch (error) {
+        debug('Error checking session storage:', error);
+      }
+      
+      // Build the redirect URL with parameters
+      const baseUrl = window.location.origin + '/buy';
+      const redirectUrl = `${window.location.origin}/buy?screen=OrderConfirmation&success=${isSuccess ? 'true' : 'false'}`;
+      
+      debug('Will redirect to:', redirectUrl);
+      
+      // Add a small delay to ensure storage operations complete and logs can be seen
+      setTimeout(function() {
+        debug('Redirecting now...');
+        window.location.href = redirectUrl;
+      }, 1500); // Increased to 1.5 seconds to give users time to see the page
+    }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <img src="/fluidpower_logo.gif" alt="FluidPower Logo" class="logo">
+    <h2>Processing your payment...</h2>
+    <p>Please wait while we redirect you back to your order.</p>
+    
+    <!-- Add this to help debug in case the redirect doesn't happen -->
+    <div class="manual-redirect">
+      <p>If you're not redirected automatically, <a href="#" id="manual-redirect">click here</a>.</p>
+    </div>
+    
+    <script>
+      // Handle manual redirect
+      document.getElementById('manual-redirect').addEventListener('click', function(e) {
+        e.preventDefault();
+        const urlParams = new URLSearchParams(window.location.search);
+        const isSuccess = urlParams.get('success') === 'true';
+        const baseUrl = window.location.origin + '/buy';
+        window.location.href = `${baseUrl}?screen=OrderConfirmation&success=${isSuccess ? 'true' : 'false'}`;
+      });
+    </script>
+  </div>
+</body>
+</html>
