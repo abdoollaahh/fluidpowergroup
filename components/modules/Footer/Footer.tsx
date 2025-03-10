@@ -11,12 +11,12 @@ const Footer = () => {
   // Add router check
   const router = useRouter();
   const isBuyPage = router.pathname.includes('/buy') || router.asPath.includes('/buy');
-  
+
   // Return null (nothing) when on Buy page
   if (isBuyPage) {
     return null;
   }
-  
+
   // Normal return when not on Buy page
   return (
     <div className="bg-black/90 py-16 border-t text-white px-10">
