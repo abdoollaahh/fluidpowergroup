@@ -20,7 +20,12 @@ const Header = ({ categories }: { categories: Category[] }) => {
   const router = useRouter();
   return (
     <HoverWrapper hook={{ hover, setHover }}>
-      <div className="w-full" onMouseLeave={() => setHover(null)}>
+      <div className="w-full top-0 bg-white z-50" 
+  style={{
+    background: 'linear-gradient(to bottom, white 60%, rgba(255, 255, 255, 0.8) 75%, rgba(255, 255, 255, 0))',
+    borderBottom: 'none',
+    paddingBottom: '20px'
+  }}onMouseLeave={() => setHover(null)}>
         <div className="wrapper relative w-full px-6 z-30">
           <div className="flex items-center gap-8 py-2 overflow-hidden ">
             <div className="w-1/5 lg:hidden flex items-center justify-start">
