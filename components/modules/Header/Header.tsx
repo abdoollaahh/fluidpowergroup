@@ -25,7 +25,7 @@ const Header = ({ categories }: { categories: Category[] }) => {
   style={{
     background: 'linear-gradient(to bottom, white 0%, white 50%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 0) 100%)',
     borderBottom: 'none',
-    paddingBottom: '40px',
+    paddingBottom: '30px',
     transition: 'all 0.3s ease-in-out' // Add smooth transition
   }}onMouseLeave={() => setHover(null)}>
         <div className="wrapper relative w-full px-6 z-30">
@@ -105,7 +105,7 @@ const Header = ({ categories }: { categories: Category[] }) => {
         </AnimatePresence>
       </div>
     </HoverWrapper>
-      <div style={{ height: "120px", width: "100%" }} />
+      <div style={{ height: "90px", width: "100%" }} />
     </>
   );
 };
