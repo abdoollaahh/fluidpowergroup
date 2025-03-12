@@ -19,12 +19,13 @@ const Header = ({ categories }: { categories: Category[] }) => {
 
   const router = useRouter();
   return (
+    <>
     <HoverWrapper hook={{ hover, setHover }}>
-      <div className="w-full top-0 bg-white z-50" 
+      <div className="w-full fixed top-0 bg-white z-50" 
   style={{
     background: 'linear-gradient(to bottom, white 60%, rgba(255, 255, 255, 0.8) 75%, rgba(255, 255, 255, 0))',
     borderBottom: 'none',
-    paddingBottom: '20px'
+    paddingBottom: '30px'
   }}onMouseLeave={() => setHover(null)}>
         <div className="wrapper relative w-full px-6 z-30">
           <div className="flex items-center gap-8 py-2 overflow-hidden ">
@@ -103,6 +104,8 @@ const Header = ({ categories }: { categories: Category[] }) => {
         </AnimatePresence>
       </div>
     </HoverWrapper>
+      <div style={{ height: "100px", width: "100%" }} />
+    </>
   );
 };
 
