@@ -18,22 +18,43 @@ const Header = ({ categories }: { categories: Category[] }) => {
   const { open: cartOpen, toggleCart, items } = useContext(CartContext);
 
   const router = useRouter();
+  
+  // Updated to check for both buy and hosebuilder paths
+  const needsSolidHeader = router.pathname.includes('/hosebuilder') || router.pathname.includes('/hosebuilder');
+  
+  // Define the styles based on the path
+  const headerStyle = needsSolidHeader 
+    ? {
+        background: 'white',
+        borderBottom: 'none',
+        paddingBottom: '0px',
+        transition: 'all 0.3s ease-in-out'
+      }
+    : {
+        background: 'linear-gradient(to bottom, white 0%, white 50%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 0) 100%)',
+        borderBottom: 'none',
+        paddingBottom: '0px',
+        transition: 'all 0.3s ease-in-out'
+      };
+  
+  // Define spacer height explicitly too
+  const spacerHeight = needsSolidHeader ? "90px" : "120px";
+  
   return (
     <>
     <HoverWrapper hook={{ hover, setHover }}>
-      <div className="w-full fixed top-0 bg-white z-50" 
-  style={{
-    background: 'linear-gradient(to bottom, white 0%, white 50%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 0) 100%)',
-    borderBottom: 'none',
-    paddingBottom: '40px',
-    transition: 'all 0.3s ease-in-out' // Add smooth transition
-  }}onMouseLeave={() => setHover(null)}>
+      <div 
+        className="w-full fixed top-0 bg-white z-50" 
+        style={headerStyle}
+        onMouseLeave={() => setHover(null)}
+      >
         <div className="wrapper relative w-full px-6 z-30">
+          {/* Rest of your header code remains the same */}
           <div className="flex items-center gap-8 py-2 overflow-hidden ">
             <div className="w-1/5 lg:hidden flex items-center justify-start">
               <Cart open={cartOpen} handleClose={toggleCart} />
 
-              <div className="relative flex items-center  lg:hidden text-2xl">
+              <div className="relative flex items-center lg:hidden text-2xl">
                 {items.length > 0 && (
                   <div className="absolute top-0 right-0 text-xs py-0.5 px-2 bg-black text-white rounded-full ">
                     {items.length}
@@ -49,7 +70,7 @@ const Header = ({ categories }: { categories: Category[] }) => {
               </div>
             </div>
 
-            <div className="lg:w-full flex self-center w-3/5 justify-center lg:justify-start  ">
+            <div className="lg:w-full flex self-center w-3/5 justify-center lg:justify-start">
               <Logo />
             </div>
 
@@ -76,24 +97,13 @@ const Header = ({ categories }: { categories: Category[] }) => {
                 >
                   Search
                 </button>
-                {/*<FiSearch
-                  onClick={() => {
-                    router.push("/products/search");
-                  }}
-                  className=" relative text-4xl text-primary mr-5  hover:text-slate-700 hover:cursor-pointer rounded-full h-full w-full p-2"
-                />
-                */}
                 <FiShoppingCart
                   onClick={toggleCart}
-                  className="text-xl hover:text-primary hover:cursor-pointer font-bold  h-full w-full p-2"
+                  className="text-xl hover:text-primary hover:cursor-pointer font-bold h-full w-full p-2"
                 />
               </div>
 
               <Cart open={cartOpen} handleClose={toggleCart} />
-
-              {/*<div className="icon-btn">
-                <FiUser />
-                </div>*/}
             </div>
           </div>
         </div>
@@ -105,7 +115,8 @@ const Header = ({ categories }: { categories: Category[] }) => {
         </AnimatePresence>
       </div>
     </HoverWrapper>
-      <div style={{ height: "120px", width: "100%" }} />
+    {/* Spacer div with explicit height */}
+    <div style={{ height: spacerHeight, width: "100%" }} />
     </>
   );
 };
