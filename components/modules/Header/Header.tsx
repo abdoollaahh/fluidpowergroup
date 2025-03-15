@@ -43,11 +43,13 @@ const Header = ({ categories }: { categories: Category[] }) => {
   return (
     <>
     <HoverWrapper hook={{ hover, setHover }}>
-      <div 
-        className="w-full fixed top-0 bg-white z-50" 
-        style={headerStyle}
-        onMouseLeave={() => setHover(null)}
-      >
+      <div className="w-full fixed top-0 bg-white z-50" 
+  style={{
+    background: 'linear-gradient(to bottom, white 0%, white 50%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 0) 100%)',
+    borderBottom: 'none',
+    paddingBottom: '30px',
+    transition: 'all 0.3s ease-in-out' // Add smooth transition
+  }}onMouseLeave={() => setHover(null)}>
         <div className="wrapper relative w-full px-6 z-30">
           {/* Rest of your header code remains the same */}
           <div className="flex items-center gap-8 py-2 overflow-hidden ">
@@ -115,8 +117,7 @@ const Header = ({ categories }: { categories: Category[] }) => {
         </AnimatePresence>
       </div>
     </HoverWrapper>
-    {/* Spacer div with explicit height */}
-    <div style={{ height: spacerHeight, width: "100%" }} />
+      <div style={{ height: "90px", width: "100%" }} />
     </>
   );
 };
