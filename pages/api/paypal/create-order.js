@@ -1,13 +1,13 @@
 // pages/api/paypal/create-order.js
 import fetch from 'node-fetch'; // Or built-in fetch if Node >= 18
 
-// --- Environment Variables ---
+// More precise environment determination
 const isVercelPreview = process.env.VERCEL_ENV === 'preview';
 const forceSandbox = process.env.PAYPAL_MODE === 'sandbox';
+const forceProduction = process.env.PAYPAL_MODE === 'production';
 
-// Use sandbox if explicitly set or if in preview environment
-const USE_SANDBOX = forceSandbox || isVercelPreview || process.env.NODE_ENV !== 'production';
-
+// If PAYPAL_MODE is explicitly set, use that, otherwise use environment detection
+const USE_SANDBOX = forceProduction ? false : (forceSandbox || isVercelPreview || process.env.NODE_ENV !== 'production');
 const PAYPAL_CLIENT_ID = USE_SANDBOX
     ? process.env.SANDBOX_CLIENT_ID
     : process.env.PRODUCTION_CLIENT_ID;
