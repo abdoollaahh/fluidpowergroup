@@ -23,6 +23,10 @@ async function getPayPalAccessToken() {
 
 // --- Main API Handler ---
 export default async function handler(req, res) {
+    console.log(`--- EXECUTING ${req.url} ---`);
+    console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+    console.log(`Using PAYPAL_API_BASE: ${PAYPAL_API_BASE}`);
+    console.log(`Using PAYPAL_CLIENT_ID (first 10 chars): ${PAYPAL_CLIENT_ID ? PAYPAL_CLIENT_ID.substring(0,10) : 'N/A'}`);
     // --- Keep Basic CORS ---
     res.setHeader('Access-Control-Allow-Origin', '*'); // Adjust as needed for production
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
