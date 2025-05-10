@@ -2,9 +2,23 @@
 import fetch from 'node-fetch';
 
 // --- Environment Variables --- (Keep these)
-const PAYPAL_CLIENT_ID = process.env.NODE_ENV === 'production' ? process.env.PRODUCTION_CLIENT_ID : process.env.SANDBOX_CLIENT_ID;
-const PAYPAL_CLIENT_SECRET = process.env.NODE_ENV === 'production' ? process.env.PRODUCTION_SECRET : process.env.SANDBOX_SECRET;
-const PAYPAL_API_BASE = process.env.NODE_ENV === 'production' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+const isVercelPreview = process.env.VERCEL_ENV === 'preview';
+const forceSandbox = process.env.PAYPAL_MODE === 'sandbox';
+
+// Use sandbox if explicitly set or if in preview environment
+const USE_SANDBOX = forceSandbox || isVercelPreview || process.env.NODE_ENV !== 'production';
+
+const PAYPAL_CLIENT_ID = USE_SANDBOX
+    ? process.env.SANDBOX_CLIENT_ID
+    : process.env.PRODUCTION_CLIENT_ID;
+    
+const PAYPAL_CLIENT_SECRET = USE_SANDBOX
+    ? process.env.SANDBOX_SECRET
+    : process.env.PRODUCTION_SECRET;
+    
+const PAYPAL_API_BASE = USE_SANDBOX
+    ? 'https://api-m.sandbox.paypal.com'
+    : 'https://api-m.paypal.com';
 
 // --- Helper: Get PayPal Access Token --- (Keep this)
 async function getPayPalAccessToken() {
@@ -23,10 +37,13 @@ async function getPayPalAccessToken() {
 
 // --- Main API Handler ---
 export default async function handler(req, res) {
-    console.log(`--- EXECUTING ${req.url} ---`);
-    console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
-    console.log(`Using PAYPAL_API_BASE: ${PAYPAL_API_BASE}`);
-    console.log(`Using PAYPAL_CLIENT_ID (first 10 chars): ${PAYPAL_CLIENT_ID ? PAYPAL_CLIENT_ID.substring(0,10) : 'N/A'}`);
+    console.log("Vercel deployment information:");
+    console.log("VERCEL_ENV:", process.env.VERCEL_ENV); // 'production', 'preview', or 'development'
+    console.log("VERCEL_GIT_COMMIT_REF:", process.env.VERCEL_GIT_COMMIT_REF); // The branch name
+    console.log("PAYPAL_MODE:", process.env.PAYPAL_MODE);
+    console.log("Calculated USE_SANDBOX:", USE_SANDBOX);
+    console.log("USING CLIENT_ID starting with:", PAYPAL_CLIENT_ID ? PAYPAL_CLIENT_ID.substring(0, 5) + "..." : "NOT FOUND");
+    console.log("USING CLIENT_SECRET exists:", !!PAYPAL_CLIENT_SECRET);
     // --- Keep Basic CORS ---
     res.setHeader('Access-Control-Allow-Origin', '*'); // Adjust as needed for production
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -35,7 +52,7 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') { res.setHeader('Allow', ['POST', 'OPTIONS']); return res.status(405).json({ success: false, error: `Method ${req.method} Not Allowed` }); }
 
     console.log("Received request to /api/paypal/capture-order");
-    console.log("Full request body for capture:", JSON.stringify(req.body, null, 2)); // Log the full body
+    //console.log("Full request body for capture:", JSON.stringify(req.body, null, 2)); // Log the full body
 
     // *** MODIFIED: Extract more details from req.body ***
     const {
@@ -113,7 +130,7 @@ export default async function handler(req, res) {
         // --- Payment Capture Successful (or Pending) ---
         console.log(`Payment processed for order ${orderID}. Internal Order #: ${orderNumber}, Payer ID: ${payerID}, Capture ID: ${captureId}, Status: ${finalCaptureStatus}`);
 
-        // ** TODO: Save Order Details to Your Database **
+        {/*// ** TODO: Save Order Details to Your Database **
         // Example of what you'd save:
         console.log("Order details ready for database:", {
             yourInternalOrderNumber: orderNumber,
@@ -126,7 +143,7 @@ export default async function handler(req, res) {
             fullOrderDetails: originalOrderParams // Contains item specifics, original prices etc.
             // You might also save amounts confirmed by PayPal from captureData.purchase_units[0].amount
         });
-        // *********************************************
+        // ********************************************* */}
 
         // --- Respond to Frontend ---
         res.status(200).json({
