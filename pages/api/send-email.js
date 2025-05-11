@@ -3,29 +3,32 @@ import nodemailer from 'nodemailer';
 import fetch from 'node-fetch'; // Keep this if needed for other services
 
 // --- Environment Variables ---
-// SMTP configuration (NEW)
+// SMTP configuration
 const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587');
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 
 // Existing environment variables
-//const SENDER_EMAIL = process.env.SENDER_EMAIL || process.env.SMTP_USER || 'noreply@fluidpowergroup.com.au'; // Use SMTP_USER as fallback
 const BUSINESS_EMAIL = process.env.BUSINESS_EMAIL;
 const VALID_SERVER_KEY = process.env.VALID_SERVER_KEY; // Needed for auth check
 
-// --- Configure Nodemailer Transporter --- (NEW)
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: SMTP_PORT === 465, // true for 465, false for other ports
-    auth: {
-      user: SMTP_USER,
-      pass: SMTP_PASS
-    }
-  });
-};
+// --- Create a persistent transporter (singleton pattern) ---
+let transporter = null;
+function getTransporter() {
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_PORT === 465, // true for 465, false for other ports
+      auth: {
+        user: SMTP_USER,
+        pass: SMTP_PASS
+      }
+    });
+  }
+  return transporter;
+}
 
 // --- Allowed Origins Definition --- (UNCHANGED)
 const allowedOrigins = [
@@ -88,7 +91,7 @@ export default async function handler(req, res) {
         try {
             console.log('Email endpoint accessed (/api/send-email)');
 
-            // --- Validate SMTP Configuration --- (NEW)
+            // --- Validate SMTP Configuration ---
             if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
                 console.error("FATAL: SMTP configuration missing (Host, User, or Password).");
                 return res.status(500).json({ success: false, error: "Email service configuration error." });
@@ -99,10 +102,10 @@ export default async function handler(req, res) {
                 return res.status(500).json({ success: false, error: "Email service configuration error." });
             }
 
-            // --- Create Transporter --- (NEW)
-            const transporter = createTransporter();
+            // --- Get the persistent transporter ---
+            const mailer = getTransporter();
 
-            // Extract data needed for sending (UNCHANGED)
+            // Extract data needed for sending
             const {
                 orderNumber,
                 userDetails,
@@ -111,7 +114,7 @@ export default async function handler(req, res) {
                 userEmail          // Fallback email from emailService
             } = req.body;
 
-            // Simplified Validation (UNCHANGED)
+            // Simplified Validation
             const customerEmailAddress = userDetails?.email || userEmail;
             if (!customerEmailAddress || !emailTemplates || !emailTemplates.customerEmailContent || !emailTemplates.businessEmailContent) {
                  console.error('Validation Failed: Missing crucial email content or customer email.', { customerEmailAddress, emailTemplatesExists: !!emailTemplates });
@@ -120,9 +123,8 @@ export default async function handler(req, res) {
             }
             
             const currentOrderNumber = orderNumber || 'Unknown';
-            //const customerName = (userDetails && userDetails.name) ? userDetails.name : 'Valued Customer';
 
-            // Define attachments for Nodemailer (MODIFIED FOR NODEMAILER)
+            // Define attachments for Nodemailer
             const attachments = pdfAttachment ? [{
                 filename: `Order-${currentOrderNumber}.pdf`,
                 content: pdfAttachment,
@@ -130,42 +132,43 @@ export default async function handler(req, res) {
                 contentType: 'application/pdf'
             }] : [];
 
-            // --- Send Business Email --- (MODIFIED FOR NODEMAILER)
+            // --- Prepare both emails for parallel sending ---
+            const businessEmailOptions = {
+                from: `"FluidPower Group Order System" <${SMTP_USER}>`,
+                to: BUSINESS_EMAIL,
+                subject: `New Order Received - Order #${currentOrderNumber}`,
+                html: emailTemplates.businessEmailContent,
+                attachments: attachments.length > 0 ? attachments : undefined
+            };
+
+            const customerEmailOptions = {
+                from: `"FluidPower Group" <${SMTP_USER}>`,
+                to: customerEmailAddress,
+                subject: `Your Order Confirmation - Order #${currentOrderNumber}`,
+                html: emailTemplates.customerEmailContent,
+                attachments: attachments.length > 0 ? attachments : undefined
+            };
+
+            // Log what we're about to do
             console.log(`Sending business email for order ${currentOrderNumber} to ${BUSINESS_EMAIL}`);
+            console.log(`Sending customer email for order ${currentOrderNumber} to ${customerEmailAddress}`);
+
+            // --- Send both emails in parallel using Promise.all ---
             try {
-                const businessInfo = await transporter.sendMail({
-                    from: `"FluidPower Group Order System" <${SMTP_USER}>`,
-                    to: BUSINESS_EMAIL,
-                    subject: `New Order Received - Order #${currentOrderNumber}`,
-                    html: emailTemplates.businessEmailContent,
-                    attachments: attachments.length > 0 ? attachments : undefined
-                });
+                const [businessInfo, customerInfo] = await Promise.all([
+                    mailer.sendMail(businessEmailOptions),
+                    mailer.sendMail(customerEmailOptions)
+                ]);
                 
                 console.log(`Business email sent successfully. Message ID: ${businessInfo.messageId}`);
-            } catch (businessEmailError) {
-                console.error(`Failed to send business email. Error:`, businessEmailError);
-                // Continue to customer email - don't return error yet
-            }
-
-            // --- Send Customer Email --- (MODIFIED FOR NODEMAILER)
-            console.log(`Sending customer email for order ${currentOrderNumber} to ${customerEmailAddress}`);
-            try {
-                const customerInfo = await transporter.sendMail({
-                    from: `"FluidPower Group" <${SMTP_USER}>`,
-                    to: customerEmailAddress,
-                    subject: `Your Order Confirmation - Order #${currentOrderNumber}`,
-                    html: emailTemplates.customerEmailContent,
-                    attachments: attachments.length > 0 ? attachments : undefined
-                });
-                
                 console.log(`Customer email sent successfully. Message ID: ${customerInfo.messageId}`);
-            } catch (customerEmailError) {
-                console.error(`Failed to send customer email. Error:`, customerEmailError);
-                throw new Error(`Failed to send customer email (${customerEmailError.message})`);
+                
+                // Success
+                res.status(200).json({ success: true });
+            } catch (emailError) {
+                console.error('Failed to send one or both emails:', emailError);
+                throw new Error(`Email sending failed: ${emailError.message}`);
             }
-
-            // Success
-            res.status(200).json({ success: true });
 
         } catch (error) {
             console.error('Error processing /api/send-email:', error);
