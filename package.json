@@ -23,7 +23,7 @@
     "mongoose": "^8.14.1",
     "next": "12.1.0",
     "node-fetch": "^3.3.2",
-    "nodemailer": "^7.0.2",
+    "nodemailer": "^7.0.3",
     "react": "17.0.2",
     "react-dom": "17.0.2",
     "react-icons": "^4.3.1",

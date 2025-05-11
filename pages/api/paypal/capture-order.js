@@ -38,13 +38,13 @@ async function getPayPalAccessToken() {
 
 // --- Main API Handler ---
 export default async function handler(req, res) {
-    console.log("Vercel deployment information:");
+    {/*console.log("Vercel deployment information:");
     console.log("VERCEL_ENV:", process.env.VERCEL_ENV); // 'production', 'preview', or 'development'
     console.log("VERCEL_GIT_COMMIT_REF:", process.env.VERCEL_GIT_COMMIT_REF); // The branch name
     console.log("PAYPAL_MODE:", process.env.PAYPAL_MODE);
     console.log("Calculated USE_SANDBOX:", USE_SANDBOX);
     console.log("USING CLIENT_ID starting with:", PAYPAL_CLIENT_ID ? PAYPAL_CLIENT_ID.substring(0, 5) + "..." : "NOT FOUND");
-    console.log("USING CLIENT_SECRET exists:", !!PAYPAL_CLIENT_SECRET);
+    console.log("USING CLIENT_SECRET exists:", !!PAYPAL_CLIENT_SECRET);*/}
     // --- Keep Basic CORS ---
     res.setHeader('Access-Control-Allow-Origin', '*'); // Adjust as needed for production
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
