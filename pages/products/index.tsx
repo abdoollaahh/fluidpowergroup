@@ -15,9 +15,11 @@ const ProductsPage = () => {
   const [series, setSeries] = useState([]);
   const [categories, setCategories] = useState([]);
   useEffect(() => {
+    console.log('Environment variable:', process.env.NEXT_PUBLIC_BASEURL);
+    console.log('Full API URL:', `${process.env.NEXT_PUBLIC_BASEURL}/getCategories`);
     const categories = async () => {
       const cat = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASEURL}/getCategories`
+        `https://fluidpowergroup.com.au/getCategories`
       );
       return cat;
     };

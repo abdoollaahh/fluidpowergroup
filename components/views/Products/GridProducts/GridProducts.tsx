@@ -8,6 +8,9 @@ type Props = {
 };
 
 const GridProducts = ({ seriesList, showDescription }: Props) => {
+  console.log('SeriesList received:', seriesList);
+  console.log('SeriesList length:', seriesList.length);
+  console.log('First item:', seriesList[0]);
   return (
     <div className="col-span-12  sm:col-span-9 xl:col-span-10 flex flex-col gap-8  sm:gap-2  ">
       <SortProducts />
