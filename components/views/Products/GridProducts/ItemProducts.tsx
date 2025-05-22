@@ -1,9 +1,9 @@
+// components/views/Products/GridProducts/ItemProducts.tsx
 import Anchor from "@/modules/Anchor";
 import { motion } from "framer-motion";
-import Image from "next/image";
+import SafeImage from "../../../../utils/SafeImage"; // Adjust the path as needed
 
-const ItemProducts = ({ item, showDescription }: { item: any, showDescription: false }) => {
-  
+const ItemProducts = ({ item, showDescription = false }: { item: any, showDescription?: boolean }) => {
   const getDescriptions = (description: string) => {
     //get text before first break tag
     const text = description.split("<br>")[0];
@@ -11,8 +11,24 @@ const ItemProducts = ({ item, showDescription }: { item: any, showDescription: f
     return stripped + "...";
   }
 
+  if (!item) {
+    return (
+      <div className="flex flex-col w-full max-w-sm mx-auto group cursor-pointer border-slate-800 border-[1px] p-4 h-full shadow-md">
+        <div className="w-full pt-[100%] relative">
+          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+            <div className="text-gray-400">Loading...</div>
+          </div>
+        </div>
+        <div className="text-xl px-3 py-1.5 font-light flex justify-center">
+          <h3 className="text-xl font-semibold">Loading...</h3>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Anchor href={`/products/${item.id}`}>
+<<<<<<< HEAD
     {console.log("PRODUCT DATA ---->", {
       name: item.name,
       imageUrl: item.image,
@@ -29,6 +45,19 @@ const ItemProducts = ({ item, showDescription }: { item: any, showDescription: f
             className="scale-75 group-hover:scale-[0.8] transition-all"
             objectFit="contain"
           />
+=======
+      <div className="flex flex-col w-full max-w-sm mx-auto group cursor-pointer border-slate-800 border-[1px] p-4 h-full shadow-md">
+        <motion.div className="w-full pt-[100%] relative transition-all duration-500">
+          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+            <SafeImage
+              src={item.image}
+              alt={item.slug || item.name || "Product image"}
+              width={300}
+              height={300}
+              className="scale-75 group-hover:scale-[0.8] transition-all object-contain"
+            />
+          </div>
+>>>>>>> feature/add-hose-builder-app
         </motion.div>
         <div className="text-xl px-3 py-1.5 font-light flex justify-center gap-12">
           <h3 className="text-xl font-semibold"><b>{item.name || item.title}</b></h3>

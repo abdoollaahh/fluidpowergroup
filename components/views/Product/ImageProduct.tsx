@@ -1,16 +1,16 @@
 import clsx from 'clsx';
 import { AnimatePresence, motion } from 'framer-motion';
-import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import SafeImage from "../../../utils/SafeImage";
 
 type Props = {
   images: string[];
 };
 
-const ImageProduct = ({ images }: Props) => {
-  const [selectedImage, setSelectedImage] = useState(images[0]);
-
+const ImageProduct = ({ images = [] }: Props) => {
+  const safeImages = useMemo(() => images || [], [images]);
+  const [selectedImage, setSelectedImage] = useState(safeImages.length > 0 ? safeImages[0] : '');
   const [direction, setDirection] = useState(true);
 
   const variants = {
@@ -30,15 +30,26 @@ const ImageProduct = ({ images }: Props) => {
     },
   };
 
-  const imageIndex = images.indexOf(selectedImage);
+  if (safeImages.length === 0 || !selectedImage) {
+    return (
+      <div className="relative col-span-full lg:col-span-6 xl:col-span-7 w-full border rounded-3xl h-full">
+        <div className="h-full w-full flex items-center justify-center">
+          <div className="text-gray-400">Loading image...</div>
+        </div>
+      </div>
+    );
+  }
+
+  const imageIndex = safeImages.indexOf(selectedImage);
 
   return (
-    <div className="relative col-span-full lg:col-span-6 xl:col-span-7 w-full border rounded-3xl h-full pt-[100%] lg:pt-0 lg:aspect-auto">
-      <AnimatePresence exitBeforeEnter>
-        <div className="absolute top-0 left-0 h-full w-full p-16">
+    <div className="relative col-span-full lg:col-span-6 xl:col-span-7 w-full border rounded-3xl h-full overflow-hidden">
+      {/* This container maintains aspect ratio in both portrait and landscape */}
+      <div className="w-full h-full min-h-[300px] flex items-center justify-center p-4">
+        <AnimatePresence exitBeforeEnter>
           <motion.div
             variants={variants}
-            className="relative h-full w-full "
+            className="w-full h-full flex items-center justify-center"
             key={selectedImage}
             custom={direction}
             transition={{
@@ -47,57 +58,74 @@ const ImageProduct = ({ images }: Props) => {
             initial="enter"
             animate="center"
             exit="exit">
+<<<<<<< HEAD
             <Image
               src={selectedImage}
               alt=""
               layout="fill"
               objectFit="contain"
+=======
+            <SafeImage
+              src={selectedImage}
+              alt="Product"
+              width={800}
+              height={800}
+              className="object-contain max-w-full max-h-full"
+              useContainMode={true}
+>>>>>>> feature/add-hose-builder-app
             />
           </motion.div>
-        </div>
-      </AnimatePresence>
-
-      <div className="absolute h-full top-0 left-0   flex flex-col justify-center  ">
-        <div
-          className="p-2 hover:bg-slate-300/20 rounded-full cursor-pointer z-10 m-2 group"
-          onClick={() => {
-            setSelectedImage(
-              images[
-                (imageIndex > 0 ? imageIndex - 1 : images.length - 1) %
-                  images.length
-              ]
-            );
-          }}>
-          <FiChevronLeft className="text-3xl text-black/60 group-hover:text-black group-hover:scale-110 transition-all duration-200 " />
-        </div>
+        </AnimatePresence>
       </div>
+      
+      {/* Navigation arrows */}
+      {safeImages.length > 1 && (
+        <>
+          <div className="absolute h-full top-0 left-0 flex flex-col justify-center">
+            <div
+              className="p-2 hover:bg-slate-300/20 rounded-full cursor-pointer z-10 m-2 group"
+              onClick={() => {
+                setDirection(false);
+                setSelectedImage(
+                  safeImages[
+                    (imageIndex > 0 ? imageIndex - 1 : safeImages.length - 1) %
+                      safeImages.length
+                  ]
+                );
+              }}>
+              <FiChevronLeft className="text-3xl text-black/60 group-hover:text-black group-hover:scale-110 transition-all duration-200" />
+            </div>
+          </div>
 
-      <div className="absolute h-full top-0 right-0   flex flex-col justify-center  ">
-        <div
-          className="p-2 hover:bg-slate-300/20 rounded-full cursor-pointer z-10 m-2 group"
-          onClick={() => {
-            setSelectedImage(
-              images[(images.indexOf(selectedImage) + 1) % images.length]
-            );
-          }}>
-          <FiChevronRight className="text-3xl text-black/60 group-hover:text-black group-hover:scale-110 transition-all duration-200 " />
-        </div>
-      </div>
-      <div className="absolute h-full  bottom-0 left-0 w-full flex items-end justify-center pb-6 gap-4">
-        {images.map((item, i) => (
-          <div
-            onClick={() => {
-              setDirection(i >= images.indexOf(selectedImage));
+          <div className="absolute h-full top-0 right-0 flex flex-col justify-center">
+            <div
+              className="p-2 hover:bg-slate-300/20 rounded-full cursor-pointer z-10 m-2 group"
+              onClick={() => {
+                setDirection(true);
+                setSelectedImage(
+                  safeImages[(imageIndex + 1) % safeImages.length]
+                );
+              }}>
+              <FiChevronRight className="text-3xl text-black/60 group-hover:text-black group-hover:scale-110 transition-all duration-200" />
+            </div>
+          </div>
 
-              setSelectedImage(item);
-            }}
-            className={clsx(
-              'w-3 aspect-square rounded-full cursor-pointer',
-              item === selectedImage ? 'bg-black/60' : 'bg-slate-200'
-            )}
-            key={i}></div>
-        ))}
-      </div>
+          <div className="absolute bottom-0 left-0 w-full flex items-end justify-center pb-6 gap-4">
+            {safeImages.map((item, i) => (
+              <div
+                onClick={() => {
+                  setDirection(i >= safeImages.indexOf(selectedImage));
+                  setSelectedImage(item);
+                }}
+                className={clsx(
+                  'w-3 aspect-square rounded-full cursor-pointer',
+                  item === selectedImage ? 'bg-black/60' : 'bg-slate-200'
+                )}
+                key={i}></div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 };
