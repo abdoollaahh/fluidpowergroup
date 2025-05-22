@@ -16,17 +16,12 @@ const ProductsPage = () => {
   const [categories, setCategories] = useState([]);
   useEffect(() => {
     const categories = async () => {
-      const cat = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASEURL}/getCategories`
-      );
+      const cat = await axios.get('/api/categories');
       return cat;
     };
 
     const series = async () => {
-      const series = await axios.post(
-        `${process.env.NEXT_PUBLIC_BASEURL}/getAllSeries`,
-        { data: { slug } }
-      );
+      const series = await axios.post('/api/series', { id: slug });
       return series;
     };
 
