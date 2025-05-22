@@ -28,24 +28,6 @@ const ItemProducts = ({ item, showDescription = false }: { item: any, showDescri
 
   return (
     <Anchor href={`/products/${item.id}`}>
-<<<<<<< HEAD
-    {console.log("PRODUCT DATA ---->", {
-      name: item.name,
-      imageUrl: item.image,
-      fullItem: item
-    })}
-      <div className="flex flex-col w-full  max-w-sm    mx-auto group    cursor-pointer border-slate-800 border-[1px] p-4 h-full shadow-md">
-        <motion.div className="w-full  pt-[100%]  relative  transition-all duration-500">
-          <Image
-            layout="fill"
-            src={item.image}
-            blurDataURL={item.image}
-            placeholder="blur"
-            alt={item.slug}
-            className="scale-75 group-hover:scale-[0.8] transition-all"
-            objectFit="contain"
-          />
-=======
       <div className="flex flex-col w-full max-w-sm mx-auto group cursor-pointer border-slate-800 border-[1px] p-4 h-full shadow-md">
         <motion.div className="w-full pt-[100%] relative transition-all duration-500">
           <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
@@ -57,7 +39,6 @@ const ItemProducts = ({ item, showDescription = false }: { item: any, showDescri
               className="scale-75 group-hover:scale-[0.8] transition-all object-contain"
             />
           </div>
->>>>>>> feature/add-hose-builder-app
         </motion.div>
         <div className="text-xl px-3 py-1.5 font-light flex justify-center gap-12">
           <h3 className="text-xl font-semibold"><b>{item.name || item.title}</b></h3>
