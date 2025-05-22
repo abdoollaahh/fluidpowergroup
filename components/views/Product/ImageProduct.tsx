@@ -58,13 +58,6 @@ const ImageProduct = ({ images = [] }: Props) => {
             initial="enter"
             animate="center"
             exit="exit">
-<<<<<<< HEAD
-            <Image
-              src={selectedImage}
-              alt=""
-              layout="fill"
-              objectFit="contain"
-=======
             <SafeImage
               src={selectedImage}
               alt="Product"
@@ -72,7 +65,6 @@ const ImageProduct = ({ images = [] }: Props) => {
               height={800}
               className="object-contain max-w-full max-h-full"
               useContainMode={true}
->>>>>>> feature/add-hose-builder-app
             />
           </motion.div>
         </AnimatePresence>
