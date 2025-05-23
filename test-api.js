@@ -1,93 +1,62 @@
-// test-api.js - Run this locally to test your API routes
+// enhanced-test.js - More detailed debugging
 const axios = require('axios');
 
-// IMPORTANT: Update this to your actual Vercel deployment URL
-const PRODUCTION_URL = 'https://fluidpowergroup-bhif7ffhv-fluidpower.vercel.app'; // <- Replace with your actual URL
-const LOCAL_URL = 'http://localhost:3000';
+const PRODUCTION_URL = 'https://fluidpowergroup-9d3bhmaau-fluidpower.vercel.app';
 
-// Set which environment to test
-const TEST_PRODUCTION = true; // Set to false to test locally
+async function detailedTest() {
+  console.log('\n🔍 DETAILED API TESTING');
+  console.log('========================\n');
 
-const BASE_URL = TEST_PRODUCTION ? PRODUCTION_URL : LOCAL_URL;
-
-async function testAPIs() {
-  console.log(`\nTesting APIs at: ${BASE_URL}`);
-  console.log('================================\n');
-
-  // Test Categories API
+  // Test 1: Check what categories actually returns
   try {
-    console.log('Testing Categories API...');
-    const startTime = Date.now();
-    const categoriesResponse = await axios.get(`${BASE_URL}/api/categories`);
-    const endTime = Date.now();
-    
-    console.log('✅ Categories API Success');
-    console.log(`Response time: ${endTime - startTime}ms`);
-    console.log('Status:', categoriesResponse.status);
-    console.log('Headers:', categoriesResponse.headers);
-    console.log('Response structure:', Object.keys(categoriesResponse.data));
-    console.log('Categories count:', categoriesResponse.data.categories?.length || 'N/A');
-    if (categoriesResponse.data.categories?.length > 0) {
-      console.log('First category:', JSON.stringify(categoriesResponse.data.categories[0], null, 2));
-    }
+    console.log('1. Testing Categories API Response Structure:');
+    const catResponse = await axios.get(`${PRODUCTION_URL}/api/categories`);
+    console.log('Raw response data:', JSON.stringify(catResponse.data, null, 2));
+    console.log('Type of categories:', typeof catResponse.data.categories);
+    console.log('Is array?:', Array.isArray(catResponse.data.categories));
   } catch (error) {
-    console.log('❌ Categories API Failed');
-    if (error.response) {
-      console.log('Status:', error.response.status);
-      console.log('Headers:', error.response.headers);
-      console.log('Error data:', error.response.data);
-    } else if (error.request) {
-      console.log('No response received');
-      console.log('Request:', error.request);
-    } else {
-      console.log('Error:', error.message);
-    }
+    console.log('Categories failed:', error.message);
   }
 
-  console.log('\n--------------------------------\n');
+  console.log('\n------------------------\n');
 
-  // Test Series API
+  // Test 2: Check the external API directly
   try {
-    console.log('Testing Series API...');
-    const startTime = Date.now();
-    const seriesResponse = await axios.post(`${BASE_URL}/api/series`, { id: '1' });
-    const endTime = Date.now();
-    
-    console.log('✅ Series API Success');
-    console.log(`Response time: ${endTime - startTime}ms`);
-    console.log('Status:', seriesResponse.status);
-    console.log('Headers:', seriesResponse.headers);
-    console.log('Response structure:', Object.keys(seriesResponse.data));
-    console.log('Series count:', seriesResponse.data.series?.length || 'N/A');
-    if (seriesResponse.data.series?.length > 0) {
-      console.log('First series:', JSON.stringify(seriesResponse.data.series[0], null, 2));
+    console.log('2. Testing External Categories API Directly:');
+    const extResponse = await axios.get('https://fluidpowergroup.com.au/api/getCategories');
+    console.log('External API response (first 500 chars):', JSON.stringify(extResponse.data).substring(0, 500));
+    console.log('Response type:', typeof extResponse.data);
+    console.log('Is array?:', Array.isArray(extResponse.data));
+    if (Array.isArray(extResponse.data) && extResponse.data.length > 0) {
+      console.log('First item structure:', JSON.stringify(extResponse.data[0], null, 2));
     }
   } catch (error) {
-    console.log('❌ Series API Failed');
-    if (error.response) {
-      console.log('Status:', error.response.status);
-      console.log('Headers:', error.response.headers);
-      console.log('Error data:', error.response.data);
-    } else if (error.request) {
-      console.log('No response received');
-    } else {
-      console.log('Error:', error.message);
-    }
+    console.log('External API failed:', error.message);
   }
 
-  console.log('\n================================\n');
+  console.log('\n------------------------\n');
+
+  // Test 3: Try different series endpoints
+  console.log('3. Testing Various Series Endpoints:');
   
-  // Test if we're getting CORS errors by checking the external API directly
-  console.log('Testing direct access to external API (this should fail with CORS in browser but work in Node.js):');
-  try {
-    const directResponse = await axios.get('https://fluidpowergroup.com.au/api/getCategories');
-    console.log('✅ Direct API access works from Node.js');
-    console.log('Response has data:', !!directResponse.data);
-  } catch (error) {
-    console.log('❌ Direct API access failed');
-    console.log('Error:', error.message);
+  const seriesEndpoints = [
+    'https://fluidpowergroup.com.au/api/getSeries?categoryId=1',
+    'https://fluidpowergroup.com.au/api/getSeries?id=1',
+    'https://fluidpowergroup.com.au/api/series?categoryId=1',
+    'https://fluidpowergroup.com.au/api/getProducts?categoryId=1'
+  ];
+
+  for (const endpoint of seriesEndpoints) {
+    try {
+      console.log(`\nTrying: ${endpoint}`);
+      const response = await axios.get(endpoint);
+      console.log('✅ Success! Status:', response.status);
+      console.log('Response preview:', JSON.stringify(response.data).substring(0, 200));
+      break; // Stop if we find a working endpoint
+    } catch (error) {
+      console.log('❌ Failed:', error.response?.status || error.message);
+    }
   }
 }
 
-// Run the tests
-testAPIs();
+detailedTest();

@@ -23,7 +23,6 @@ export default async function handler(req, res) {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          // Add any required headers for the external API
         },
       });
   
@@ -32,9 +31,11 @@ export default async function handler(req, res) {
       }
   
       const data = await response.json();
+      console.log('External API returned:', data);
       
-      // Return data in the format your frontend expects
-      res.status(200).json({ categories: data });
+      // The external API already returns {categories: [...]}
+      // So we just pass it through as-is
+      res.status(200).json(data);
     } catch (error) {
       console.error('Error fetching categories:', error);
       res.status(500).json({ 

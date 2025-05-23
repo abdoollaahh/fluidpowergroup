@@ -17,39 +17,54 @@ export default async function handler(req, res) {
   
     try {
       // Handle both GET and POST methods
-      let categoryId;
+      let categorySlug;
       
       if (req.method === 'POST') {
         // Get id from request body (as your current code uses POST)
-        categoryId = req.body.id;
+        categorySlug = req.body.id;
       } else {
         // Get categoryId from query parameters
-        categoryId = req.query.categoryId || req.query.id;
+        categorySlug = req.query.categoryId || req.query.id;
       }
       
-      if (!categoryId) {
-        return res.status(400).json({ error: 'Category ID is required' });
+      if (!categorySlug) {
+        return res.status(400).json({ error: 'Category slug is required' });
       }
   
-      console.log('Fetching series for category ID:', categoryId);
+      console.log('Fetching series for category slug:', categorySlug);
   
-      // Fetch from the actual API
-      const response = await fetch(`https://fluidpowergroup.com.au/api/getSeries?categoryId=${categoryId}`, {
+      // First, fetch all categories
+      const categoriesResponse = await fetch('https://fluidpowergroup.com.au/api/getCategories', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          // Add any required headers for the external API
         },
       });
   
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!categoriesResponse.ok) {
+        throw new Error(`HTTP error! status: ${categoriesResponse.status}`);
       }
   
-      const data = await response.json();
+      const data = await categoriesResponse.json();
+      
+      // Find the category by slug
+      const category = data.categories.find(cat => cat.slug === categorySlug);
+      
+      if (!category) {
+        console.log('Category not found for slug:', categorySlug);
+        return res.status(404).json({ 
+          error: 'Category not found',
+          series: [] 
+        });
+      }
+  
+      // The series data is actually in the subCategories array
+      const series = category.subCategories || [];
+      
+      console.log(`Found ${series.length} series for category ${categorySlug}`);
       
       // Return data in the format your frontend expects
-      res.status(200).json({ series: data });
+      res.status(200).json({ series: series });
     } catch (error) {
       console.error('Error fetching series:', error);
       res.status(500).json({ 
