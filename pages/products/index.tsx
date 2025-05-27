@@ -24,7 +24,7 @@ const ProductsPage = () => {
         setError(null);
 
         // Fetch categories
-        const categoriesResponse = await axios.get('/api/categories');
+        const categoriesResponse = await axios.get('/api/getCategories');
         console.log('Categories response:', categoriesResponse.data);
         
         if (categoriesResponse.data.categories) {
@@ -39,7 +39,7 @@ const ProductsPage = () => {
 
         // Fetch series if slug exists
         if (slug) {
-          const seriesResponse = await axios.post('/api/series', { id: slug });
+          const seriesResponse = await axios.post('/api/getAllSeries', { data: { slug: slug } });
           console.log('Series response:', seriesResponse.data);
           
           if (seriesResponse.data.series) {
