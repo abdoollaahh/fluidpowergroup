@@ -5,7 +5,8 @@ const nextConfig = {
     domains: [
       "fluidpowergroup.s3.ap-southeast-2.amazonaws.com",
       "images.unsplash.com",
-      "cdn.schema.io"
+      "cdn.schema.io",
+      "cdn.swell.store" 
     ],
     //unoptimized: true
   },
