@@ -1,7 +1,7 @@
 // components/views/Products/GridProducts/ItemProducts.tsx
 import Anchor from "@/modules/Anchor";
 import { motion } from "framer-motion";
-import SafeImage from "../../../../utils/SafeImage"; // Adjust the path as needed
+import SafeImage from "../../../../utils/SafeImage";
 
 const ItemProducts = ({ item, showDescription = false }: { item: any, showDescription?: boolean }) => {
   const getDescriptions = (description: string) => {

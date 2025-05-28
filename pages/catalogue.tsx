@@ -11,7 +11,7 @@ const CataloguePage = () => {
   useEffect(() => {
     const categories = async () => {
       const cat = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASEURL}/getCategories`
+        `/api/getCategories`
       );
       return cat;
     };

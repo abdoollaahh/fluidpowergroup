@@ -7,7 +7,7 @@ const nextConfig = {
       "images.unsplash.com",
       "cdn.schema.io"
     ],
-    unoptimized: true
+    //unoptimized: true
   },
   
   // For redirects (changing URL in browser)

@@ -17,7 +17,7 @@ function MyApp({ Component, pageProps, router }: AppProps) {
       let cat;
       do {
         cat = await axios.get(
-          `${process.env.NEXT_PUBLIC_BASEURL}/getCategories`
+          `/api/getCategories`
         );
       } while (cat.data.categories[0].subCategories.length === 0);
       return cat;
