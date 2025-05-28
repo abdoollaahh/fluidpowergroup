@@ -40,7 +40,7 @@ const ProductPage = () => {
 
     const seriesDetails = async () => {
       const details = await axios.post(
-        `${process.env.NEXT_PUBLIC_BASEURL}/getSeriesDetails`,
+        `/api/getSeriesDetails`,
         { data: { id } }
       );
       return details;

@@ -61,7 +61,7 @@ const Search = () => {
   useEffect(() => {
     const categories = async () => {
       const cat = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASEURL}/getAllProducts`
+        `/api/getAllProducts`
       );
       if (cat.data.categories.length !== 0) {
         if (cat.data.categories[0].subCategories.length !== 0) {
