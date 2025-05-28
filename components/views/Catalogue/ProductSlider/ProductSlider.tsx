@@ -88,8 +88,8 @@ const ProductSlider = ({
                   alt="product"
                 />
               </motion.div>
-              <div className="text-xl px-3 py-1.5 font-light  flex justify-center  text-center  gap-12  whitespace-pre">
-                <h3 className="text-2xl font-medium">{product.title}</h3>
+              <div className="text-xl px-3 py-1.5 font-light flex justify-center text-center gap-12">
+                <h3 className="text-2xl font-medium truncate">{product.title}</h3>
                 {product.price && <h3>{product.price}</h3>}
               </div>
             </div>

@@ -50,7 +50,7 @@ const OrderSummaryProduct = ({
 
     try {
       const cart = await axios.post(
-        `${process.env.NEXT_PUBLIC_BASEURL}/createCart`,
+        `/api/createCart`,
         {
           items: body,
         }
