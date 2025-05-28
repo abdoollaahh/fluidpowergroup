@@ -27,7 +27,7 @@ const ProductPage = () => {
     const products = async () => {
       try {
         const prod = await axios.post(
-          `${process.env.NEXT_PUBLIC_BASEURL}/getProducts`,
+          `/api/getProducts`,
           { data: { id } }
         );
         console.log('API Response:', prod.data);  // Add this logging
