@@ -8,6 +8,7 @@ export interface IItemCart {
   name: string,
   price: number,
   stock: number,
+  image?: string,
   /*id_inch: string,
   id_mm: string,
   od_mm: string,

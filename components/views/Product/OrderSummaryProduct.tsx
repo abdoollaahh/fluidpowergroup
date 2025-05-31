@@ -7,11 +7,19 @@ import { useRouter } from "next/router";
 
 type IOrderSummaryProductProps = {
   items: IItemCart[];
+  series?: ISeries;
   handleClear: () => void;
+};
+
+type ISeries = {
+  name: string;
+  description: string;
+  images: string[];
 };
 
 const OrderSummaryProduct = ({
   items,
+  series,
   handleClear,
 }: IOrderSummaryProductProps) => {
   const itemsAdded = useMemo(
@@ -32,7 +40,11 @@ const OrderSummaryProduct = ({
     window.scroll({ behavior: "smooth", top: 0, left: 0 });
 
     itemsAdded.forEach((item) => {
-      addItem(item);
+      const itemWithImage = {
+        ...item,
+        image: series?.images?.[0] || '/cartImage.jpeg' // Use first series image or fallback
+      };
+      addItem(itemWithImage);
     });
 
     handleClear();
@@ -41,13 +53,21 @@ const OrderSummaryProduct = ({
   const checkout = async () => {
     // Ensure handleAddToCart runs first
     handleAddToCart();
-
-    // Proceed with checkout after items are added to the cart
-    const body = items.map((item: any) => ({
-      product_id: item.id,
-      quantity: item.quantity,
-    }));
-
+  
+    // Only include items with quantity > 0
+    const body = items
+      .filter((item: any) => item.quantity > 0)
+      .map((item: any) => ({
+        product_id: item.id,
+        quantity: item.quantity,
+      }));
+  
+    // Don't proceed if no items selected
+    if (body.length === 0) {
+      alert("Please select at least one item");
+      return;
+    }
+  
     try {
       const cart = await axios.post(
         `/api/createCart`,

@@ -1,4 +1,4 @@
-import { createContext, useState } from 'react';
+import { createContext, useState, useEffect } from 'react';
 import { ICart, IItemCart } from 'types/cart';
 import { Children } from 'types/general';
 
@@ -10,6 +10,7 @@ export const CartContext = createContext<{
   deleteItem: (item: IItemCart) => void;
   updateItem: (item: IItemCart) => void;
   setCart: (cart: ICart) => void;
+  clearCart: () => void;
 }>({
   toggleCart: () => {},
   items: [],
@@ -18,6 +19,7 @@ export const CartContext = createContext<{
   deleteItem: () => {},
   updateItem: () => {},
   setCart: () => {},
+  clearCart: () => {},
 });
 
 type ICartWrapperProps = {
@@ -25,7 +27,50 @@ type ICartWrapperProps = {
 };
 
 const CartWrapper = ({ children }: ICartWrapperProps) => {
-  const [cart, setCart] = useState<ICart>({ open: false, items: [] });
+  // Initialize cart state from localStorage if available
+  const [cart, setCart] = useState<ICart>(() => {
+    // Only access localStorage on client side
+    if (typeof window !== 'undefined') {
+      try {
+        const savedCart = localStorage.getItem('shopping-cart');
+        const cartTimestamp = localStorage.getItem('cart-timestamp');
+        
+        if (savedCart && cartTimestamp) {
+          const now = Date.now();
+          const saved = parseInt(cartTimestamp);
+          const oneDayInMs = 1 * 60 * 60 * 1000; // 24 hours
+          
+          // Check if cart is less than 24 hours old
+          if (now - saved < oneDayInMs) {
+            const parsedCart = JSON.parse(savedCart);
+            return {
+              open: false,
+              items: parsedCart.items || []
+            };
+          } else {
+            // Cart expired, clear it
+            localStorage.removeItem('shopping-cart');
+            localStorage.removeItem('cart-timestamp');
+          }
+        }
+      } catch (error) {
+        console.error('Error loading cart from localStorage:', error);
+      }
+    }
+    return { open: false, items: [] };
+  });
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('shopping-cart', JSON.stringify(cart));
+        localStorage.setItem('cart-timestamp', Date.now().toString());
+      } catch (error) {
+        console.error('Error saving cart to localStorage:', error);
+      }
+    }
+  }, [cart]);
 
   const toggleCart = () => {
     setCart((prevCart) => ({ ...prevCart, open: !prevCart.open }));
@@ -54,6 +99,10 @@ const CartWrapper = ({ children }: ICartWrapperProps) => {
     }));
   };
 
+  const clearCart = () => {
+    setCart({ open: false, items: [] });
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -63,6 +112,7 @@ const CartWrapper = ({ children }: ICartWrapperProps) => {
         deleteItem,
         updateItem,
         setCart,
+        clearCart,
         open: cart.open,
       }}>
       {children}
