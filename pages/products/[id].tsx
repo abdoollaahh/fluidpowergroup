@@ -71,6 +71,7 @@ const ProductPage = () => {
       <div className="max-w-2xl lg:max-w-full w-full mx-auto ">
         <OrderSummaryProduct
           items={items}
+          series={series}
           handleClear={() =>
             setItems(items.map((item) => ({ ...item, quantity: 0 })))
           }

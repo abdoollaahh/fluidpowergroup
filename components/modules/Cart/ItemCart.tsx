@@ -20,8 +20,8 @@ const ItemCart = ({ item }: IItemCartProps) => {
           <div className="relative w-full h-full">
             <Image
               layout="fill"
-              src="/cartImage.jpeg"
-              alt="product"
+              src={item.image || '/cartImage.jpeg'} 
+              alt={item.name || "product"}
               objectFit="contain"
             />
           </div>
