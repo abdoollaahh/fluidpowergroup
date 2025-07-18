@@ -3,6 +3,31 @@ import swell from "utils/swell/swellinit";
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
+    // Function to recursively fetch subcategories
+    const fetchSubCategories = async (parentId: string): Promise<any[]> => {
+      const subCategoriesResponse = await swell.get('/categories', { 
+        where: { parent_id: parentId } 
+      });
+      
+      // For each subcategory, fetch its children recursively
+      const subCategories = await Promise.all(
+        subCategoriesResponse.results.map(async (sub: any) => {
+          const childCategories = await fetchSubCategories(sub.id);
+          
+          return {
+            title: sub.name,
+            slug: sub.slug,
+            id: sub.id,
+            image: sub.images !== null && sub.images[0] !== undefined ? sub.images[0].file.url : null,
+            description: sub.description,
+            subCategories: childCategories // Add children here
+          };
+        })
+      );
+      
+      return subCategories;
+    };
+
     // Get parent categories
     const categories = await swell.get('/categories', { where: { parent_id: null } });
     
@@ -11,25 +36,11 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       Number(new Date(a.date_created)) - Number(new Date(b.date_created))
     );
     
-    // Map categories and fetch subcategories using Promise.all
+    // Map categories and fetch ALL nested subcategories
     const sortedCategories = await Promise.all(
       sortedCategoriesAsc.map(async (category: any) => {
-        // Fetch subcategories for this category
-        const subCategoriesResponse = await swell.get('/categories', { 
-          where: { parent_id: category.id } 
-        });
+        const subCategories = await fetchSubCategories(category.id);
         
-        // Map subcategories
-        const subCategories = subCategoriesResponse.results.map((sub: any) => ({
-          title: sub.name,
-          slug: sub.slug,
-          id: sub.id,
-          category: category.slug,
-          image: sub.images !== null && sub.images[0] !== undefined ? sub.images[0].file.url : null,
-          description: sub.description
-        }));
-        
-        // Return the category with its subcategories
         return {
           title: category.name,
           id: category.id,
