@@ -11,6 +11,22 @@ const ItemProducts = ({ item, showDescription = false }: { item: any, showDescri
     return stripped + "...";
   }
 
+  // Determine the correct URL based on item type
+  const getItemUrl = (item: any) => {
+    // If item has quantity/price/stock, it's a final product - use ID
+    if (item.quantity !== undefined || item.price !== undefined || item.stock !== undefined) {
+      return `/products/${item.id}`;
+    }
+    
+    // If item has slug and appears to be a category/series, use query parameter
+    if (item.slug) {
+      return `/products?subcategory=${item.slug}`;
+    }
+    
+    // Fallback to ID-based URL
+    return `/products/${item.id}`;
+  };
+
   if (!item) {
     return (
       <div className="flex flex-col w-full max-w-sm mx-auto group cursor-pointer border-slate-800 border-[1px] p-4 h-full shadow-md">
@@ -27,7 +43,7 @@ const ItemProducts = ({ item, showDescription = false }: { item: any, showDescri
   }
 
   return (
-    <Anchor href={`/products/${item.id}`}>
+    <Anchor href={getItemUrl(item)}>
       <div className="flex flex-col w-full max-w-sm mx-auto group cursor-pointer border-slate-800 border-[1px] p-4 h-full shadow-md">
         <motion.div className="w-full pt-[100%] relative transition-all duration-500">
           <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
