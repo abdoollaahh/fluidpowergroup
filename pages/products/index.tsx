@@ -61,9 +61,10 @@ const ProductsPage = () => {
             });
             console.log('getProducts response:', productsResponse.data);
             
+            // FIXED: Check if getProducts returned series data
             if (productsResponse.data.series && productsResponse.data.series.length > 0) {
-              console.log('✅ Found subcategory navigation:', productsResponse.data.series.length);
-              setSeries(productsResponse.data.series);
+              console.log('✅ Found subcategory navigation from getProducts:', productsResponse.data.series.length);
+              setSeries(productsResponse.data.series); // Set the series from getProducts response
               setProducts([]);
               return; // Found navigation, we're done
             }
