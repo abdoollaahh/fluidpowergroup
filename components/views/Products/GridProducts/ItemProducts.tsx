@@ -13,18 +13,44 @@ const ItemProducts = ({ item, showDescription = false }: { item: any, showDescri
 
   // Determine the correct URL based on item type
   const getItemUrl = (item: any) => {
+    console.log('=== ItemProducts URL Debug ===');
+    console.log('Item data:', item);
+    console.log('Has price:', item.price !== undefined);
+    console.log('Has stock:', item.stock !== undefined);
+    console.log('Has quantity:', item.quantity !== undefined);
+    console.log('Has name:', !!item.name);
+    console.log('Has title:', !!item.title);
+    console.log('Has slug:', !!item.slug);
+    
+    let url = '';
+    let reason = '';
+    
     // If item has quantity/price/stock, it's a final product - use ID
     if (item.quantity !== undefined || item.price !== undefined || item.stock !== undefined) {
-      return `/products/${item.id}`;
+      url = `/products/${item.id}`;
+      reason = 'Has price/stock/quantity - using ID URL';
+    }
+    // If item has name (not title) and no slug, it's likely a product - use ID
+    else if (item.name && !item.title && !item.slug) {
+      url = `/products/${item.id}`;
+      reason = 'Has name, no title/slug - using ID URL';
+    }
+    // If item has title (not name) and slug, it's a category/series - use query parameter
+    else if (item.title && item.slug) {
+      url = `/products?subcategory=${item.slug}`;
+      reason = 'Has title and slug - using query URL';
+    }
+    // Fallback to ID-based URL (safer default)
+    else {
+      url = `/products/${item.id}`;
+      reason = 'Fallback - using ID URL';
     }
     
-    // If item has slug and appears to be a category/series, use query parameter
-    if (item.slug) {
-      return `/products?subcategory=${item.slug}`;
-    }
+    console.log('Decision:', reason);
+    console.log('Generated URL:', url);
+    console.log('=== End Debug ===');
     
-    // Fallback to ID-based URL
-    return `/products/${item.id}`;
+    return url;
   };
 
   if (!item) {
