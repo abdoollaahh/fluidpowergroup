@@ -77,15 +77,14 @@ const ProductPage = () => {
   if (subcategories.length > 0) {
     return (
       <div className="pt-10 pb-12 lg:pt-14 lg:pb-20 flex flex-col gap-10 sm:gap-16">
-        <div className="max-w-2xl lg:max-w-full w-full mx-auto mb-4">
-          <div className="grid grid-cols-12 h-full space-y-6 lg:space-y-0 space-x-0 lg:space-x-6 mx-auto wrapper px-8 md:px-12 overflow-hidden">
-            <ImageProduct images={series.images} />
-            <DescriptionProduct items={null} series={series} />
-          </div>
-        </div>
-        
-        {/* Display subcategories in grid format */}
+        {/* Just show the category title and grid - no large product image */}
         <div className="wrapper px-8 md:px-12">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold">{series?.name}</h1>
+            {series?.description && (
+              <p className="text-gray-600 mt-2">{series.description}</p>
+            )}
+          </div>
           <GridProducts 
             seriesList={subcategories} 
             showDescription={true} 
