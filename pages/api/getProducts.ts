@@ -3,12 +3,44 @@ import swell from "utils/swell/swellinit";
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    const categoryId = req.body?.data?.id;
+    const categoryIdOrSlug = req.body?.data?.id;
     
-    if (!categoryId) {
-      return res.status(400).json({ message: "Category ID is required" });
+    if (!categoryIdOrSlug) {
+      return res.status(400).json({ message: "Category ID or slug is required" });
     }
 
+    let categoryId = categoryIdOrSlug;
+
+    // Check if the parameter looks like a slug (contains hyphens) rather than an ID
+    if (typeof categoryIdOrSlug === 'string' && categoryIdOrSlug.includes('-')) {
+      // It's a slug, so we need to find the category by slug first
+      console.log(`=== getProducts API Debug ===`);
+      console.log(`Looking for category with slug: "${categoryIdOrSlug}"`);
+      
+      const allCategories = await swell.get('/categories', { limit: 1000 });
+      console.log(`Total categories found: ${allCategories.results.length}`);
+      
+      // Debug: Show first few category slugs
+      console.log('First 5 category slugs:', allCategories.results.slice(0, 5).map((cat: any) => cat.slug));
+      
+      const targetCategory = allCategories.results.find((cat: any) => cat.slug === categoryIdOrSlug);
+      console.log(`Target category found:`, targetCategory ? 'YES' : 'NO');
+      
+      if (!targetCategory) {
+        // Debug: Show all matching slugs
+        const matchingSlugs = allCategories.results.filter((cat: any) => 
+          cat.slug && cat.slug.includes(categoryIdOrSlug.split('-')[0])
+        ).map((cat: any) => cat.slug);
+        console.log('Similar slugs found:', matchingSlugs.slice(0, 10));
+        return res.status(404).json({ message: "Category not found by slug", searchedSlug: categoryIdOrSlug, similarSlugs: matchingSlugs.slice(0, 5) });
+      }
+      
+      categoryId = targetCategory.id;
+      console.log(`✅ Found category by slug "${categoryIdOrSlug}": ${categoryId}`);
+      console.log(`=== End API Debug ===`);
+    }
+
+    // Now proceed with the original logic using the categoryId
     // First, check for actual products in this category
     const products = await swell.get('/products', { limit: 1000 });
     const selectedProducts = products.results.filter((product: any) => {
@@ -63,6 +95,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(200).json({ products: [] });
 
   } catch (err: any) {
+    console.error('getProducts API error:', err);
     res.status(400).json({ message: err.message });
   }
 }
