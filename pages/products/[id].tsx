@@ -23,6 +23,8 @@ const ProductPage = () => {
   const id = router.query.id;
   const [items, setItems] = useState<IItemCart[]>([]);
   const [series, setSeries] = useState<ISeries>();
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
   useEffect(() => {
     const products = async () => {
       try {
@@ -30,7 +32,11 @@ const ProductPage = () => {
           `/api/getProducts`,
           { data: { id } }
         );
-        console.log('API Response:', prod.data);  // Add this logging
+        console.log('=== ProductPage API Response ===');
+        console.log('Full response:', prod.data);
+        console.log('Products found:', prod.data.products?.length || 0);
+        console.log('Series found:', prod.data.series?.length || 0);
+        console.log('=== End ProductPage Debug ===');
         return prod;
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -39,21 +45,62 @@ const ProductPage = () => {
     };
 
     const seriesDetails = async () => {
-      const details = await axios.post(
-        `/api/getSeriesDetails`,
-        { data: { id } }
-      );
-      return details;
+      try {
+        const details = await axios.post(
+          `/api/getSeriesDetails`,
+          { data: { id } }
+        );
+        console.log('SeriesDetails response:', details.data);
+        return details;
+      } catch (error) {
+        console.error('Error fetching series details:', error);
+        return undefined;
+      }
     };
 
     products().then((result: any) => {
-      setItems(result.data.products);
+      if (result?.data) {
+        // Check if we got series data instead of products (Level 4 category)
+        if (result.data.series && result.data.series.length > 0 && (!result.data.products || result.data.products.length === 0)) {
+          console.log('🔄 Detected category with subcategories - need to get category slug for redirect');
+          console.log('Series data:', result.data.series);
+          
+          // Get the current category's details to find its slug
+          seriesDetails().then((seriesResult: any) => {
+            if (seriesResult?.data?.series) {
+              console.log('Current category details:', seriesResult.data.series);
+              
+              // Check if the series details contain a slug or name we can use
+              // We need to construct the redirect URL using the current category's slug
+              // For "Elbow - 90°" it should be "jic-joint-industry-council-elbow-90"
+              
+              setIsRedirecting(true);
+              
+              // TEMPORARY: Let's see what data we get first
+              console.log('Would redirect with this data - checking structure first');
+              // For now, redirect to main products to avoid infinite loops
+              router.push(`/products`);
+            }
+          });
+          
+          return;
+        }
+        
+        // Normal product display (Level 3 and final products)
+        console.log('✅ Displaying products in table format');
+        setItems(result.data.products || []);
+      }
     });
 
     seriesDetails().then((result: any) => {
       setSeries(result.data.series);
     });
-  }, [id]);
+  }, [id, router]);
+
+  // Show loading during redirect
+  if (isRedirecting) {
+    return <Loading />;
+  }
 
   if (series == null) {
     return <Loading />;
