@@ -28,7 +28,7 @@ const ItemProducts = ({ item, showDescription = false }: { item: any, showDescri
 
   return (
     <Anchor href={`/products/${item.id}`}>
-      <div className="flex flex-col w-full max-w-sm mx-auto group cursor-pointer border-slate-800 border-[1px] p-4 h-full shadow-md">
+      <div className="flex flex-col w-full max-w-sm mx-auto group cursor-pointer border-slate-800 border-[1px] p-4 h-full shadow-xl rounded-2xl transition-all duration-300 ease-out hover:transform hover:-translate-y-2 hover:rotate-x-3 hover:shadow-2xl hover:shadow-gray-800/50">
         <motion.div className="w-full pt-[100%] relative transition-all duration-500">
           <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
             <SafeImage
@@ -36,7 +36,7 @@ const ItemProducts = ({ item, showDescription = false }: { item: any, showDescri
               alt={item.slug || item.name || "Product image"}
               width={300}
               height={300}
-              className="scale-75 group-hover:scale-[0.8] transition-all object-contain"
+              className="scale-75 group-hover:scale-[0.82] transition-all duration-300 object-contain"
             />
           </div>
         </motion.div>
