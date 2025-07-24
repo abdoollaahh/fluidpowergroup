@@ -9,15 +9,14 @@
     @apply bg-black text-white py-2.5 lg:py-4 px-3 text-lg  lg:text-xl rounded-full hover:bg-black/80 border-2 border-transparent   transition-all duration-300;
   }
 
-  *::-webkit-scrollbar {
+  /* Selective scrollbar hiding class */
+  .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
 
-  /* Hide scrollbar for IE, Edge and Firefox */
-  * {
+  .hide-scrollbar {
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
-    /* background: rgb(0, 0, 0, 0.01); */
   }
 
   td,
