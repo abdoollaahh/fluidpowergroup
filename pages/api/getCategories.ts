@@ -1,8 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import swell from "utils/swell/swellinit";
 
-// Add the transformTitle function here (copy from above)
-
 const transformTitle = (fullTitle: string) => {
   // Handle specific cases from your product catalog
   
@@ -57,7 +55,7 @@ const transformTitle = (fullTitle: string) => {
     return { shortTitle: 'Hydraulic 3rd Functions', subtitle: '' };
   }
   
-  // Fitting categories (existing ones)
+  // Fitting categories
   if (fullTitle.includes('JIC') && fullTitle.includes('Joint Industrial Council')) {
     return { shortTitle: 'JIC', subtitle: '(Joint Industrial Council)' };
   }
@@ -74,122 +72,99 @@ const transformTitle = (fullTitle: string) => {
     return { shortTitle: 'Ferrules', subtitle: '' };
   }
   
-  // Generic pattern matching for parentheses (for future titles)
+  // Generic pattern matching for parentheses
   const parenthesesMatch = fullTitle.match(/^([^(]+)\s*\((.+)\)$/);
   if (parenthesesMatch) {
     const beforeParens = parenthesesMatch[1].trim();
     const insideParens = parenthesesMatch[2].trim();
     
-    // If it's an acronym followed by full description
     if (beforeParens.length <= 10 && beforeParens.match(/^[A-Z0-9\s-&]+$/)) {
       return { shortTitle: beforeParens, subtitle: `(${insideParens})` };
     }
   }
   
-  // Default: no transformation needed
   return { shortTitle: fullTitle, subtitle: '' };
 };
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
-    // Get parent categories
-    const categories = await swell.get('/categories', { where: { parent_id: null } });
+    console.log('Starting optimized getCategories...');
+    const startTime = Date.now();
+
+    // Single API call to get ALL categories (this is what worked in diagnostics!)
+    const allCategoriesResponse = await swell.get('/categories', { 
+      limit: 1000
+    });
+
+    console.log(`Fetched ${allCategoriesResponse.results.length} categories in ${Date.now() - startTime}ms`);
+
+    const allCategories = allCategoriesResponse.results;
     
-    // Sort categories by creation date
-    const sortedCategoriesAsc = categories.results.sort((a: any, b: any) => 
-      Number(new Date(a.date_created)) - Number(new Date(b.date_created))
+    // Build hierarchy in memory (super fast)
+    const categoryMap = new Map();
+    const rootCategories: any[] = [];
+    
+    // Create all category objects
+    allCategories.forEach((cat: any) => {
+      const { shortTitle, subtitle } = transformTitle(cat.name);
+      
+      const categoryObj = {
+        title: cat.name,
+        shortTitle,
+        subtitle,
+        id: cat.id,
+        slug: cat.slug,
+        description: cat.description,
+        parent_id: cat.parent_id,
+        date_created: cat.date_created,
+        image: cat.images && cat.images[0] ? cat.images[0].file.url : null,
+        subCategories: []
+      };
+      
+      categoryMap.set(cat.id, categoryObj);
+      
+      if (!cat.parent_id) {
+        rootCategories.push(categoryObj);
+      }
+    });
+    
+    // Build the hierarchy
+    allCategories.forEach((cat: any) => {
+      if (cat.parent_id && categoryMap.has(cat.parent_id)) {
+        const parent = categoryMap.get(cat.parent_id);
+        const child = categoryMap.get(cat.id);
+        if (parent && child) {
+          parent.subCategories.push(child);
+        }
+      }
+    });
+    
+    // Sort by creation date
+    rootCategories.sort((a, b) => 
+      new Date(a.date_created).getTime() - new Date(b.date_created).getTime()
     );
     
-    // Map categories and fetch subcategories using Promise.all
-    const sortedCategories = await Promise.all(
-      sortedCategoriesAsc.map(async (category: any) => {
-        const { shortTitle: catShortTitle, subtitle: catSubtitle } = transformTitle(category.name); // NEW
-        
-        // Fetch level 2 subcategories
-        const subCategoriesResponse = await swell.get('/categories', { 
-          where: { parent_id: category.id } 
-        });
-        
-        // Map level 2 subcategories and check for level 3
-        const subCategories = await Promise.all(
-          subCategoriesResponse.results.map(async (sub: any) => {
-            const { shortTitle: subShortTitle, subtitle: subSubtitle } = transformTitle(sub.name); // NEW
-            
-            // Fetch level 3 subcategories for this level 2 category
-            const level3Response = await swell.get('/categories', { 
-              where: { parent_id: sub.id } 
-            });
-            
-            // Map level 3 subcategories and check for level 4
-            const level3Categories = await Promise.all(
-              level3Response.results.map(async (level3: any) => {
-                const { shortTitle: l3ShortTitle, subtitle: l3Subtitle } = transformTitle(level3.name); // NEW
-                
-                // Fetch level 4 subcategories
-                const level4Response = await swell.get('/categories', { 
-                  where: { parent_id: level3.id } 
-                });
-                
-                const level4Categories = level4Response.results.map((level4: any) => {
-                  const { shortTitle: l4ShortTitle, subtitle: l4Subtitle } = transformTitle(level4.name); // NEW
-                  
-                  return {
-                    title: level4.name,
-                    shortTitle: l4ShortTitle,    // NEW
-                    subtitle: l4Subtitle,        // NEW
-                    slug: level4.slug,
-                    id: level4.id,
-                    category: category.slug,
-                    image: level4.images !== null && level4.images[0] !== undefined ? level4.images[0].file.url : null,
-                    description: level4.description
-                  };
-                });
-                
-                return {
-                  title: level3.name,
-                  shortTitle: l3ShortTitle,      // NEW
-                  subtitle: l3Subtitle,          // NEW
-                  slug: level3.slug,
-                  id: level3.id,
-                  category: category.slug,
-                  image: level3.images !== null && level3.images[0] !== undefined ? level3.images[0].file.url : null,
-                  description: level3.description,
-                  subCategories: level4Categories
-                };
-              })
-            );
-            
-            return {
-              title: sub.name,
-              shortTitle: subShortTitle,         // NEW
-              subtitle: subSubtitle,             // NEW
-              slug: sub.slug,
-              id: sub.id,
-              category: category.slug,
-              image: sub.images !== null && sub.images[0] !== undefined ? sub.images[0].file.url : null,
-              description: sub.description,
-              subCategories: level3Categories
-            };
-          })
-        );
-        
-        // Return the category with its subcategories
-        return {
-          title: category.name,
-          shortTitle: catShortTitle,             // NEW
-          subtitle: catSubtitle,                 // NEW
-          id: category.id,
-          slug: category.slug,
-          subCategories: subCategories,
-          description: category.description
-        };
-      })
-    );
+    // Clean up response (remove internal fields)
+    const cleanCategories = rootCategories.map(category => {
+      const clean = (cat: any): any => {
+        const { parent_id, date_created, ...cleanCat } = cat;
+        if (cleanCat.subCategories && cleanCat.subCategories.length > 0) {
+          cleanCat.subCategories = cleanCat.subCategories.map(clean);
+        }
+        return cleanCat;
+      };
+      return clean(category);
+    });
+
+    console.log(`Total processing time: ${Date.now() - startTime}ms`);
+    res.status(200).json({ categories: cleanCategories });
     
-    res.status(200).json({ categories: sortedCategories });
   } catch (err: any) {
-    console.error('Error fetching categories:', err);
-    return res.status(400).json({ message: err.message });
+    console.error('Error in getCategories:', err);
+    res.status(500).json({ 
+      message: err.message || 'Failed to fetch categories',
+      error: 'API_ERROR'
+    });
   }
 };
 
