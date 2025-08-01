@@ -14,168 +14,82 @@ type searchParams = {
   extraParams?: string | null;
 };
 
-const SEARCHPARAMETERS = [
-  {
-    product: "Hose Fittings",
-    categories: ["BSP", "JIC", "METRIC", "ORFS", "FERRULES"],
-    subCategories: [
-      " Male Straight",
-      "Female Straight",
-      "45\u00B0",
-      "90\u00B0",
-      "Banjo",
-    ],
-  },
-  {
-    product: "Hydraulic Adaptors",
-    categories: ["BSP", "JIC", "METRIC", "ORFS", "STAINLESS ADAPTORS"],
-    subCategories: ["Straight", "45\u00B0", "90\u00B0", "TEE"],
-  },
-  {
-    product: "Hydraulic Hoses",
-    categories: ["Suction", "Hydraulic"],
-    subCategories: [],
-  },
-  {
-    product: "Steel Tubes",
-    categories: ["Carbon Steel", "Stainless Steel"],
-    subCategories: ["Metric", "Imperial"],
-  },
-  {
-    product: "Miscellaneous",
-    categories: ["Tube Clamps", "Quick Release Couplers", "Ball Valves", "Hose Protections", "Hydraulic Valves"],
-    subCategories: [],
-  }
-];
-
 const Search = () => {
   const router = useRouter();
-  const [titles, setTitles] = useState<String>("");
-  const [categories, setCategories] = useState<searchParams>({title: null, categories: null, subCategories: null, extraParams: null});
+  const [selectedCategory, setSelectedCategory] = useState<searchParams>({
+    title: null, 
+    categories: null, 
+    subCategories: null, 
+    extraParams: null
+  });
   const [data, setData] = useState<any>([]);
   const [filteredData, setFilteredData] = useState<any>([]);
   const [loading, setLoading] = useState(true);
-  const [retry, setRetry] = useState(false);
-  const [open, setOpen] = useState<String>("");
+  const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState<string>("");
 
   useEffect(() => {
-    const categories = async () => {
-      const cat = await axios.get(
-        `/api/getAllProducts`
-      );
-      if (cat.data.categories.length !== 0) {
-        if (cat.data.categories[0].subCategories.length !== 0) {
-          if (cat.data.categories[0].subCategories[0].series.length !== 0) {
-            return cat;
-          } else {
-            await categories();
-          }
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log('Fetching categories for search...');
+        const response = await axios.get('/api/getAllProducts');
+        console.log('Categories response:', response.data);
+        
+        if (response.data && response.data.categories) {
+          setData(response.data.categories);
+          console.log('Categories loaded successfully:', response.data.categories.length);
         } else {
-          await categories();
+          console.warn('No categories found in response');
+          setData([]);
         }
-      } else {
-        await categories();
+        
+      } catch (err: any) {
+        console.error('Error fetching categories:', err);
+        setError(err.message || 'Failed to load search data');
+      } finally {
+        setLoading(false);
       }
     };
 
-    categories().then((result: any) => {
-      if (result === undefined) {
-        setRetry(true);
-        return;
-      }
-      setData(result.data.categories);
-      setLoading(false);
-    });
-  }, [retry, data]);
+    fetchCategories();
+  }, []);
 
-  // useEffect(() => {
-  //       const series = async () => {
-  //     const series = await axios.post(
-  //       `${process.env.NEXT_PUBLIC_BASEURL}/getAllSeries`,
-  //       { data: { slug } }
-  //     );
-  //     return series;
-  //   };
-
-  //   series().then((result: any) => {
-  //     setSeries(result.data.series);
-  //   });
-  // }, [slug]);
-
-  // const checkCategory = (product: string, category: string) => {
-  //   const found = categories.find((cat) => cat.title === product);
-  //   if (found) {
-  //     return found.categories.includes(category);
-  //   }
-  //   return false;
-  // };
-
-  // const checkSubCategory = (product: string, subCategory: string) => {
-  //   const found = categories.find((cat) => cat.title === product);
-  //   if (found) {
-  //     return found.subCategories.includes(subCategory);
-  //   }
-  //   return false;
-  // };
-
-  // const addCategory = (product: string, category: string) => {
-  //   const found = categories.find((cat) => cat.title === product);
-  //   if (found) {
-  //     if (found.categories.includes(category)) {
-  //       found.categories = found.categories.filter((cat) => cat !== category);
-  //     } else {
-  //       found.categories.push(category);
-  //     }
-  //   } else {
-  //     categories.push({
-  //       title: product,
-  //       categories: [category],
-  //       subCategories: [],
-  //     });
-  //   }
-  //   setCategories([...categories]);
-  // };
-
-  // const addSubCategory = (product: string, subCategory: string) => {
-  //   const found = categories.find((cat) => cat.title === product);
-  //   if (found) {
-  //     if (found.subCategories.includes(subCategory)) {
-  //       found.subCategories = found.subCategories.filter(
-  //         (cat) => cat !== subCategory
-  //       );
-  //     } else {
-  //       found.subCategories.push(subCategory);
-  //     }
-  //   } else {
-  //     categories.push({
-  //       title: product,
-  //       categories: [],
-  //       subCategories: [subCategory],
-  //     });
-  //   }
-  //   setCategories([...categories]);
-  // };
+  // Extract values to avoid dependency warning
+  const categoryTitle = selectedCategory.title;
+  const categoryName = selectedCategory.categories;
 
   useEffect(() => {
     let newFilteredData: any[] = [];
 
-    if (categories.title !== null && categories.categories !== null) {
+    // Only filter if we have both title and categories selected
+    if (categoryTitle && categoryName && data.length > 0) {
+      console.log('Filtering data for:', { title: categoryTitle, category: categoryName });
+      
       data.forEach((product: any) => {
-        if (product.title === categories.title) {
-          console.log(product.subCategories)
+        if (product.title === categoryTitle) {
+          console.log('Found matching product:', product.title);
+          console.log('Product subCategories:', product.subCategories);
+          
           product.subCategories.forEach((cat: any) => {
-            if (cat.title.toLowerCase() === categories.categories?.toLowerCase()) {
-              newFilteredData = [...newFilteredData, ...cat.series];
-              if (categories.subCategories)
-                newFilteredData = newFilteredData.filter(series => series.description?.toLowerCase().includes(categories.subCategories?.replace("\u00B0", '').toLowerCase()))
+            if (cat.title.toLowerCase().includes(categoryName.toLowerCase())) {
+              console.log('Found matching category:', cat.title);
+              if (cat.series && cat.series.length > 0) {
+                // Show all series in the category - no subcategory filtering
+                newFilteredData = [...newFilteredData, ...cat.series];
+              }
             }
-          })
+          });
         }
       });
+      
+      console.log('Filtered results:', newFilteredData.length);
     }
     
-    setFilteredData(newFilteredData)
-  }, [categories, data]);
+    setFilteredData(newFilteredData);
+  }, [categoryTitle, categoryName, data]);
 
   const variants = {
     initial: { opacity: 0, x: -100 },
@@ -191,6 +105,23 @@ const Search = () => {
     return <Loading />;
   }
 
+  if (error) {
+    return (
+      <div className="px-8 md:px-12 py-12 min-h-screen flex flex-col items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Search Error</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="px-8 md:px-12 py-12 min-h-screen">
       <div className="text-[4rem] md:text-[6rem] lg:text-[8rem] xl:text-[10rem] font-bold text-slate-200/50 md:mx-10 ">
@@ -200,7 +131,8 @@ const Search = () => {
         <div className="w-full p-5 px-8 rounded-md shadow-lg hover:shadow-xl transition duration-200">
           <div>
             <div>
-              {SEARCHPARAMETERS.map((product, index) => (
+              {/* Dynamic categories from database */}
+              {data.map((product: any, index: number) => (
                 <div
                   key={index}
                   className="flex flex-col md:flex-row justify-start items-start my-2"
@@ -208,27 +140,27 @@ const Search = () => {
                   <div
                     className="w-[30%] max-w-[200px]"
                     onClick={() => {
-                      setTitles(product.product);
-                      setCategories({
-                        title: product.product,
+                      console.log('Selected product:', product.title);
+                      setSelectedCategory({
+                        title: product.title,
                         categories: null,
                         subCategories: null,
                         extraParams: null,
                       });
-                      setOpen(product.product);
+                      setOpen(product.title);
                     }}
                   >
                     <span
                       className={`text-lg font-bold ${
-                        open === product.product
+                        open === product.title
                           ? "text-primary"
                           : "text-slate-700"
                       } cursor-pointer`}
                     >
-                      {product.product}
+                      {product.title}
                     </span>
                   </div>
-                  {open === product.product && (
+                  {open === product.title && (
                     <AnimatePresence>
                       <div>
                         <motion.div
@@ -243,59 +175,73 @@ const Search = () => {
                               Categories
                             </span>
                             <motion.div className="flex mt-2 flex-wrap">
-                              {product.categories.map((category, index) => (
+                              {product.subCategories.map((category: any, catIndex: number) => (
                                 <div
                                   className={`border-2 rounded-xl mr-4 px-4 py-1 flex justify-center items-center my-2 hover:cursor-pointer
                                   ${
-                                    categories.categories === category
+                                    selectedCategory.categories === category.title
                                       ? "border-slate-700 text-slate-700 bg-primary"
                                       : "border-slate-700"
                                   }
                                   `}
-                                  key={index}
+                                  key={catIndex}
                                   onClick={() => {
-                                    setCategories({
-                                      ...categories,
-                                      categories: category,
-                                    })
+                                    console.log('Selected category:', category.title);
+                                    setSelectedCategory({
+                                      ...selectedCategory,
+                                      categories: category.title,
+                                    });
                                   }}
                                 >
-                                  {category}
+                                  {category.title}
                                 </div>
                               ))}
                             </motion.div>
                           </div>
-                          <div className="mt-2">
-                            <span className="text-md font-bold text-black">
-                              {product.subCategories.length > 0 &&
-                                "Sub-Categories"}
-                            </span>
-                            <div className="flex mt-2 flex-wrap mb-5">
-                              {product.subCategories.map(
-                                (subCategory, index) => (
-                                  <div
-                                    className={`
-                                  border-2 rounded-xl mr-4 mt-2 px-4 py-1 flex justify-center items-center hover:cursor-pointer
-                                  ${
-                                      categories.subCategories === subCategory
-                                      ? "border-slate-700 text-slate-700 bg-primary"
-                                      : "border-slate-700"
-                                  }
-                                  `}
-                                    key={index}
-                                    onClick={() => {
-                                      setCategories({
-                                        ...categories,
-                                        subCategories: subCategory,
-                                      })
-                                    }}
-                                  >
-                                    {subCategory}
-                                  </div>
-                                )
-                              )}
+                          
+                          {/* Show series as sub-categories if a category is selected */}
+                          {selectedCategory.categories && (
+                            <div className="mt-2">
+                              <span className="text-md font-bold text-black">
+                                Sub-Categories
+                              </span>
+                              <div className="flex mt-2 flex-wrap mb-5">
+                                {product.subCategories
+                                  .find((cat: any) => cat.title === selectedCategory.categories)
+                                  ?.series?.map((series: any, seriesIndex: number) => (
+                                    <div
+                                      className={`
+                                    border-2 rounded-xl mr-4 mt-2 px-4 py-1 flex justify-center items-center hover:cursor-pointer hover:bg-blue-50 transition-colors
+                                    border-slate-700
+                                    `}
+                                      key={seriesIndex}
+                                      onClick={() => {
+                                        console.log('Navigating to series:', series.title, 'with slug:', series.slug);
+                                        
+                                        // Check if this series has sub-items (making it a category) or if it's a final product
+                                        // Try multiple navigation strategies based on the data structure
+                                        
+                                        if (series.slug) {
+                                          // First try as subcategory
+                                          router.push(`/products?subcategory=${series.slug}`);
+                                        } else if (series.id) {
+                                          // Try as category ID
+                                          router.push(`/products?id=${series.id}`);
+                                        } else if (series.subCategory && series.category) {
+                                          // Try with category and subcategory structure
+                                          router.push(`/products?category=${series.category}&subcategory=${series.subCategory}`);
+                                        } else {
+                                          // Fallback: try direct product navigation
+                                          router.push(`/products/${series.id || series.slug || series.title}`);
+                                        }
+                                      }}
+                                    >
+                                      {series.title}
+                                    </div>
+                                  ))}
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </motion.div>
                       </div>
                     </AnimatePresence>
@@ -305,7 +251,14 @@ const Search = () => {
             </div>
           </div>
         </div>
+        
+        {/* Show data availability info */}
+        <div className="text-sm text-gray-500">
+          Loaded {data.length} product categories
+          {filteredData.length > 0 && ` • Found ${filteredData.length} results`}
+        </div>
       </div>
+      
       <motion.div className="p-10">
         <GridProducts
           seriesList={filteredData}
@@ -316,4 +269,4 @@ const Search = () => {
   );
 };
 
-export default Search;
+export default withLayout(Search);

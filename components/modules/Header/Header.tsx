@@ -1,7 +1,7 @@
 import NavHeader from "./NavHeader";
 import { FiUser, FiShoppingCart, FiSearch } from "react-icons/fi";
 import Snackbar from "./Snackbar/Snackbar";
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import HoverWrapper from "context/HoverWrapper";
 import { AnimatePresence } from "framer-motion";
@@ -16,8 +16,25 @@ import Link from "next/link";
 const Header = ({ categories }: { categories: Category[] }) => {
   const [hover, setHover] = useState<string | null>(null);
   const { open: cartOpen, toggleCart, items } = useContext(CartContext);
-
   const router = useRouter();
+
+  // Reset hover state on route change
+  useEffect(() => {
+    const handleRouteChange = () => {
+      setHover(null); // Reset hover state when route changes
+    };
+
+    // Listen for route changes
+    router.events.on('routeChangeStart', handleRouteChange);
+    router.events.on('routeChangeComplete', handleRouteChange);
+
+    // Cleanup
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChange);
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [router.events]);
+
   return (
     <>
     <HoverWrapper hook={{ hover, setHover }}>
@@ -76,13 +93,6 @@ const Header = ({ categories }: { categories: Category[] }) => {
                 >
                   Search
                 </button>
-                {/*<FiSearch
-                  onClick={() => {
-                    router.push("/products/search");
-                  }}
-                  className=" relative text-4xl text-primary mr-5  hover:text-slate-700 hover:cursor-pointer rounded-full h-full w-full p-2"
-                />
-                */}
                 <FiShoppingCart
                   onClick={toggleCart}
                   className="text-xl hover:text-primary hover:cursor-pointer font-bold  h-full w-full p-2"
@@ -90,15 +100,11 @@ const Header = ({ categories }: { categories: Category[] }) => {
               </div>
 
               <Cart open={cartOpen} handleClose={toggleCart} />
-
-              {/*<div className="icon-btn">
-                <FiUser />
-                </div>*/}
             </div>
           </div>
         </div>
 
-        <AnimatePresence exitBeforeEnter>
+        <AnimatePresence>
           {hover === "Products" && (
             <ProductMenuHeader categories={categories} />
           )}

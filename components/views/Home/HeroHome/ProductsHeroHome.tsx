@@ -8,17 +8,12 @@ import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 type Props = {};
 
 const ProductsHeroHome = (props: Props) => {
-  /*const images = useMemo(
-    () => ["/frontA.png", "/frontB.png", "/frontC.png", "/frontD.png"],
-    []
-  );
-*/
-const images = useMemo(() => [
-  `${process.env.NEXT_PUBLIC_BASE_URL || ''}/frontA.png`,
-  `${process.env.NEXT_PUBLIC_BASE_URL || ''}/frontB.png`,
-  `${process.env.NEXT_PUBLIC_BASE_URL || ''}/frontC.png`,
-  `${process.env.NEXT_PUBLIC_BASE_URL || ''}/frontD.png`
-], []); // Empty dependency array since these values never change
+  const images = useMemo(() => [
+    `${process.env.NEXT_PUBLIC_BASE_URL || ''}/frontA.png`,
+    `${process.env.NEXT_PUBLIC_BASE_URL || ''}/frontB.png`,
+    `${process.env.NEXT_PUBLIC_BASE_URL || ''}/frontC.png`,
+    `${process.env.NEXT_PUBLIC_BASE_URL || ''}/frontD.png`
+  ], []); // Empty dependency array since these values never change
 
   const [selectedImage, setSelectedImage] = useState(images[0]);
 
@@ -26,18 +21,18 @@ const images = useMemo(() => [
 
   const variants = {
     enter: {
-      x: 80,
       opacity: 0,
+      scale: 1.05,
     },
     center: {
       zIndex: 1,
-      x: 0,
       opacity: 1,
+      scale: 1,
     },
     exit: {
       zIndex: 0,
-      x: -80,
       opacity: 0,
+      scale: 0.95,
     },
   };
 
@@ -59,40 +54,41 @@ const images = useMemo(() => [
   }, [images]);
 
   return (
-    <div className="md:max-w-full  md:w-1/2  w-full      h-full flex items-center justify-center mx-auto relative">
-      <AnimatePresence exitBeforeEnter>
+    <div className="md:max-w-full md:w-1/2 w-full h-full flex items-center justify-center mx-auto relative">
+      <AnimatePresence exitBeforeEnter initial={false}>
         <motion.div
           variants={variants}
-          className="sm:w-[75%] w-full max-w-sm sm:max-w-full   aspect-square gap-8   overflow-hidden  border rounded-2xl border-slate-200"
+          className="sm:w-[85%] w-full max-w-md sm:max-w-full aspect-square gap-8 overflow-hidden border rounded-2xl border-slate-200"
           key={selectedImage}
           custom={direction}
           transition={{
-            duration: 0.4,
+            duration: 0.8,
+            ease: "easeInOut"
           }}
           initial="enter"
           animate="center"
           exit="exit"
         >
-          <div className="relative p-4 w-full h-full -z-20">
-          <Image
+          <div className="relative p-4 w-full h-full -z-20 overflow-hidden">
+            <Image
               src={selectedImage}
-              layout="fill"
-              objectFit="cover"
+              width={600}
+              height={600}
+              className="object-cover w-full h-full"
               priority
               quality={100}
-              loader={({ src }) => src}
+              unoptimized
               alt="hero"
             />
           </div>
         </motion.div>
       </AnimatePresence>
 
-      <div className="absolute h-full  bottom-0 left-0 w-full  items-end justify-center pb-12 gap-4 hidden sm:flex">
+      <div className="absolute h-full bottom-0 left-0 w-full items-end justify-center pb-12 gap-4 hidden sm:flex">
         {images.map((item, i) => (
           <div
             onClick={() => {
               setDirection(i >= images.indexOf(selectedImage));
-
               setSelectedImage(item);
             }}
             className={clsx(
