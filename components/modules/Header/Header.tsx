@@ -1,7 +1,7 @@
 import NavHeader from "./NavHeader";
 import { FiUser, FiShoppingCart, FiSearch } from "react-icons/fi";
 import Snackbar from "./Snackbar/Snackbar";
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import HoverWrapper from "context/HoverWrapper";
 import { AnimatePresence } from "framer-motion";
@@ -16,8 +16,8 @@ import Link from "next/link";
 const Header = ({ categories }: { categories: Category[] }) => {
   const [hover, setHover] = useState<string | null>(null);
   const { open: cartOpen, toggleCart, items } = useContext(CartContext);
-
   const router = useRouter();
+<<<<<<< HEAD
   
   // Updated to check for both buy and hosebuilder paths
   const needsSolidHeader = router.pathname.includes('/hosebuilder') || router.pathname.includes('/hosebuilder');
@@ -40,6 +40,26 @@ const Header = ({ categories }: { categories: Category[] }) => {
   // Define spacer height explicitly too
   const spacerHeight = needsSolidHeader ? "90px" : "120px";
   
+=======
+
+  // Reset hover state on route change
+  useEffect(() => {
+    const handleRouteChange = () => {
+      setHover(null); // Reset hover state when route changes
+    };
+
+    // Listen for route changes
+    router.events.on('routeChangeStart', handleRouteChange);
+    router.events.on('routeChangeComplete', handleRouteChange);
+
+    // Cleanup
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChange);
+      router.events.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [router.events]);
+
+>>>>>>> feature/add-hose-builder-app
   return (
     <>
     <HoverWrapper hook={{ hover, setHover }}>
@@ -110,7 +130,7 @@ const Header = ({ categories }: { categories: Category[] }) => {
           </div>
         </div>
 
-        <AnimatePresence exitBeforeEnter>
+        <AnimatePresence>
           {hover === "Products" && (
             <ProductMenuHeader categories={categories} />
           )}

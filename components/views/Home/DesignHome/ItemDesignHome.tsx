@@ -10,31 +10,56 @@ import { useState } from "react";
 interface ItemDesignHomeProps {
   title: string;
 }
+
 const ItemDesignHome = ({ title }: ItemDesignHomeProps) => {
   const [hover, setHover] = useState(false);
+  
   return (
-    <div className="col-span-2  aspect-square rounded-md relative overflow-hidden  hover:shadow-2xl hover:shadow-slate-200">
+    <div 
+      className="col-span-2 aspect-square rounded-md relative overflow-hidden hover:shadow-2xl hover:shadow-slate-200 max-w-[400px] w-full mx-auto"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      <Image
+        src={`${process.env.NEXT_PUBLIC_BASE_URL || ''}/hydraulicSystemDesign.jpeg`}
+        alt="Hydraulic System Design"
+        width={400}
+        height={400}
+        className="object-cover w-full h-full"
+        priority
+        quality={100}
+        unoptimized
+      />
+      
       <motion.div
         layout
-        onMouseEnter={() => {
-          setHover(true);
-        }}
-        onMouseLeave={() => {
-          setHover(false);
-        }}
-        className="absolute top-0 left-0 w-full bg-black/30  backdrop-grayscale-[0.3] hover:backdrop-grayscale-0 cursor-pointer transition-all duration-200  h-full z-20 text-white  font-semibold p-8 flex flex-col justify-end gap-4 "
+        className="absolute top-0 left-0 w-full bg-black/30 backdrop-grayscale-[0.3] hover:backdrop-grayscale-0 cursor-pointer transition-all duration-200 h-full z-20 text-white font-semibold p-8 flex flex-col justify-end gap-4"
       >
         <LayoutGroup>
           <motion.h2 layout="position" className="text-2xl xl:text-3xl">
             {title}
           </motion.h2>
-          <AnimatePresence exitBeforeEnter>
+          <AnimatePresence>
             {hover && (
               <motion.div
                 className="text-lg xl:text-xl font-light hidden lg:block"
-                initial={{ y: 100, opacity: 0 }}
-                animate={{ y: 0, opacity: 1, transition: { duration: 0.3 } }}
-                exit={{ y: 50, opacity: 0, transition: { duration: 0.05 } }}
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ 
+                  y: 0, 
+                  opacity: 1, 
+                  transition: { 
+                    duration: 0.2,
+                    ease: "easeOut"
+                  } 
+                }}
+                exit={{ 
+                  y: 10, 
+                  opacity: 0, 
+                  transition: { 
+                    duration: 0.15,
+                    ease: "easeIn"
+                  } 
+                }}
               >
                 We can design, build and install the right hydraulic systems
                 according to your needs.
@@ -42,64 +67,69 @@ const ItemDesignHome = ({ title }: ItemDesignHomeProps) => {
             )}
           </AnimatePresence>
         </LayoutGroup>
-        {/*<button className="btn-tertiary py-1.5">Learn More </button>*/}
       </motion.div>
-      <Image
-        src={`${process.env.NEXT_PUBLIC_BASE_URL || ''}/hydraulicSystemDesign.jpeg`}
-        alt="Hydraulic System Design"
-        layout="fill"
-        objectFit="cover"
-        priority
-        quality={100}
-        loader={({ src }) => src}  // Adding the same loader that worked for logo
-      />
     </div>
   );
 };
+
 const ItemDesignsHome = ({ title }: ItemDesignHomeProps) => {
   const [hover, setHover] = useState(false);
+  
   return (
-    <div className="col-span-2  aspect-square rounded-md relative overflow-hidden  hover:shadow-2xl hover:shadow-slate-200">
+    <div 
+      className="col-span-2 aspect-square rounded-md relative overflow-hidden hover:shadow-2xl hover:shadow-slate-200 max-w-[400px] w-full mx-auto"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      <Image
+        src={`${process.env.NEXT_PUBLIC_BASE_URL || ''}/drafting.jpeg`}
+        alt="Design and Drafting"
+        width={400}
+        height={400}
+        className="object-cover w-full h-full"
+        priority
+        quality={100}
+        unoptimized
+      />
+      
       <motion.div
         layout
-        onMouseEnter={() => {
-          setHover(true);
-        }}
-        onMouseLeave={() => {
-          setHover(false);
-        }}
-        className="absolute top-0 left-0 w-full bg-black/30  backdrop-grayscale-[0.3] hover:backdrop-grayscale-0 cursor-pointer transition-all duration-200  h-full z-20 text-white  font-semibold p-8 flex flex-col justify-end gap-4 "
+        className="absolute top-0 left-0 w-full bg-black/30 backdrop-grayscale-[0.3] hover:backdrop-grayscale-0 cursor-pointer transition-all duration-200 h-full z-20 text-white font-semibold p-8 flex flex-col justify-end gap-4"
       >
         <LayoutGroup>
           <motion.h2 layout="position" className="text-2xl xl:text-3xl">
             {title}
           </motion.h2>
-          <AnimatePresence exitBeforeEnter>
+          <AnimatePresence>
             {hover && (
               <motion.div
                 className="text-lg xl:text-xl font-light hidden lg:block"
-                initial={{ y: 100, opacity: 0 }}
-                animate={{ y: 0, opacity: 1, transition: { duration: 0.3 } }}
-                exit={{ y: 50, opacity: 0, transition: { duration: 0.05 } }}
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ 
+                  y: 0, 
+                  opacity: 1, 
+                  transition: { 
+                    duration: 0.2,
+                    ease: "easeOut"
+                  } 
+                }}
+                exit={{ 
+                  y: 10, 
+                  opacity: 0, 
+                  transition: { 
+                    duration: 0.15,
+                    ease: "easeIn"
+                  } 
+                }}
               >
-                Our engineers can bring your ideas to life.<br></br>We are using
-                the latest 3D softwares for our design and drafting.<br></br>
+                Our engineers can bring your ideas to life.<br />
+                We are using the latest 3D softwares for our design and drafting.<br />
                 Talk to us if you want anything to build.
               </motion.div>
             )}
           </AnimatePresence>
         </LayoutGroup>
-        {/*<button className="btn-tertiary py-1.5">Learn More </button>*/}
       </motion.div>
-      <Image
-        src={`${process.env.NEXT_PUBLIC_BASE_URL || ''}/drafting.jpeg`}
-        alt="Design and Drafting"
-        layout="fill"
-        objectFit="cover"
-        priority
-        quality={100}
-        loader={({ src }) => src}  // Adding the same loader that worked for logo
-      />
     </div>
   );
 };

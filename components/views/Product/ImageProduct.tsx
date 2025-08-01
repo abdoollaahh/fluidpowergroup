@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import SafeImage from "../../../utils/SafeImage";
 
@@ -12,6 +12,13 @@ const ImageProduct = ({ images = [] }: Props) => {
   const safeImages = useMemo(() => images || [], [images]);
   const [selectedImage, setSelectedImage] = useState(safeImages.length > 0 ? safeImages[0] : '');
   const [direction, setDirection] = useState(true);
+
+  // Reset to first image when images array changes
+  useEffect(() => {
+    if (safeImages.length > 0) {
+      setSelectedImage(safeImages[0]);
+    }
+  }, [safeImages]);
 
   const variants = {
     enter: {
@@ -44,12 +51,12 @@ const ImageProduct = ({ images = [] }: Props) => {
 
   return (
     <div className="relative col-span-full lg:col-span-6 xl:col-span-7 w-full border rounded-3xl h-full overflow-hidden">
-      {/* This container maintains aspect ratio in both portrait and landscape */}
-      <div className="w-full h-full min-h-[300px] flex items-center justify-center p-4">
+      {/* Container adapts to image size */}
+      <div className="w-full h-full min-h-[200px] max-h-[350px] flex items-center justify-center p-4">
         <AnimatePresence exitBeforeEnter>
           <motion.div
             variants={variants}
-            className="w-full h-full flex items-center justify-center"
+            className="flex items-center justify-center max-w-[300px] max-h-[300px]"
             key={selectedImage}
             custom={direction}
             transition={{
@@ -61,9 +68,9 @@ const ImageProduct = ({ images = [] }: Props) => {
             <SafeImage
               src={selectedImage}
               alt="Product"
-              width={800}
-              height={800}
-              className="object-contain max-w-full max-h-full"
+              width={300}
+              height={300}
+              className="!w-[200px] !h-[200px] md:!w-[250px] md:!h-[250px] lg:!w-[280px] lg:!h-[280px] xl:!w-[300px] xl:!h-[300px] object-contain"
               useContainMode={true}
             />
           </motion.div>
