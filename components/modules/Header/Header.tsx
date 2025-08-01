@@ -17,30 +17,6 @@ const Header = ({ categories }: { categories: Category[] }) => {
   const [hover, setHover] = useState<string | null>(null);
   const { open: cartOpen, toggleCart, items } = useContext(CartContext);
   const router = useRouter();
-<<<<<<< HEAD
-  
-  // Updated to check for both buy and hosebuilder paths
-  const needsSolidHeader = router.pathname.includes('/hosebuilder') || router.pathname.includes('/hosebuilder');
-  
-  // Define the styles based on the path
-  const headerStyle = needsSolidHeader 
-    ? {
-        background: 'white',
-        borderBottom: 'none',
-        paddingBottom: '0px',
-        transition: 'all 0.3s ease-in-out'
-      }
-    : {
-        background: 'linear-gradient(to bottom, white 0%, white 50%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 0) 100%)',
-        borderBottom: 'none',
-        paddingBottom: '0px',
-        transition: 'all 0.3s ease-in-out'
-      };
-  
-  // Define spacer height explicitly too
-  const spacerHeight = needsSolidHeader ? "90px" : "120px";
-  
-=======
 
   // Reset hover state on route change
   useEffect(() => {
@@ -59,7 +35,6 @@ const Header = ({ categories }: { categories: Category[] }) => {
     };
   }, [router.events]);
 
->>>>>>> feature/add-hose-builder-app
   return (
     <>
     <HoverWrapper hook={{ hover, setHover }}>
