@@ -65,7 +65,7 @@ const Services: NextPage = () => {
                   <div className="text-xl text-yellow-600 sm:text-2xl font-light opacity-75">
                     • JIC 37° Flaring of Imperial Tubes <br />
                     • JIC 37° Flaring of Metric Tubes with JIC Nuts & Sleeves <br />
-                    • Tubes range from 3/8" to 1" OR 10mm to 28mm <br />
+                    • Tubes range from 3/8&quot; to 1&quot; OR 10mm to 28mm <br />
                     • Our Machines are the most updated and produce clean flares with high accuracy <br />
                     • Metric Tubes Cutting Ring Assembly<br />
                     • ORFS Ends Assembly
@@ -116,7 +116,7 @@ const Services: NextPage = () => {
                   <div className="text-2xl sm:text-3xl font-semibold">{item}</div>
                   <div className="text-xl text-yellow-600 sm:text-2xl font-light opacity-75">
                     • We are equipped with the latest machines <br />
-                    • Hose Crimping Upto 2" Hose <br />
+                    • Hose Crimping Upto 2&quot; Hose <br />
                     • Multi-Braid Hose Crimping <br />
                     • We have the capacity of handling large quantity of hose crimping and packing
                   </div>
