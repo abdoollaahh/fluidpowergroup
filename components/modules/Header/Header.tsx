@@ -50,11 +50,7 @@ const Header = ({ categories }: { categories: Category[] }) => {
           <div className="flex items-center gap-8 py-2 overflow-hidden ">
             <div className="w-1/5 lg:hidden flex items-center justify-start">
               <Cart open={cartOpen} handleClose={toggleCart} />
-
-<<<<<<< HEAD
-=======
               {/* FIXED Mobile Search and Cart Section - Simplified for Mobile */}
->>>>>>> feature/add-hose-builder-app
               <div className="relative flex items-center lg:hidden text-2xl">
                 {items.length > 0 && (
                   <div className="absolute -top-1 -right-1 text-xs py-0.5 px-1.5 bg-black text-white rounded-full z-10">
@@ -246,23 +242,7 @@ const Header = ({ categories }: { categories: Category[] }) => {
                       }}
                     ></div>
                   </div>
-<<<<<<< HEAD
-                )}
-                <button
-                  onClick={() => {
-                    router.push("/products/search");
-                  }}
-                  className="py-2 bg-yellow-400 hover:text-yellow-400 shadow-sm border font-semibold hover:border-yellow-400 text-black text-sm rounded-lg mx-5"
-                >
-                  Search
-                </button>
-                <FiShoppingCart
-                  onClick={toggleCart}
-                  className="text-xl hover:text-primary hover:cursor-pointer font-bold h-full w-full p-2"
-                />
-=======
                 </div>
->>>>>>> feature/add-hose-builder-app
               </div>
 
               <Cart open={cartOpen} handleClose={toggleCart} />
