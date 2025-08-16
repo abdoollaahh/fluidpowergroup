@@ -13,40 +13,56 @@ const SubCategories = ({ subCategories }: ICategoriesProps) => {
     return null
   }
   return (
-    <div className="grid grid-rows-3 grid-cols-3  w-4/5 grid-flow-col gap-y-6 gap-x-6 pl-12 xl:pl-20 ">
-      <AnimatePresence exitBeforeEnter>
-        {subCategories.map((subCategory) => (
-          <Anchor
-            key={subCategory.id}
-            href={`/products?subcategory=${subCategory?.slug}`}
-            className="hover:no-underline"
-          >
-            <motion.div
-              key={subCategory?.id}
-              initial={{ x: -50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 50, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="w-full h-full flex   rounded-lg group cursor-pointer "
+    <>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .hover-scale-element {
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+          }
+          .group:hover .hover-scale-element {
+            transform: scale(1.2) !important;
+          }
+        `
+      }} />
+      
+      <div className="grid grid-rows-3 grid-cols-3 w-4/5 grid-flow-col gap-y-4 gap-x-6 pl-12 xl:pl-20">
+        <AnimatePresence exitBeforeEnter>
+          {subCategories.map((subCategory) => (
+            <Anchor
+              key={subCategory.id}
+              href={`/products?subcategory=${subCategory?.slug}`}
+              className="hover:no-underline"
             >
-              <div className=" group-hover:scale-105 transition-all  duration-200 rounded-xl w-20 h-20 p-2  border">
-                <div className="relative  w-full h-full   ">
-                  <Image
-                    src={subCategory?.image || "/product-3.png"}
-                    layout="fill"
-                    objectFit="contain"
-                    alt="Site logo"
-                  />
+              <motion.div
+                key={subCategory?.id}
+                initial={{ x: -50, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 50, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="w-full h-full flex rounded-lg group cursor-pointer"
+              >
+                <div 
+                  className="rounded-xl w-24 h-24 p-1 border hover-scale-element flex items-center justify-center overflow-hidden"
+                  style={{ aspectRatio: '1 / 1' }}
+                >
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={subCategory?.image || "/product-3.png"}
+                      layout="fill"
+                      objectFit="contain"
+                      alt="Site logo"
+                    />
+                  </div>
                 </div>
-              </div>
-              <h3 className="text-lg xl:text-xl group-hover:underline underline-offset-4  font-light py-1 px-4">
-                {subCategory?.title}
-              </h3>
-            </motion.div>
-          </Anchor>
-        ))}
-      </AnimatePresence>
-    </div>
+                <h3 className="text-lg xl:text-xl font-light py-1 px-4 origin-left hover-scale-element">
+                  {subCategory?.title}
+                </h3>
+              </motion.div>
+            </Anchor>
+          ))}
+        </AnimatePresence>
+      </div>
+    </>
   );
 };
 

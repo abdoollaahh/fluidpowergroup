@@ -107,11 +107,11 @@ const ProductSlider = ({
   }, [currentIndex, products.length]);
 
   return (
-    <div className="w-full flex flex-col gap-8">
-      {/* Mobile title - shows on small screens */}
+    <div className="w-full flex flex-col gap-8 lg:pl-16">
+      {/* Mobile title - shows on small screens - Strip HTML from description */}
       <motion.div className="flex lg:hidden flex-col shrink-0 w-full justify-center gap-4 px-4">
-        <h2 className="text-3xl font-semibold">{title}</h2>
-        <div>{description}</div>
+        <h2 className="text-3xl font-semibold">{stripHtml(title)}</h2>
+        <div>{stripHtml(description)}</div>
       </motion.div>
 
       {/* Desktop layout with working horizontal scroll */}
@@ -130,10 +130,10 @@ const ProductSlider = ({
             className="flex gap-4 pb-4 pl-1 pr-12 pt-16"
             style={{ width: 'max-content' }}
           >
-            {/* Desktop title - first item in the flex */}
+            {/* Desktop title - first item in the flex - Strip HTML from both title and description */}
             <div className="hidden lg:flex flex-col shrink-0 w-56 h-72 justify-center py-4 gap-4 bg-white">
-              <h2 className="text-3xl font-semibold">{title}</h2>
-              <div className="font-light">{description}</div>
+              <h2 className="text-3xl font-semibold">{stripHtml(title)}</h2>
+              <div className="font-light">{stripHtml(description)}</div>
             </div>
 
             {/* Product cards with magnetic expandable effect */}
@@ -179,7 +179,7 @@ const ProductSlider = ({
                       />
                     </motion.div>
                     
-                    {/* Text content with expansion */}
+                    {/* Text content with expansion - Strip HTML from all text fields */}
                     <div className="flex-1 flex flex-col justify-center text-center">
                       {/* Main title - smart display based on hover and data availability */}
                       <h3 className={`font-bold transition-all duration-500 ${
@@ -187,16 +187,16 @@ const ProductSlider = ({
                       }`}>
                         {isHovered && product.shortTitle ? (
                           <div>
-                            <div>{product.shortTitle}</div>
+                            <div>{stripHtml(product.shortTitle)}</div>
                             <div className="text-sm font-normal text-gray-700 mt-1">
                               {(() => {
-                                // Combine subtitle and description intelligently
+                                // Combine subtitle and description intelligently - Strip HTML from both
                                 let combinedText = '';
                                 let additionalDetail = '';
                                 
                                 if (product.subtitle) {
-                                  // Remove parentheses from subtitle and add description
-                                  const cleanSubtitle = stripHtml(product.subtitle.replace(/[()]/g, ''));
+                                  // Remove parentheses from subtitle and add description - Strip HTML first
+                                  const cleanSubtitle = stripHtml(product.subtitle).replace(/[()]/g, '');
                                   
                                   if (product.description) {
                                     // Filter out redundant parts from description and strip HTML
@@ -206,7 +206,7 @@ const ProductSlider = ({
                                     desc = desc.trim();
                                     
                                     // Special handling for hose products - extract finish details
-                                    if (product.shortTitle && product.shortTitle.includes('Wire Braided Hose')) {
+                                    if (product.shortTitle && stripHtml(product.shortTitle).includes('Wire Braided Hose')) {
                                       // Look for finish details like "Two Wire Wrap and Smooth Finish"
                                       const finishMatch = desc.match(/(Two Wire Wrap and Smooth Finish|Wire Wrap and Smooth Finish|Smooth Finish)/i);
                                       if (finishMatch) {
@@ -245,7 +245,7 @@ const ProductSlider = ({
                       {/* Price display only */}
                       {product.price && (
                         <div className="text-lg font-medium mt-2">
-                          {product.price}
+                          {stripHtml(product.price)}
                         </div>
                       )}
                     </div>
@@ -257,7 +257,7 @@ const ProductSlider = ({
         </div>
 
         {/* Dots Indicator - Always visible, positioned under first tile */}
-        <div className="flex items-center gap-3 mt-6 px-4 lg:px-4 lg:ml-64">
+        <div className="flex items-center gap-3 mt-6 px-4 lg:px-4 lg:ml-80">
           {products.map((_, index) => (
             <button
               key={index}

@@ -77,22 +77,59 @@ const ProductMenuHeader = ({ categories, onClose }: ProductMenuHeaderProps) => {
   return (
     <motion.div 
       className="absolute w-full left-0 z-40"
+      style={{ top: "100%" }} // Position right at the bottom of header
       data-dropdown="product-menu"
     >
       <motion.div
-        className="backdrop-blur-3xl py-16 px-10 xl:px-28 w-full z-30"
+        className="py-16 px-10 xl:px-28 w-full z-30"
+        style={{
+          // Lighter, less frosty glass effect
+          background: `
+            linear-gradient(180deg, 
+              rgba(255, 255, 255, 0.25) 0%, 
+              rgba(255, 255, 255, 0.2) 60%, 
+              rgba(255, 255, 255, 0.35) 85%, 
+              rgba(255, 255, 255, 0.4) 100%
+            ),
+            rgba(255, 255, 255, 0.3)
+          `,
+          backdropFilter: "blur(8px)",
+          border: "1px solid rgba(255, 255, 255, 0.25)",
+          borderRadius: "0 0 25px 25px",
+          boxShadow: `
+            0 15px 35px rgba(0, 0, 0, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4),
+            inset 0 -2px 8px rgba(255, 255, 255, 0.15)
+          `,
+          position: "relative"
+        }}
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0, transition: { duration: 0.3 } }}
         exit={{ opacity: 0, y: -50, transition: { duration: 0.2 } }}
       >
-        <div className="wrapper flex">
+        {/* Subtle top shine */}
+        <div
+          style={{
+            position: "absolute",
+            top: "0",
+            left: "0",
+            right: "0",
+            height: "20%",
+            background: "linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%)",
+            borderRadius: "0 0 15px 15px",
+            pointerEvents: "none",
+            zIndex: 1
+          }}
+        />
+        
+        <div className="wrapper flex relative z-10">
           <Categories
             categories={categories}
             selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
           />
 
-          <SubCategories subCategories={selectedCategory.subCategories} />
+          <SubCategories subCategories={selectedCategory?.subCategories || []} />
         </div>
       </motion.div>
     </motion.div>

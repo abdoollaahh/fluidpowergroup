@@ -2,7 +2,7 @@
 
 @layer components {
   .wrapper {
-    @apply w-full max-w-screen-2xl mx-auto;
+    @apply w-full mx-auto;
   }
   .icon-btn {
     @apply p-2 hover:bg-slate-50 rounded-full cursor-pointer;
