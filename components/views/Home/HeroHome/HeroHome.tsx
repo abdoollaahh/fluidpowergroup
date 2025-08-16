@@ -1,11 +1,41 @@
 import Header from "@/modules/Header";
 import InfoHeroHome from "./InfoHeroHome";
 import ProductsHeroHome from "./ProductsHeroHome";
+import BackgroundPhotosSlideshow from "../../../BackgroundPhotosSlideshow";
 
 const HeroHome = () => {
   return (
-    <div className="flex flex-col md:h-screen md:min-h-[40rem] md:max-h-[50rem] wrapper w-full items-center  overflow-hidden">
-      <div className="h-full flex flex-col-reverse md:flex-row max-w-4xl   xl:max-w-6xl px-8 pt-8 pb-10 lg:p-0 gap-8 md:gap-0 ">
+    <div className="flex flex-col h-[600px] md:h-[1100px] md:min-h-[40rem] wrapper w-full items-center overflow-hidden relative">
+      {/* Background Photos - First for lowest layer */}
+      <BackgroundPhotosSlideshow />
+      
+      {/* Horizontal fade layer - positioned between CompanyNewsBanner and Footer */}
+      <div 
+        className="hidden md:block absolute left-0"
+        style={{
+          top: "0px", // Starts right after CompanyNewsBanner
+          bottom: "0px", // Ends right before Footer
+          width: "60%", // Covers text area and fades out - Desktop only
+          background: "linear-gradient(to right, rgba(250, 204, 21, 0.6) 0%, rgba(250, 204, 21, 0.4) 30%, rgba(250, 204, 21, 0.2) 60%, rgba(250, 204, 21, 0) 100%)",
+          pointerEvents: "none", // Ensures it doesn't block interactions
+          zIndex: 15
+        }}
+      />
+
+      {/* Mobile fade layer - covers 30% width for text and buttons */}
+      <div 
+        className="md:hidden absolute left-0"
+        style={{
+          top: "0px",
+          bottom: "0px", 
+          width: "50%", // Reduced from 100% to 30% for mobile
+          background: "linear-gradient(to right, rgba(250, 204, 21, 0.6) 0%, rgba(250, 204, 21, 0.4) 50%, rgba(250, 204, 21, 0.2) 80%, rgba(250, 204, 21, 0) 100%)",
+          pointerEvents: "none",
+          zIndex: 15
+        }}
+      />
+      
+      <div className="h-full flex flex-col-reverse md:flex-row px-8 pt-8 md:pb-0 pb-10 lg:max-w-none lg:justify-start lg:pl-8 lg:pr-0 lg:pt-0 lg:pb-0 gap-8 md:gap-0 relative z-20">
         <InfoHeroHome />
         <ProductsHeroHome />
       </div>
