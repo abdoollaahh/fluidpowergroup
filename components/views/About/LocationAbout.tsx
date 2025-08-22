@@ -1,11 +1,9 @@
 import Image from "next/image";
-import LogoMouseTracker from '../../LogoMouseTracker'; // Adjust path as needed
 
 const LocationAbout = () => {
   return (
     <>
       {/* Bottom Layer: Logo Mouse Tracker */}
-      <LogoMouseTracker zIndex={1} />
       
       {/* Content with 80% faded white background */}
       <div className="relative z-10" style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)' }}>

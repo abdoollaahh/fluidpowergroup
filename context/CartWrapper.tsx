@@ -27,42 +27,44 @@ type ICartWrapperProps = {
 };
 
 const CartWrapper = ({ children }: ICartWrapperProps) => {
-  // Initialize cart state from localStorage if available
-  const [cart, setCart] = useState<ICart>(() => {
-    // Only access localStorage on client side
-    if (typeof window !== 'undefined') {
-      try {
-        const savedCart = localStorage.getItem('shopping-cart');
-        const cartTimestamp = localStorage.getItem('cart-timestamp');
-        
-        if (savedCart && cartTimestamp) {
-          const now = Date.now();
-          const saved = parseInt(cartTimestamp);
-          const oneDayInMs = 1 * 60 * 60 * 1000; // 24 hours
-          
-          // Check if cart is less than 24 hours old
-          if (now - saved < oneDayInMs) {
-            const parsedCart = JSON.parse(savedCart);
-            return {
-              open: false,
-              items: parsedCart.items || []
-            };
-          } else {
-            // Cart expired, clear it
-            localStorage.removeItem('shopping-cart');
-            localStorage.removeItem('cart-timestamp');
-          }
-        }
-      } catch (error) {
-        console.error('Error loading cart from localStorage:', error);
-      }
-    }
-    return { open: false, items: [] };
-  });
+  // Start with empty cart for SSR consistency
+  const [cart, setCart] = useState<ICart>({ open: false, items: [] });
+  const [isHydrated, setIsHydrated] = useState(false);
 
-  // Save cart to localStorage whenever it changes
+  // Load cart from localStorage after component mounts (client-side only)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    try {
+      const savedCart = localStorage.getItem('shopping-cart');
+      const cartTimestamp = localStorage.getItem('cart-timestamp');
+      
+      if (savedCart && cartTimestamp) {
+        const now = Date.now();
+        const saved = parseInt(cartTimestamp);
+        const oneHourInMs = 1 * 60 * 60 * 1000; // 1 hour
+        
+        // Check if cart is less than 1 hour old
+        if (now - saved < oneHourInMs) {
+          const parsedCart = JSON.parse(savedCart);
+          setCart({
+            open: false, // Always start with cart closed
+            items: parsedCart.items || []
+          });
+        } else {
+          // Cart expired, clear it
+          localStorage.removeItem('shopping-cart');
+          localStorage.removeItem('cart-timestamp');
+        }
+      }
+    } catch (error) {
+      console.error('Error loading cart from localStorage:', error);
+    }
+    
+    setIsHydrated(true);
+  }, []); // Run only once after mount
+
+  // Save cart to localStorage whenever it changes (but only after hydration)
+  useEffect(() => {
+    if (isHydrated) {
       try {
         localStorage.setItem('shopping-cart', JSON.stringify(cart));
         localStorage.setItem('cart-timestamp', Date.now().toString());
@@ -70,7 +72,7 @@ const CartWrapper = ({ children }: ICartWrapperProps) => {
         console.error('Error saving cart to localStorage:', error);
       }
     }
-  }, [cart]);
+  }, [cart, isHydrated]);
 
   const toggleCart = () => {
     setCart((prevCart) => ({ ...prevCart, open: !prevCart.open }));

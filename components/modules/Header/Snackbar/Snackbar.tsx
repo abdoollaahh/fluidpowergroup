@@ -20,13 +20,13 @@ const Snackbar = () => {
   useLockBodyScroll(menu);
 
   return (
-    <div className="text-3xl icon-btn">
-      {/* Elegant Custom Burger Menu Icon */}
+    <div className="relative">
+      {/* FLOW FIX: Remove all absolute positioning, make it behave like normal content */}
       <div
         onClick={() => {
           setMenu(!menu);
         }}
-        className="cursor-pointer p-2 hover:bg-gray-100 rounded-lg transition-all duration-200"
+        className="cursor-pointer p-2 hover:bg-gray-100 rounded-lg transition-all duration-200 relative"
         style={{
           display: "flex",
           flexDirection: "column",
@@ -35,7 +35,6 @@ const Snackbar = () => {
           height: "32px",
           justifyContent: "center",
           alignItems: "center",
-          position: "relative"
         }}
       >
         <div
@@ -87,12 +86,16 @@ const Snackbar = () => {
                 transition: { duration: 0.8 },
               }}
               exit={{ opacity: 0, transition: { duration: 0 } }}
-              className="fixed mt-6 left-0 w-full h-screen -z-10 bg-black/10"
+              className="fixed inset-0 z-40 bg-black/10"
+              style={{ top: "90px" }} // Start below header
               onClick={() => setMenu(!menu)}
             ></motion.div>
             <motion.div
-              className="absolute left-0 mt-6 w-full p-8 -z-10 border-b"
+              className="fixed left-0 right-0 z-50 p-6 border-b"
               style={{
+                // FLOW FIX: Use fixed positioning that's viewport-based, not container-based
+                top: "90px", // Position right below header
+                width: "100%",
                 // Glass effect background with gradient towards bottom
                 background: `
                   linear-gradient(180deg, 

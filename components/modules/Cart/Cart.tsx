@@ -21,10 +21,10 @@ const Cart = ({ open, handleClose }: ICart) => {
   return (
     <AnimatePresence>
       {open && (
-        <motion.div className="fixed  left-0 top-0   w-screen h-screen  z-30 flex justify-end ">
+        <motion.div className="fixed left-0 top-0 w-screen h-screen z-30 flex justify-end">
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1, transition: { duration: 0.6 } }}
+            animate={{ opacity: 1, transition: { duration: 0.6, delay: 0.4 } }}
             exit={{ opacity: 0, transition: { duration: 0.4 } }}
             className="absolute left-0 top-0 w-full h-full bg-black/40"
             onClick={handleClose}
@@ -53,11 +53,11 @@ const Cart = ({ open, handleClose }: ICart) => {
               `,
             }}
             initial={{ x: 400, opacity: 0 }}
-            animate={{ x: 0, opacity: 1, transition: { duration: 0.6 } }}
+            animate={{ x: 0, opacity: 1, transition: { duration: 0.6, delay: 0.4 } }}
             exit={{ x: 500, opacity: 0, transition: { duration: 0.4 } }}
           >
             <HeaderCart handleClose={handleClose} />
-            <div className="flex flex-col  h-full overflow-auto">
+            <div className="flex flex-col h-full overflow-auto">
               {isEmpty ? (
                 <div className="h-full flex flex-col items-center justify-center">
                   Your Cart is Empty

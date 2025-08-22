@@ -1,6 +1,6 @@
 import { FiMail, FiMapPin } from "react-icons/fi";
-import { BsFacebook, BsTwitter, BsInstagram } from "react-icons/bs";
-import { useRouter } from 'next/router'; // Add this import
+import { BsFacebook, BsInstagram } from "react-icons/bs";
+import { useRouter } from 'next/router';
 import Anchor from "../Anchor";
 import IconButton from "../IconButton";
 import Logo from "../Logo";
@@ -32,9 +32,25 @@ const Footer = () => {
           </div>
 
           <div className="flex gap-2">
-            <IconButton Icon={BsTwitter} />
-            <IconButton Icon={BsFacebook} />
-            <IconButton Icon={BsInstagram} />
+            {/* Facebook - Add link */}
+            <a 
+              href="https://www.facebook.com/share/1754zF77w4/?mibextid=wwXlfr" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:no-underline"
+            >
+              <IconButton Icon={BsFacebook} />
+            </a>
+            
+            {/* Instagram - Add link */}
+            <a 
+              href="https://www.instagram.com/fluidpowergroup" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:no-underline"
+            >
+              <IconButton Icon={BsInstagram} />
+            </a>
           </div>
         </div>
       </div>

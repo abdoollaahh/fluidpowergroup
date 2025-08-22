@@ -63,10 +63,10 @@ function MyApp({ Component, pageProps, router }: AppProps) {
   }, [nextRouter.events]);
 
   return (
-    <div className="flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <CartWrapper>
         <Header categories={categories} />
-        <div>
+        <main className="flex-grow">
           <Head>
             <title>FluidPower Group</title>
           </Head>
@@ -80,11 +80,12 @@ function MyApp({ Component, pageProps, router }: AppProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              className="h-full"
             >
               <Component {...pageProps} />
             </motion.div>
           </AnimatePresence>
-        </div>
+        </main>
       </CartWrapper>
       <Footer />
     </div>
