@@ -98,7 +98,7 @@ const TableProduct = ({ items, setItems }: ITableProductProps) => {
                       radial-gradient(ellipse at center, rgba(250, 204, 21, 0.9) 20%, rgba(250, 204, 21, 0.7) 60%, rgba(255, 215, 0, 0.8) 100%), 
                       rgba(250, 204, 21, 0.6)
                     `;
-                    e.currentTarget.style.backdropFilter = "blur(15px)";
+                    e.currentTarget.style.setProperty('backdrop-filter', 'blur(15px)');
                     e.currentTarget.style.border = "1px solid rgba(255, 215, 0, 0.9)";
                     e.currentTarget.style.borderRadius = "12px";
                     e.currentTarget.style.boxShadow = `
@@ -111,7 +111,7 @@ const TableProduct = ({ items, setItems }: ITableProductProps) => {
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.backdropFilter = "none";
+                    e.currentTarget.style.setProperty('backdrop-filter', 'none');
                     e.currentTarget.style.border = "none";
                     e.currentTarget.style.borderRadius = "0";
                     e.currentTarget.style.boxShadow = "none";
