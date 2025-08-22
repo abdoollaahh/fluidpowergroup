@@ -25,7 +25,7 @@ const SubCategories = ({ subCategories }: ICategoriesProps) => {
         `
       }} />
       
-      <div className="grid grid-rows-3 grid-cols-3 w-4/5 grid-flow-col gap-y-4 gap-x-6 pl-12 xl:pl-20">
+      <div className="grid grid-rows-3 grid-cols-3 w-4/5 grid-flow-row gap-y-4 gap-x-6 pl-12 xl:pl-20">
         <AnimatePresence exitBeforeEnter>
           {subCategories.map((subCategory) => (
             <Anchor

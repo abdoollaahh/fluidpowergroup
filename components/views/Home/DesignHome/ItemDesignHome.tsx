@@ -5,8 +5,7 @@ import {
   motion,
 } from "framer-motion";
 import Image from "next/image";
-import { useState } from "react";
-import LogoMouseTracker from '../../../LogoMouseTracker';
+import { useState, useEffect } from "react";
 
 interface ItemDesignHomeProps {
   title: string;
@@ -14,12 +13,20 @@ interface ItemDesignHomeProps {
 
 const ItemDesignHome = ({ title }: ItemDesignHomeProps) => {
   const [hover, setHover] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   return (
     <>
-      {/* Logo Mouse Tracker - positioned behind the images */}
-      <LogoMouseTracker zIndex={0} />
-      
       <div
         className="col-span-2 aspect-square rounded-md relative overflow-hidden hover:shadow-2xl hover:shadow-slate-200 max-w-[400px] w-full mx-auto z-10"
         onMouseEnter={() => setHover(true)}
@@ -45,19 +52,19 @@ const ItemDesignHome = ({ title }: ItemDesignHomeProps) => {
               {title}
             </motion.h2>
             <AnimatePresence>
-              {hover && (
+              {(hover || isMobile) && (
                 <motion.div
-                  className="text-lg xl:text-xl font-light hidden lg:block"
-                  initial={{ y: 20, opacity: 0 }}
+                  className="text-lg xl:text-xl font-light"
+                  initial={isMobile ? { opacity: 1, y: 0 } : { y: 20, opacity: 0 }}
                   animate={{ 
                     y: 0, 
                     opacity: 1, 
                     transition: { 
-                      duration: 0.2,
+                      duration: isMobile ? 0 : 0.2,
                       ease: "easeOut"
                     } 
                   }}
-                  exit={{ 
+                  exit={isMobile ? {} : { 
                     y: 10, 
                     opacity: 0, 
                     transition: { 
@@ -80,12 +87,20 @@ const ItemDesignHome = ({ title }: ItemDesignHomeProps) => {
 
 const ItemDesignsHome = ({ title }: ItemDesignHomeProps) => {
   const [hover, setHover] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   return (
     <>
-      {/* Logo Mouse Tracker - positioned behind the images */}
-      <LogoMouseTracker zIndex={-1} />
-      
       <div 
         className="col-span-2 aspect-square rounded-md relative overflow-hidden hover:shadow-2xl hover:shadow-slate-200 max-w-[400px] w-full mx-auto z-10"
         onMouseEnter={() => setHover(true)}
@@ -111,19 +126,19 @@ const ItemDesignsHome = ({ title }: ItemDesignHomeProps) => {
               {title}
             </motion.h2>
             <AnimatePresence>
-              {hover && (
+              {(hover || isMobile) && (
                 <motion.div
-                  className="text-lg xl:text-xl font-light hidden lg:block"
-                  initial={{ y: 20, opacity: 0 }}
+                  className="text-lg xl:text-xl font-light"
+                  initial={isMobile ? { opacity: 1, y: 0 } : { y: 20, opacity: 0 }}
                   animate={{ 
                     y: 0, 
                     opacity: 1, 
                     transition: { 
-                      duration: 0.2,
+                      duration: isMobile ? 0 : 0.2,
                       ease: "easeOut"
                     } 
                   }}
-                  exit={{ 
+                  exit={isMobile ? {} : { 
                     y: 10, 
                     opacity: 0, 
                     transition: { 

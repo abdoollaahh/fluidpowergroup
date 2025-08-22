@@ -5,14 +5,16 @@ import db from "db";
 const Services = () => {
   const [hoveredService, setHoveredService] = useState<string | null>(null);
   const [expandedService, setExpandedService] = useState<string | null>(null);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   const services = [
@@ -121,44 +123,7 @@ const Services = () => {
   return (
     <div className="flex flex-col w-full">
       <div className="bg-white min-h-screen relative overflow-hidden">
-        {/* Dynamic Background Logos - FULL VIEWPORT COVERAGE */}
-        <div className="fixed inset-0 pointer-events-none z-0">
-          {typeof window !== 'undefined' && (
-            <>
-              {[...Array(30)].map((_, i) => {
-                const yPos = (mousePosition.y / window.innerHeight) * 100 + Math.cos(Date.now() / 1000 + i) * 20;
-                // Only show logos in the main content area (above footer)
-                const isInMainArea = yPos < 85; // Approximate footer starts at 85% of viewport
-                
-                return isInMainArea ? (
-                  <div
-                    key={i}
-                    className="absolute w-8 h-8 transition-all duration-1000 ease-out opacity-60 hover:opacity-80"
-                    style={{
-                      left: `${(mousePosition.x / window.innerWidth) * 100 + Math.sin(Date.now() / 1000 + i) * 20}%`,
-                      top: `${yPos}%`,
-                      transition: 'all 2s ease-out',
-                      animationDelay: `${i * 0.1}s`,
-                      filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))'
-                    }}
-                  >
-                    <Image
-                      src="/fluidpower-logo.png"
-                      alt="FluidPower Group Logo"
-                      width={32}
-                      height={32}
-                      className="w-full h-full object-contain"
-                      priority={false}
-                      loading="lazy"
-                    />
-                  </div>
-                ) : null;
-              })}
-            </>
-          )}
-        </div>
-
-        {/* Background gradient overlay - LIMITED TO MAIN CONTENT ONLY */}
+        {/* Background gradient overlay */}
         <div className="absolute inset-0 pointer-events-none z-0 bg-gradient-to-br from-yellow-50/30 via-white to-amber-50/30"></div>
 
         <div className="w-full wrapper text-black flex relative z-10">
@@ -223,9 +188,9 @@ const Services = () => {
                           </p>
                         </div>
 
-                        {/* Features - Show on hover or expand */}
+                        {/* Features - Show on hover or expand, OR always show on mobile */}
                         <div className={`space-y-3 transition-all duration-500 delay-200 ${
-                          hoveredService === service.id || expandedService === service.id 
+                          hoveredService === service.id || expandedService === service.id || isMobile
                             ? 'opacity-100 transform translate-y-0' 
                             : 'opacity-0 transform translate-y-4'
                         }`}>
@@ -234,7 +199,8 @@ const Services = () => {
                               key={featureIndex}
                               className="flex items-center text-gray-700 text-sm md:text-base font-medium"
                               style={{
-                                transitionDelay: `${200 + featureIndex * 100}ms`
+                                transitionDelay: isMobile ? '0ms' : `${200 + featureIndex * 100}ms`,
+                                transition: isMobile ? 'none' : undefined
                               }}
                             >
                               <div className={`w-2 h-2 bg-${service.accent} rounded-full mr-3 flex-shrink-0 shadow-sm`}></div>

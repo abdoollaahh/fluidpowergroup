@@ -1,6 +1,5 @@
 import { FiMail, FiPhone } from "react-icons/fi";
 import ItemContact from "./ItemContact";
-import LogoMouseTracker from '../../LogoMouseTracker'; // Adjust path as needed
 
 const ItemsContact = () => {
   const contactOptions = [
@@ -9,12 +8,6 @@ const ItemsContact = () => {
       href: "mailto:info@fluidpowergroup.com.au",
       icon: FiMail,
       title: "info@fluidpowergroup.com.au",
-    },
-    {
-      label: "Product Queries",
-      href: "mailto:parts@fluidpowergroup.com.au",
-      icon: FiMail,
-      title: "parts@fluidpowergroup.com.au",
     },
     {
       label: "Order Queries",
@@ -32,8 +25,6 @@ const ItemsContact = () => {
 
   return (
     <div className="relative">
-      {/* Bottom Layer: Logo Mouse Tracker */}
-      <LogoMouseTracker zIndex={1} maxYPosition={65} />
       
       {/* Middle Layer: Subtle Faded Background Overlay - More contained */}
       <div className="absolute left-0 right-0 bg-gradient-to-br from-white/70 via-gray-50/50 to-white/70 z-10"
