@@ -58,8 +58,65 @@ const ProductPage = () => {
           setItems([]); // Clear products
         } else if (result.data.products && result.data.products.length > 0) {
           console.log('📦 Found products, displaying table');
-          setItems(result.data.products);
-          setSubcategories([]); // Clear subcategories
+          
+          const sortedProducts = result.data.products.sort((a: IItemCart, b: IItemCart) => {
+            const nameA = a.name;
+            const nameB = b.name;
+            
+            const partsA = nameA.split('-');
+            const partsB = nameB.split('-');
+            
+            // Extract the primary numeric identifier and detect base vs extension
+            const analyzePartNumber = (parts: string[]) => {
+              // Look for the first numeric part after the main prefix
+              // For FPG-1J09-060G -> primary: 06, isBase: true
+              // For FPG-1J09-06-080G -> primary: 06, isBase: false
+              
+              let primaryNumeric = null;
+              let isBase = false;
+              
+              for (let i = 2; i < parts.length; i++) { // Start after FPG-1J09
+                const part = parts[i];
+                const match = part.match(/^(\d+)/);
+                if (match) {
+                  primaryNumeric = parseInt(match[1]);
+                  // It's a base if this is the last part and ends with letters
+                  isBase = (i === parts.length - 1) && /\d+[A-Z]+$/.test(part);
+                  break;
+                }
+              }
+              
+              return {
+                primary: primaryNumeric || 0,
+                isBase: isBase,
+                segmentCount: parts.length
+              };
+            };
+            
+            const infoA = analyzePartNumber(partsA);
+            const infoB = analyzePartNumber(partsB);
+            
+            // First, sort by primary numeric value (06 vs 08 vs 10)
+            if (infoA.primary !== infoB.primary) {
+              return infoA.primary - infoB.primary;
+            }
+            
+            // If same primary number, base versions come first
+            if (infoA.primary === infoB.primary) {
+              // Base version (fewer segments, ends with letters) comes first
+              if (infoA.isBase && !infoB.isBase) return -1;
+              if (!infoA.isBase && infoB.isBase) return 1;
+              
+              // If both are same type (base or extension), sort by segment count
+              return infoA.segmentCount - infoB.segmentCount;
+            }
+            
+            // Fallback to alphabetical
+            return nameA.localeCompare(nameB);
+          });
+          
+          setItems(sortedProducts);
+          setSubcategories([]);
         }
       }
     });
