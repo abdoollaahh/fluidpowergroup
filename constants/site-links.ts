@@ -1,7 +1,7 @@
 const siteLinks = [
   { title: "Home", href: "/" },                // ← New Home tab
   { title: "Products", href: "/catalogue" },
-  { title: "Buy", href: "/buy" },
+  { title: "Buy", href: "/hosebuilder" },
   { title: "Services", href: "/services" },
   { title: "Design", href: "/design" },
   { title: "About", href: "/about" },
