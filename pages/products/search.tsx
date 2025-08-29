@@ -703,4 +703,4 @@ const Search = () => {
   );
 };
 
-export default withLayout(Search);
+export default Search;
