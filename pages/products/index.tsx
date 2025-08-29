@@ -162,4 +162,4 @@ const ProductsPage = () => {
   );
 };
 
-export default withLayout(ProductsPage);
+export default ProductsPage;

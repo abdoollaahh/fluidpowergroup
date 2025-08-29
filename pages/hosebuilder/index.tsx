@@ -55,11 +55,12 @@ const HoseBuilder = () => {
         <style>{`
           /* Remove conflicting styles */
           .hosebuilder-container {
-            height: calc(100vh - 64px); /* Adjust based on your header height */
+            height: calc(100vh - 120px); /* Header height + fade clearance */
             width: 100%;
             position: relative;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+            margin-top: 30px; /* Push content below header fade */
           }
 
           #root {

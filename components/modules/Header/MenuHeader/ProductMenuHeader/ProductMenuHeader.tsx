@@ -77,7 +77,7 @@ const ProductMenuHeader = ({ categories, onClose }: ProductMenuHeaderProps) => {
   return (
     <motion.div 
       className="absolute w-full left-0 z-40"
-      style={{ top: "100%" }} // Position right at the bottom of header
+      style={{ top: "80%" }} // Position right at the bottom of header
       data-dropdown="product-menu"
     >
       <motion.div
