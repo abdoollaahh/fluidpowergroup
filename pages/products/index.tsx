@@ -5,6 +5,8 @@ import Header from "@/modules/Header";
 import { useRouter } from "next/router";
 import axios from "axios";
 import Loading from "@/modules/Loading";
+// Import the sorting utility
+import { sortProductsAlphanumerically } from "../../utils/productSorting";
 
 const ProductsPage = () => {
   const router = useRouter();
@@ -46,7 +48,9 @@ const ProductsPage = () => {
             
             if (seriesResponse.data.series && seriesResponse.data.series.length > 0) {
               console.log('✅ Found series navigation:', seriesResponse.data.series.length);
-              setSeries(seriesResponse.data.series);
+              // Sort the series data before setting state
+              const sortedSeries = sortProductsAlphanumerically(seriesResponse.data.series);
+              setSeries(sortedSeries);
               setProducts([]); // Clear products when showing navigation
               return; // Found navigation, we're done
             }
@@ -64,14 +68,18 @@ const ProductsPage = () => {
             // FIXED: Check if getProducts returned series data
             if (productsResponse.data.series && productsResponse.data.series.length > 0) {
               console.log('✅ Found subcategory navigation from getProducts:', productsResponse.data.series.length);
-              setSeries(productsResponse.data.series); // Set the series from getProducts response
+              // Sort the series data before setting state
+              const sortedSeries = sortProductsAlphanumerically(productsResponse.data.series);
+              setSeries(sortedSeries); // Set the sorted series from getProducts response
               setProducts([]);
               return; // Found navigation, we're done
             }
             
             if (productsResponse.data.products && productsResponse.data.products.length > 0) {
               console.log('✅ Found products:', productsResponse.data.products.length);
-              setProducts(productsResponse.data.products);
+              // Sort the products data before setting state
+              const sortedProducts = sortProductsAlphanumerically(productsResponse.data.products);
+              setProducts(sortedProducts);
               setSeries([]); // Clear series when showing products
               return; // Found products, we're done
             }

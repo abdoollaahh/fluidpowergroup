@@ -26,6 +26,15 @@ const Header = ({ categories }: { categories: Category[] }) => {
   // Check if user is on search page
   const isSearchActive = router.pathname === '/products/search' || router.pathname === '/search';
 
+  // Check if user is on any product-related page
+  const isProductsActive: boolean = 
+    router.pathname === '/products' ||         // Main products page
+    router.pathname === '/catalogue' ||        // ProductSlider page
+    router.pathname.startsWith('/products/') || // Individual product pages like /products/[id]
+    router.pathname.startsWith('/product') ||   // Catch other product-related routes
+    (router.asPath.includes('products') && !router.asPath.includes('search')) || // Any URL containing 'products' but not search
+    (router.pathname === '/products' && !!router.query.subcategory); // Subcategory pages
+
   // Handle mobile search press with animation
   const handleMobileSearchPress = () => {
     setMobileSearchPressed(true);
@@ -200,9 +209,9 @@ const Header = ({ categories }: { categories: Category[] }) => {
               </div>
             </div>
 
-            {/* Desktop Navigation - Unchanged */}
+            {/* Desktop Navigation - Pass isProductsActive to NavHeader */}
             <div className="w-full justify-center hidden lg:flex z-30">
-              <NavHeader />
+              <NavHeader isProductsActive={isProductsActive} />
             </div>
 
             {/* Mobile Right Section - ONLY applies on mobile */}

@@ -5,7 +5,11 @@ import React, { useContext, useMemo } from "react";
 import { useRouter } from "next/router";
 import { v4 as uuid } from "uuid";
 
-const NavHeader = () => {
+interface NavHeaderProps {
+  isProductsActive?: boolean;
+}
+
+const NavHeader = ({ isProductsActive }: NavHeaderProps) => {
   const { hover, setHover } = useContext(HoverContext);
   const router = useRouter();
 
@@ -15,7 +19,12 @@ const NavHeader = () => {
   );
 
   // Function to check if a tab is active
-  const isActiveTab = (href: string) => {
+  const isActiveTab = (href: string, title: string) => {
+    // Special handling for Products tab - use the passed prop
+    if (title === "Products" && isProductsActive !== undefined) {
+      return isProductsActive;
+    }
+    
     // Handle home page specifically
     if (href === "/" && router.pathname === "/") {
       return true;
@@ -40,7 +49,7 @@ const NavHeader = () => {
     >
       <div className="flex items-center gap-1">
         {pages.map((page) => {
-          const isActive = isActiveTab(page.href);
+          const isActive = isActiveTab(page.href, page.title);
           
           return (
             <div
