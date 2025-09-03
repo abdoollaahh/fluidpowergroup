@@ -1,70 +1,65 @@
 import withLayout from "@/hoc/withLayout";
 import { ProductSlider } from "@/views/Catalogue";
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/router";
+import React from "react";
+import useSWR from 'swr';
 import axios from "axios";
 import { Category } from "types/products";
 import Loading from "@/modules/Loading";
 
+// Fetcher function for SWR
+const fetcher = async (url: string) => {
+  const response = await axios.get(url);
+  return response.data;
+};
+
 const CataloguePage = () => {
-  const router = useRouter();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  // SWR handles all the data fetching, caching, and revalidation
+  const { data, error, isLoading } = useSWR('/api/getCategories', fetcher, {
+    // SWR configuration options
+    revalidateOnFocus: false,    // Don't refetch when window regains focus
+    revalidateOnReconnect: true, // Refetch when connection is restored
+    dedupingInterval: 60000,     // Dedupe requests within 1 minute
+    errorRetryCount: 3,          // Retry 3 times on error
+    errorRetryInterval: 1000,    // Wait 1 second between retries
+  });
 
-  useEffect(() => {
-    // Don't run until router is ready
-    if (!router.isReady) return;
-
-    const fetchCategories = async () => {
-      try {
-        console.log('Fetching categories...');
-        const cat = await axios.get(`/api/getCategories`);
-        console.log('Categories fetched:', cat.data.categories?.length || 0);
-        setCategories(cat.data.categories || []);
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-        setCategories([]); // Set empty array on error
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCategories();
-  }, [router.isReady]);
-
-  // Handle router events for debugging
-  useEffect(() => {
-    const handleRouteStart = (url: string) => {
-      console.log('Route changing from /catalogue to:', url);
-    };
-    
-    const handleRouteComplete = (url: string) => {
-      console.log('Route change complete to:', url);
-      // Force refresh categories if returning to /catalogue
-      if (url === '/catalogue' && router.isReady) {
-        setLoading(true);
-        setCategories([]); // Clear existing data
-      }
-    };
-
-    router.events.on('routeChangeStart', handleRouteStart);
-    router.events.on('routeChangeComplete', handleRouteComplete);
-
-    return () => {
-      router.events.off('routeChangeStart', handleRouteStart);
-      router.events.off('routeChangeComplete', handleRouteComplete);
-    };
-  }, [router.events, router.isReady]);
-
-  // Show loading while router is not ready or while fetching
-  if (!router.isReady || loading) {
+  // Handle loading state
+  if (isLoading) {
     return <Loading />;
   }
 
-  // Show loading if categories is null/undefined (keep your existing check)
-  if (categories === null || categories === undefined) {
-    return <Loading />;
+  // Handle error state
+  if (error) {
+    console.error('Error fetching categories:', error);
+    return (
+      <div className="wrapper px-8 md:px-12 py-12 min-h-screen flex flex-col items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Categories</h2>
+          <p className="text-gray-600 mb-4">Failed to load product categories. Please try again.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
   }
+
+  // Handle empty data
+  if (!data || !data.categories || data.categories.length === 0) {
+    return (
+      <div className="wrapper px-8 md:px-12 py-12 min-h-screen flex flex-col items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">No Categories Found</h2>
+          <p className="text-gray-600">No product categories are available at the moment.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const categories: Category[] = data.categories;
 
   return (
     <div className="wrapper px-8 md:px-12  flex flex-col gap-10 mb-32">
