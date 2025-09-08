@@ -5,7 +5,6 @@ import Header from "@/modules/Header";
 import { useRouter } from "next/router";
 import axios from "axios";
 import Loading from "@/modules/Loading";
-// Import the sorting utility
 import { sortProductsAlphanumerically } from "../../utils/productSorting";
 
 const ProductsPage = () => {
@@ -22,6 +21,9 @@ const ProductsPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Don't run until router is ready
+    if (!router.isReady) return;
+
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -39,55 +41,52 @@ const ProductsPage = () => {
         // If we have a target, try to fetch its data
         if (targetSlugOrId) {
           
-          // Step 1: Try getAllSeries first (works with slugs)
-          try {
-            const seriesResponse = await axios.post('/api/getAllSeries', { 
-              data: { slug: targetSlugOrId } 
-            });
-            console.log('getAllSeries response:', seriesResponse.data);
-            
-            if (seriesResponse.data.series && seriesResponse.data.series.length > 0) {
-              console.log('✅ Found series navigation:', seriesResponse.data.series.length);
-              // Sort the series data before setting state
-              const sortedSeries = sortProductsAlphanumerically(seriesResponse.data.series);
-              setSeries(sortedSeries);
-              setProducts([]); // Clear products when showing navigation
-              return; // Found navigation, we're done
-            }
-          } catch (seriesError: any) {
-            console.log('getAllSeries failed (normal for product pages):', seriesError.message);
-          }
-
-          // Step 2: Try getProducts (works with IDs)
+          // OPTIMIZED: Use getProducts as primary (it handles both cases!)
           try {
             const productsResponse = await axios.post('/api/getProducts', { 
               data: { id: targetSlugOrId } 
             });
             console.log('getProducts response:', productsResponse.data);
             
-            // FIXED: Check if getProducts returned series data
+            // Check if getProducts returned series data (subcategories)
             if (productsResponse.data.series && productsResponse.data.series.length > 0) {
               console.log('✅ Found subcategory navigation from getProducts:', productsResponse.data.series.length);
-              // Sort the series data before setting state
               const sortedSeries = sortProductsAlphanumerically(productsResponse.data.series);
-              setSeries(sortedSeries); // Set the sorted series from getProducts response
+              setSeries(sortedSeries);
               setProducts([]);
               return; // Found navigation, we're done
             }
             
             if (productsResponse.data.products && productsResponse.data.products.length > 0) {
               console.log('✅ Found products:', productsResponse.data.products.length);
-              // Sort the products data before setting state
               const sortedProducts = sortProductsAlphanumerically(productsResponse.data.products);
               setProducts(sortedProducts);
-              setSeries([]); // Clear series when showing products
+              setSeries([]);
               return; // Found products, we're done
             }
           } catch (productError: any) {
-            console.log('getProducts failed:', productError.message);
+            console.log('getProducts failed, trying getAllSeries fallback:', productError.message);
           }
 
-          // Step 3: If nothing found, clear everything
+          // FALLBACK: Only try getAllSeries if getProducts fails
+          try {
+            const seriesResponse = await axios.post('/api/getAllSeries', { 
+              data: { slug: targetSlugOrId } 
+            });
+            console.log('getAllSeries fallback response:', seriesResponse.data);
+            
+            if (seriesResponse.data.series && seriesResponse.data.series.length > 0) {
+              console.log('✅ Found series navigation from fallback:', seriesResponse.data.series.length);
+              const sortedSeries = sortProductsAlphanumerically(seriesResponse.data.series);
+              setSeries(sortedSeries);
+              setProducts([]);
+              return;
+            }
+          } catch (seriesError: any) {
+            console.log('getAllSeries fallback also failed:', seriesError.message);
+          }
+
+          // If both fail, clear everything
           console.log('⚠️ No data found for:', targetSlugOrId);
           setSeries([]);
           setProducts([]);
@@ -118,10 +117,10 @@ const ProductsPage = () => {
     };
 
     fetchData();
-  }, [targetSlugOrId, router.query]);
+  }, [router.isReady, targetSlugOrId, router.query]);
 
-  // Show loading state
-  if (loading) {
+  // Show loading while router is not ready or while fetching
+  if (!router.isReady || loading) {
     return <Loading />;
   }
 
