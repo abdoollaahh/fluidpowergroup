@@ -100,7 +100,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     // First, check for actual products in this category
-    const products = await swell.get('/products', { limit: 1000 });
+    const products = await swell.get('/products', { limit: 500 });
     const selectedProducts = products.results.filter((product: any) => {
       return product.category_index !== undefined && 
              product.category_index.id.includes(categoryId);
