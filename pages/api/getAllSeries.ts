@@ -100,7 +100,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Find the category by slug (search all categories, not just top level)
     const allCategories = await swell.get('/categories', { limit: 1000 });
-    const targetCategory = allCategories.results.find((cat: any) => cat.slug === slug);
+    const targetCategory = allCategories.results.find((cat: any) => 
+      cat.slug === slug || cat.id === slug
+    );
     
     if (!targetCategory) {
       return res.status(404).json({ message: "Category not found" });
