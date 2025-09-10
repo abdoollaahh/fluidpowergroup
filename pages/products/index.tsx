@@ -29,9 +29,39 @@ const ProductsPage = () => {
         setLoading(true);
         setError(null);
         
+        // Detect desktop Chromium browsers
+        const isDesktopChromium = typeof window !== 'undefined' && 
+          /Chrome|Chromium|Edg/.test(navigator.userAgent) && 
+          window.innerWidth > 768;
+        
+        if (isDesktopChromium) {
+          console.log('Desktop Chromium detected - applying memory optimizations');
+          
+          // Force garbage collection if available
+          if ((window as any).gc) {
+            (window as any).gc();
+          }
+          
+          // Clear any existing timeouts/intervals that might interfere
+          const highestTimeoutId = setTimeout(() => {}, 0);
+          const maxId = Number(highestTimeoutId);
+          for (let i = 0; i < maxId; i++) {
+            clearTimeout(i);
+          }
+          
+          // Force DOM cleanup
+          if (document.activeElement && document.activeElement !== document.body) {
+            (document.activeElement as HTMLElement).blur();
+          }
+          
+          // Add small delay to let browser stabilize
+          await new Promise(resolve => setTimeout(resolve, 150));
+        }
+        
         console.log('=== ProductsPage Debug ===');
         console.log('Router query:', router.query);
         console.log('Target slug/id:', targetSlugOrId);
+        console.log('Browser type:', isDesktopChromium ? 'Desktop Chromium' : 'Other');
 
         // Always fetch categories for navigation
         const categoriesResponse = await axios.get('/api/getCategories');
@@ -54,6 +84,12 @@ const ProductsPage = () => {
               const sortedSeries = sortProductsAlphanumerically(productsResponse.data.series);
               setSeries(sortedSeries);
               setProducts([]);
+              
+              // Additional cleanup for Chromium
+              if (isDesktopChromium) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+              }
+              
               return; // Found navigation, we're done
             }
             
@@ -62,6 +98,12 @@ const ProductsPage = () => {
               const sortedProducts = sortProductsAlphanumerically(productsResponse.data.products);
               setProducts(sortedProducts);
               setSeries([]);
+              
+              // Additional cleanup for Chromium
+              if (isDesktopChromium) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+              }
+              
               return; // Found products, we're done
             }
           } catch (productError: any) {
@@ -70,6 +112,11 @@ const ProductsPage = () => {
 
           // FALLBACK: Only try getAllSeries if getProducts fails
           try {
+            // Extra delay for Chromium before fallback
+            if (isDesktopChromium) {
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
             const seriesResponse = await axios.post('/api/getAllSeries', { 
               data: { slug: targetSlugOrId } 
             });
