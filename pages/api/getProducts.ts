@@ -122,33 +122,27 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // If products exist, flatten into table items and return
     if (products.length > 0) {
-      const items = products.flatMap((product: any) => {
-        const variants = product.variants?.length > 0
-          ? product.variants
-          : [{
-              id: product.id,
-              sku: product.sku,
-              price: product.price,
-              stock_level: product.stock_level,
-            }];
-
-        return variants.map((variant: any) => ({
-          id: variant.id,
-          name: variant.sku || variant.name || product.name,
-          price: variant.price ?? variant.sale_price ?? product.price,
-          stock: variant.stock_level ?? 0,
-          attributes: variant.options
-            ? variant.options.reduce((acc: any, opt: any) => {
-                acc[opt.name] = opt.value;
-                return acc;
-              }, {})
-            : variant.attributes || {},
-          description: product.description || "",
-          quantity: 0,
-        }));
+      const sortedProducts = products.sort((a: any, b: any) => 
+        Number(new Date(a.date_created)) - Number(new Date(b.date_created))
+      );
+      
+      const productList = sortedProducts.map((product: any) => {
+        const { shortTitle, subtitle } = transformTitle(product.name);
+        
+        return {
+          id: product.id,
+          name: product.name,
+          shortTitle,
+          subtitle,
+          price: product.price,
+          stock: product.stock_level || 0,
+          attributes: product.attributes,
+          description: product.description,
+          quantity: 0
+        };
       });
 
-      return res.status(200).json({ products: items });
+      return res.status(200).json({ products: productList });
     }
 
     // No products found - check for subcategories (same as working version)
