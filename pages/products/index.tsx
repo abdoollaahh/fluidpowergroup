@@ -1,6 +1,7 @@
+// index.tsx - Updated with pagination and performance optimizations
 import withLayout from "@/hoc/withLayout";
 import { FilterProducts, GridProducts, HeaderProducts } from "@/views/Products";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Header from "@/modules/Header";
 import { useRouter } from "next/router";
 import axios from "axios";
@@ -11,138 +12,189 @@ const ProductsPage = () => {
   const router = useRouter();
   const { id, subcategory, category } = router.query;
   
-  // Determine what we're looking for - prioritize id, then subcategory, then category
   const targetSlugOrId = id || subcategory || category;
   
   const [series, setSeries] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // NEW: Pagination state
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    hasNext: false
+  });
+  const [hasInitialLoad, setHasInitialLoad] = useState(false);
 
+  // Memoize categories to prevent unnecessary re-renders
+  const memoizedCategories = useMemo(() => categories, [categories]);
+
+  // NEW: Load more products function
+  const loadMoreProducts = useCallback(async () => {
+    if (!targetSlugOrId || loadingMore || !pagination.hasNext) return;
+
+    try {
+      setLoadingMore(true);
+      
+      const response = await axios.post('/api/getProducts', { 
+        data: { 
+          id: targetSlugOrId,
+          page: pagination.page + 1,
+          limit: pagination.limit,
+          loadAll: false
+        } 
+      });
+
+      if (response.data.products && response.data.products.length > 0) {
+        const sortedNewProducts = sortProductsAlphanumerically(response.data.products);
+        setProducts(prev => [...prev, ...sortedNewProducts]);
+        setPagination(response.data.pagination);
+      }
+    } catch (error) {
+      console.error('Error loading more products:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [targetSlugOrId, loadingMore, pagination]);
+
+  // NEW: Intersection observer for infinite scroll
   useEffect(() => {
-    // Don't run until router is ready
+    if (!hasInitialLoad || !pagination.hasNext) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingMore) {
+          loadMoreProducts();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const sentinel = document.getElementById('load-more-sentinel');
+    if (sentinel) {
+      observer.observe(sentinel);
+    }
+
+    return () => observer.disconnect();
+  }, [loadMoreProducts, hasInitialLoad, pagination.hasNext, loadingMore]);
+
+  // Main data fetching effect
+  useEffect(() => {
     if (!router.isReady) return;
 
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
+        setHasInitialLoad(false);
         
-        // Detect desktop Chromium browsers
-        const isDesktopChromium = typeof window !== 'undefined' && 
-          /Chrome|Chromium|Edg/.test(navigator.userAgent) && 
-          window.innerWidth > 768;
-        
-        if (isDesktopChromium) {
-          console.log('Desktop Chromium detected - applying memory optimizations');
-          
-          // Force garbage collection if available
-          if ((window as any).gc) {
-            (window as any).gc();
-          }
-          
-          // Clear any existing timeouts/intervals that might interfere
-          const highestTimeoutId = setTimeout(() => {}, 0);
-          const maxId = Number(highestTimeoutId);
-          for (let i = 0; i < maxId; i++) {
-            clearTimeout(i);
-          }
-          
-          // Force DOM cleanup
-          if (document.activeElement && document.activeElement !== document.body) {
-            (document.activeElement as HTMLElement).blur();
-          }
-          
-          // Add small delay to let browser stabilize
-          await new Promise(resolve => setTimeout(resolve, 150));
-        }
+        // Reset pagination and products
+        setPagination({ page: 1, limit: 20, total: 0, hasNext: false });
+        setProducts([]);
+        setSeries([]);
         
         console.log('=== ProductsPage Debug ===');
-        console.log('Router query:', router.query);
         console.log('Target slug/id:', targetSlugOrId);
-        console.log('Browser type:', isDesktopChromium ? 'Desktop Chromium' : 'Other');
 
-        // Always fetch categories for navigation
+        // Always fetch categories for navigation (cached on client)
         const categoriesResponse = await axios.get('/api/getCategories');
-        console.log('Categories loaded:', categoriesResponse.data.categories?.length || 0);
         setCategories(categoriesResponse.data.categories || []);
 
-        // If we have a target, try to fetch its data
         if (targetSlugOrId) {
-          
-          // OPTIMIZED: Use getProducts as primary (it handles both cases!)
+          // NEW: Try paginated approach first
           try {
             const productsResponse = await axios.post('/api/getProducts', { 
-              data: { id: targetSlugOrId } 
+              data: { 
+                id: targetSlugOrId,
+                page: 1,
+                limit: 20,
+                loadAll: false // Use pagination
+              } 
             });
-            console.log('getProducts response:', productsResponse.data);
             
-            // Check if getProducts returned series data (subcategories)
+            console.log('Paginated getProducts response:', productsResponse.data);
+            
+            // Check if we got series data (subcategories)
             if (productsResponse.data.series && productsResponse.data.series.length > 0) {
-              console.log('✅ Found subcategory navigation from getProducts:', productsResponse.data.series.length);
+              console.log('✅ Found subcategory navigation:', productsResponse.data.series.length);
               const sortedSeries = sortProductsAlphanumerically(productsResponse.data.series);
               setSeries(sortedSeries);
               setProducts([]);
-              
-              // Additional cleanup for Chromium
-              if (isDesktopChromium) {
-                await new Promise(resolve => setTimeout(resolve, 50));
-              }
-              
-              return; // Found navigation, we're done
+              setHasInitialLoad(true);
+              return;
             }
             
+            // Check if we got products with pagination
             if (productsResponse.data.products && productsResponse.data.products.length > 0) {
-              console.log('✅ Found products:', productsResponse.data.products.length);
+              console.log('✅ Found paginated products:', productsResponse.data.products.length);
               const sortedProducts = sortProductsAlphanumerically(productsResponse.data.products);
               setProducts(sortedProducts);
               setSeries([]);
               
-              // Additional cleanup for Chromium
-              if (isDesktopChromium) {
-                await new Promise(resolve => setTimeout(resolve, 50));
+              if (productsResponse.data.pagination) {
+                setPagination(productsResponse.data.pagination);
               }
               
-              return; // Found products, we're done
+              setHasInitialLoad(true);
+              return;
             }
           } catch (productError: any) {
-            console.log('getProducts failed, trying getAllSeries fallback:', productError.message);
+            console.log('Paginated getProducts failed, trying fallback:', productError.message);
+            
+            // Fallback to load all (your existing approach)
+            try {
+              const fallbackResponse = await axios.post('/api/getProducts', { 
+                data: { 
+                  id: targetSlugOrId,
+                  loadAll: true // Use your existing logic
+                } 
+              });
+              
+              if (fallbackResponse.data.products && fallbackResponse.data.products.length > 0) {
+                console.log('✅ Found products via fallback:', fallbackResponse.data.products.length);
+                const sortedProducts = sortProductsAlphanumerically(fallbackResponse.data.products);
+                setProducts(sortedProducts);
+                setSeries([]);
+                setHasInitialLoad(true);
+                return;
+              }
+            } catch (fallbackError: any) {
+              console.log('Fallback also failed:', fallbackError.message);
+            }
           }
 
-          // FALLBACK: Only try getAllSeries if getProducts fails
+          // Try getAllSeries as final fallback
           try {
-            // Extra delay for Chromium before fallback
-            if (isDesktopChromium) {
-              await new Promise(resolve => setTimeout(resolve, 100));
-            }
-            
             const seriesResponse = await axios.post('/api/getAllSeries', { 
               data: { slug: targetSlugOrId } 
             });
-            console.log('getAllSeries fallback response:', seriesResponse.data);
             
             if (seriesResponse.data.series && seriesResponse.data.series.length > 0) {
-              console.log('✅ Found series navigation from fallback:', seriesResponse.data.series.length);
+              console.log('✅ Found series from getAllSeries:', seriesResponse.data.series.length);
               const sortedSeries = sortProductsAlphanumerically(seriesResponse.data.series);
               setSeries(sortedSeries);
               setProducts([]);
+              setHasInitialLoad(true);
               return;
             }
           } catch (seriesError: any) {
-            console.log('getAllSeries fallback also failed:', seriesError.message);
+            console.log('getAllSeries also failed:', seriesError.message);
           }
 
-          // If both fail, clear everything
           console.log('⚠️ No data found for:', targetSlugOrId);
           setSeries([]);
           setProducts([]);
         } else {
-          // No target specified, show main categories
           console.log('📂 Showing main categories');
           setSeries([]);
           setProducts([]);
         }
+        
+        setHasInitialLoad(true);
 
       } catch (err: any) {
         console.error('❌ Fatal error:', err);
@@ -164,7 +216,7 @@ const ProductsPage = () => {
     };
 
     fetchData();
-  }, [router.isReady, targetSlugOrId, router.query]);
+  }, [router.isReady, targetSlugOrId]);
 
   // Show loading while router is not ready or while fetching
   if (!router.isReady || loading) {
@@ -189,8 +241,8 @@ const ProductsPage = () => {
     );
   }
 
-  // Show empty state if no data and no categories
-  if (categories.length === 0 && series.length === 0 && products.length === 0) {
+  // Show empty state
+  if (memoizedCategories.length === 0 && series.length === 0 && products.length === 0) {
     return (
       <div className="wrapper px-8 md:px-12 py-12 min-h-screen flex flex-col items-center justify-center">
         <div className="text-center">
@@ -201,17 +253,51 @@ const ProductsPage = () => {
     );
   }
 
+  const dataToShow = series.length > 0 ? series : products;
+
   return (
     <div className="wrapper px-8 md:px-12 py-12 min-h-screen flex flex-col items-center gap-12">
-      <HeaderProducts categories={categories} slug={targetSlugOrId}/>
+      <HeaderProducts categories={memoizedCategories} slug={targetSlugOrId}/>
 
       <div className="grid grid-cols-12 w-full space-y-8 sm:space-y-0 sm:space-x-12">
-        <FilterProducts categories={categories} />
+        <FilterProducts categories={memoizedCategories} />
         <GridProducts 
-          seriesList={series.length > 0 ? series : products} 
+          seriesList={dataToShow} 
           showDescription={true} 
         />
       </div>
+
+      {/* NEW: Load More Section */}
+      {products.length > 0 && pagination.hasNext && (
+        <div className="w-full flex flex-col items-center gap-4">
+          {/* Intersection observer sentinel */}
+          <div id="load-more-sentinel" className="h-4" />
+          
+          {loadingMore && (
+            <div className="flex items-center gap-2">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+              <span className="text-gray-600">Loading more products...</span>
+            </div>
+          )}
+          
+          {/* Manual load more button as backup */}
+          {!loadingMore && (
+            <button
+              onClick={loadMoreProducts}
+              className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            >
+              Load More ({pagination.total - products.length} remaining)
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Show total count */}
+      {products.length > 0 && (
+        <div className="text-center text-gray-600">
+          Showing {products.length} of {pagination.total} products
+        </div>
+      )}
     </div>
   );
 };
