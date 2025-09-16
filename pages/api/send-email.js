@@ -1,191 +1,214 @@
-// pages/api/send-email.js
-import nodemailer from 'nodemailer';
-import fetch from 'node-fetch'; // Keep this if needed for other services
+// pages/api/test-email-connection.js
+// Diagnostic function to identify what's actually failing
 
-// --- Environment Variables ---
-// SMTP configuration
+import nodemailer from 'nodemailer';
+
 const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587');
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
-
-// Existing environment variables
 const BUSINESS_EMAIL = process.env.BUSINESS_EMAIL;
-const VALID_SERVER_KEY = process.env.VALID_SERVER_KEY; // Needed for auth check
+const VALID_SERVER_KEY = process.env.VALID_SERVER_KEY;
 
-// --- Create a persistent transporter (singleton pattern) ---
-let transporter = null;
-function getTransporter() {
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: SMTP_PORT,
-      secure: SMTP_PORT === 465, // true for 465, false for other ports
-      auth: {
-        user: SMTP_USER,
-        pass: SMTP_PASS
-      }
-    });
-  }
-  return transporter;
-}
-
-// --- Allowed Origins Definition --- (UNCHANGED)
-const allowedOrigins = [
-    process.env.LOCAL_DEV_URL, // Define in .env.local if used
-    process.env.API_BASE_URL,  // Define in .env.local/Vercel
-    'http://localhost:3000',   // Your backend origin
-    'http://localhost:19006',  // Your Expo Web dev origin
-    'https://fluidpowergroup.com.au' // Your production frontend origin
-];
-const vercelPreviewPattern = /^https:\/\/fluidpowergroup-[a-z0-9]+-fluidpower\.vercel\.app$/; // For Vercel previews
-
-// --- Main Handler Function ---
 export default async function handler(req, res) {
-    const origin = req.headers.origin;
-
-    // --- Unified CORS Header Logic --- (UNCHANGED)
-    let isOriginAllowed = false;
-    if (origin) {
-        if (allowedOrigins.includes(origin) || vercelPreviewPattern.test(origin)) {
-            isOriginAllowed = true;
-        }
-    } else {
-        // Allow requests without an origin (like curl)
-        isOriginAllowed = true;
+    // Simple auth check
+    const serverKey = req.headers['x-server-key'];
+    if (serverKey !== VALID_SERVER_KEY) {
+        return res.status(403).json({ error: 'Unauthorized' });
     }
 
-    if (isOriginAllowed && origin) {
-       res.setHeader('Access-Control-Allow-Origin', origin);
-    }
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-server-key');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-
-    // --- Handle OPTIONS preflight request FIRST --- (UNCHANGED)
-    if (req.method === 'OPTIONS') {
-        if (!isOriginAllowed && origin) {
-             console.warn(`CORS preflight denied for origin: ${origin}`);
-             return res.status(403).end('Forbidden');
-        }
-        console.log(`CORS preflight OK for origin: ${origin}`);
-        return res.status(204).end();
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // --- Handle POST request ---
-    if (req.method === 'POST') {
-        // --- Authentication --- (UNCHANGED)
-        const serverKey = req.headers['x-server-key'];
-        // Ensure VALID_SERVER_KEY is defined
-        if (!VALID_SERVER_KEY) {
-             console.error("FATAL: VALID_SERVER_KEY is not configured on the server.");
-             return res.status(500).json({ error: 'Server configuration error.' });
-        }
-        if (serverKey !== VALID_SERVER_KEY) {
-            console.error(`Unauthorized access attempt to /api/send-email. Key: ${serverKey ? 'Provided (mismatch)' : 'Missing'}`);
-            return res.status(403).json({ error: 'Unauthorized' });
-        }
-        console.log('Server authorization passed for /api/send-email');
+    const diagnostics = {
+        timestamp: new Date().toISOString(),
+        serverLocation: process.env.VERCEL_REGION || 'unknown',
+        tests: {}
+    };
 
-        // --- Main Logic ---
+    try {
+        // Test 1: Basic configuration check
+        console.log('=== DIAGNOSTIC TEST 1: Configuration ===');
+        diagnostics.tests.configuration = {
+            smtpHost: !!SMTP_HOST,
+            smtpPort: SMTP_PORT,
+            smtpUser: !!SMTP_USER,
+            smtpPass: !!SMTP_PASS,
+            businessEmail: !!BUSINESS_EMAIL,
+            status: 'PASS'
+        };
+        console.log('✅ Configuration check passed');
+
+        // Test 2: Transporter creation
+        console.log('=== DIAGNOSTIC TEST 2: Transporter Creation ===');
+        const transporter = nodemailer.createTransporter({
+            host: SMTP_HOST,
+            port: SMTP_PORT,
+            secure: SMTP_PORT === 465,
+            auth: {
+                user: SMTP_USER,
+                pass: SMTP_PASS
+            },
+            connectionTimeout: 10000,
+            greetingTimeout: 5000,
+            socketTimeout: 10000,
+            debug: true, // Enable debug logging
+            logger: true // Enable logging
+        });
+        diagnostics.tests.transporterCreation = { status: 'PASS' };
+        console.log('✅ Transporter creation passed');
+
+        // Test 3: SMTP Connection Test (without sending)
+        console.log('=== DIAGNOSTIC TEST 3: SMTP Connection ===');
+        const connectionStart = Date.now();
+        
         try {
-            console.log('Email endpoint accessed (/api/send-email)');
-
-            // --- Validate SMTP Configuration ---
-            if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
-                console.error("FATAL: SMTP configuration missing (Host, User, or Password).");
-                return res.status(500).json({ success: false, error: "Email service configuration error." });
-            }
-
-            if (!BUSINESS_EMAIL) {
-                console.error("FATAL: Business email not configured.");
-                return res.status(500).json({ success: false, error: "Email service configuration error." });
-            }
-
-            // --- Get the persistent transporter ---
-            const mailer = getTransporter();
-
-            // Extract data needed for sending
-            const {
-                orderNumber,
-                userDetails,
-                pdfAttachment,     // Base64 string (or null/undefined)
-                emailTemplates,    // Should contain { customerEmailContent, businessEmailContent }
-                userEmail          // Fallback email from emailService
-            } = req.body;
-
-            // Simplified Validation
-            const customerEmailAddress = userDetails?.email || userEmail;
-            if (!customerEmailAddress || !emailTemplates || !emailTemplates.customerEmailContent || !emailTemplates.businessEmailContent) {
-                 console.error('Validation Failed: Missing crucial email content or customer email.', { customerEmailAddress, emailTemplatesExists: !!emailTemplates });
-                 console.error('Failing Request Body:', JSON.stringify(req.body, null, 2));
-                 return res.status(400).json({ success: false, error: "Missing required email content or recipient data." });
-            }
-            
-            const currentOrderNumber = orderNumber || 'Unknown';
-
-            // Define attachments for Nodemailer
-            const attachments = pdfAttachment ? [{
-                filename: `Order-${currentOrderNumber}.pdf`,
-                content: pdfAttachment,
-                encoding: 'base64',
-                contentType: 'application/pdf'
-            }] : [];
-
-            // --- Prepare both emails for parallel sending ---
-            const businessEmailOptions = {
-                from: `"FluidPower Group Order System" <${SMTP_USER}>`,
-                to: BUSINESS_EMAIL,
-                subject: `New Order Received - Order #${currentOrderNumber}`,
-                html: emailTemplates.businessEmailContent,
-                attachments: attachments.length > 0 ? attachments : undefined
+            await transporter.verify();
+            const connectionTime = Date.now() - connectionStart;
+            diagnostics.tests.smtpConnection = { 
+                status: 'PASS',
+                connectionTime: `${connectionTime}ms`,
+                message: 'SMTP server connection successful'
             };
-
-            const customerEmailOptions = {
-                from: `"FluidPower Group" <${SMTP_USER}>`,
-                to: customerEmailAddress,
-                subject: `Your Order Confirmation - Order #${currentOrderNumber}`,
-                html: emailTemplates.customerEmailContent,
-                attachments: attachments.length > 0 ? attachments : undefined
+            console.log(`✅ SMTP connection verified in ${connectionTime}ms`);
+        } catch (verifyError) {
+            const connectionTime = Date.now() - connectionStart;
+            diagnostics.tests.smtpConnection = { 
+                status: 'FAIL',
+                connectionTime: `${connectionTime}ms`,
+                error: verifyError.message,
+                code: verifyError.code,
+                command: verifyError.command
             };
-
-            // Log what we're about to do
-            console.log(`Sending business email for order ${currentOrderNumber} to ${BUSINESS_EMAIL}`);
-            console.log(`Sending customer email for order ${currentOrderNumber} to ${customerEmailAddress}`);
-
-            // --- Send both emails in parallel using Promise.all ---
-            try {
-                const [businessInfo, customerInfo] = await Promise.all([
-                    mailer.sendMail(businessEmailOptions),
-                    mailer.sendMail(customerEmailOptions)
-                ]);
-                
-                console.log(`Business email sent successfully. Message ID: ${businessInfo.messageId}`);
-                console.log(`Customer email sent successfully. Message ID: ${customerInfo.messageId}`);
-                
-                // Success
-                res.status(200).json({ success: true });
-            } catch (emailError) {
-                console.error('Failed to send one or both emails:', emailError);
-                throw new Error(`Email sending failed: ${emailError.message}`);
-            }
-
-        } catch (error) {
-            console.error('Error processing /api/send-email:', error);
-            res.status(500).json({ success: false, error: error.message || 'Internal server error processing email request.' });
+            console.error(`❌ SMTP connection failed after ${connectionTime}ms:`, verifyError.message);
         }
-    } else {
-        // Handle unsupported methods (UNCHANGED)
-        res.setHeader('Allow', ['POST', 'OPTIONS']);
-        res.status(405).json({ error: `Method ${req.method} Not Allowed` });
+
+        // Test 4: Simple Email Send (without PDF)
+        console.log('=== DIAGNOSTIC TEST 4: Simple Email Send ===');
+        const emailStart = Date.now();
+        
+        try {
+            const testEmail = {
+                from: `"FluidPower Diagnostic" <${SMTP_USER}>`,
+                to: BUSINESS_EMAIL,
+                subject: `Diagnostic Test - ${diagnostics.timestamp}`,
+                html: `
+                    <h3>Email System Diagnostic Test</h3>
+                    <p><strong>Test Time:</strong> ${diagnostics.timestamp}</p>
+                    <p><strong>Server Location:</strong> ${diagnostics.serverLocation}</p>
+                    <p><strong>Purpose:</strong> Testing email functionality after recent issues</p>
+                    <p>If you receive this email, basic SMTP functionality is working.</p>
+                `
+            };
+
+            const result = await transporter.sendMail(testEmail);
+            const emailTime = Date.now() - emailStart;
+            
+            diagnostics.tests.simpleEmailSend = {
+                status: 'PASS',
+                sendTime: `${emailTime}ms`,
+                messageId: result.messageId,
+                accepted: result.accepted,
+                rejected: result.rejected
+            };
+            console.log(`✅ Simple email sent successfully in ${emailTime}ms. Message ID: ${result.messageId}`);
+        } catch (emailError) {
+            const emailTime = Date.now() - emailStart;
+            diagnostics.tests.simpleEmailSend = {
+                status: 'FAIL',
+                sendTime: `${emailTime}ms`,
+                error: emailError.message,
+                code: emailError.code,
+                command: emailError.command
+            };
+            console.error(`❌ Simple email send failed after ${emailTime}ms:`, emailError.message);
+        }
+
+        // Test 5: PDF Email Send (with small test PDF)
+        console.log('=== DIAGNOSTIC TEST 5: PDF Email Send ===');
+        const pdfStart = Date.now();
+        
+        try {
+            // Create a minimal PDF in base64 for testing
+            const testPdfBase64 = 'JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPD4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovUmVzb3VyY2VzIDw8Ci9Gb250IDw8Ci9GMSA0IDAgUgo+Pgo+PgovQ29udGVudHMgNSAwIFIKPj4KZW5kb2JqCjQgMCBvYmoKPDwKL1R5cGUgL0ZvbnQKL1N1YnR5cGUgL1R5cGUxCi9CYXNlRm9udCAvSGVsdmV0aWNhCj4+CmVuZG9iago1IDAgb2JqCjw8Ci9MZW5ndGggNDQKPj4Kc3RyZWFtCkJUCi9GMSA5IFRmCjUwIDc1MCBUZAooVGVzdCBQREYpIFRqCkVUCmVuZHN0cmVhbQplbmRvYmoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmCjAwMDAwMDAwMDkgMDAwMDAgbgowMDAwMDAwMDU4IDAwMDAwIG4KMDAwMDAwMDExNSAwMDAwMCBuCjAwMDAwMDAyNTEgMDAwMDAgbgowMDAwMDAwMzE4IDAwMDAwIG4KDQP0cmFpbGVyCjw8Ci9TaXplIDYKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjQxMQolJUVPRg==';
+            
+            const testEmailWithPdf = {
+                from: `"FluidPower Diagnostic" <${SMTP_USER}>`,
+                to: BUSINESS_EMAIL,
+                subject: `Diagnostic Test with PDF - ${diagnostics.timestamp}`,
+                html: `
+                    <h3>Email System Diagnostic Test (with PDF)</h3>
+                    <p><strong>Test Time:</strong> ${diagnostics.timestamp}</p>
+                    <p><strong>Server Location:</strong> ${diagnostics.serverLocation}</p>
+                    <p>Testing PDF attachment functionality. A small test PDF should be attached.</p>
+                `,
+                attachments: [{
+                    filename: 'diagnostic-test.pdf',
+                    content: testPdfBase64,
+                    encoding: 'base64',
+                    contentType: 'application/pdf'
+                }]
+            };
+
+            const pdfResult = await transporter.sendMail(testEmailWithPdf);
+            const pdfTime = Date.now() - pdfStart;
+            
+            diagnostics.tests.pdfEmailSend = {
+                status: 'PASS',
+                sendTime: `${pdfTime}ms`,
+                messageId: pdfResult.messageId,
+                accepted: pdfResult.accepted,
+                rejected: pdfResult.rejected
+            };
+            console.log(`✅ PDF email sent successfully in ${pdfTime}ms. Message ID: ${pdfResult.messageId}`);
+        } catch (pdfError) {
+            const pdfTime = Date.now() - pdfStart;
+            diagnostics.tests.pdfEmailSend = {
+                status: 'FAIL',
+                sendTime: `${pdfTime}ms`,
+                error: pdfError.message,
+                code: pdfError.code,
+                command: pdfError.command
+            };
+            console.error(`❌ PDF email send failed after ${pdfTime}ms:`, pdfError.message);
+        }
+
+        // Close transporter
+        transporter.close();
+
+        // Generate summary
+        const passCount = Object.values(diagnostics.tests).filter(test => test.status === 'PASS').length;
+        const totalTests = Object.keys(diagnostics.tests).length;
+        
+        diagnostics.summary = {
+            totalTests,
+            passed: passCount,
+            failed: totalTests - passCount,
+            overallStatus: passCount === totalTests ? 'ALL_PASS' : passCount > 0 ? 'PARTIAL_PASS' : 'ALL_FAIL'
+        };
+
+        console.log('=== DIAGNOSTIC SUMMARY ===');
+        console.log(`Tests passed: ${passCount}/${totalTests}`);
+        console.log(`Overall status: ${diagnostics.summary.overallStatus}`);
+
+        res.status(200).json(diagnostics);
+
+    } catch (error) {
+        console.error('Diagnostic test failed:', error);
+        diagnostics.tests.criticalError = {
+            status: 'FAIL',
+            error: error.message
+        };
+        diagnostics.summary = { overallStatus: 'CRITICAL_FAIL' };
+        res.status(500).json(diagnostics);
     }
 }
 
-// Maintain the existing size limit config (UNCHANGED)
 export const config = {
     api: {
-      bodyParser: {
-        sizeLimit: '10mb', // Maintain 10MB limit
-      },
+        bodyParser: {
+            sizeLimit: '1mb',
+        },
     },
 };
