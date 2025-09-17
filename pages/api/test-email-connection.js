@@ -38,7 +38,7 @@ export default async function handler(req, res) {
         };
 
         // Test 2: Create transporter
-        const transporter = nodemailer.createTransporter({
+        const transporter = nodemailer.createTransport({
             host: SMTP_HOST,
             port: SMTP_PORT,
             secure: SMTP_PORT === 465,
