@@ -6,8 +6,9 @@ const AZURE_TENANT_ID = process.env.AZURE_TENANT_ID;
 const AZURE_CLIENT_ID = process.env.AZURE_CLIENT_ID;
 const AZURE_CLIENT_SECRET = process.env.AZURE_CLIENT_SECRET;
 
-// Existing environment variables
-const BUSINESS_EMAIL = process.env.BUSINESS_EMAIL;
+// Email configuration
+const BUSINESS_EMAIL = process.env.BUSINESS_EMAIL; // Where to send business notifications
+const SENDER_EMAIL = process.env.SENDER_EMAIL;     // What email to send FROM
 const VALID_SERVER_KEY = process.env.VALID_SERVER_KEY;
 
 // --- Allowed Origins Definition --- (UNCHANGED)
@@ -53,8 +54,8 @@ async function getGraphAccessToken() {
 }
 
 // --- Send Email via Microsoft Graph ---
-async function sendEmailViaGraph(accessToken, emailData) {
-    const graphEndpoint = 'https://graph.microsoft.com/v1.0/me/sendMail';
+async function sendEmailViaGraph(accessToken, emailData, fromEmail) {
+    const graphEndpoint = `https://graph.microsoft.com/v1.0/users/${fromEmail}/sendMail`;
     
     try {
         const response = await fetch(graphEndpoint, {
@@ -167,8 +168,8 @@ export default async function handler(req, res) {
                 return res.status(500).json({ success: false, error: "Email service configuration error." });
             }
 
-            if (!BUSINESS_EMAIL) {
-                console.error("FATAL: Business email not configured.");
+            if (!BUSINESS_EMAIL || !SENDER_EMAIL) {
+                console.error("FATAL: Business email or sender email not configured.");
                 return res.status(500).json({ success: false, error: "Email service configuration error." });
             }
 
@@ -223,10 +224,10 @@ export default async function handler(req, res) {
                 warnings: []
             };
 
-            // Step 1: Send customer email first (CRITICAL)
+            // Step 1: Send customer email first (CRITICAL) - FROM orders@ email
             try {
                 console.log('Sending customer email via Graph API...');
-                const customerResult = await sendEmailViaGraph(accessToken, customerEmailData);
+                const customerResult = await sendEmailViaGraph(accessToken, customerEmailData, SENDER_EMAIL);
                 results.customerEmailSent = true;
                 console.log(`Customer email sent successfully. ID: ${customerResult.messageId}`);
             } catch (customerError) {
@@ -238,10 +239,10 @@ export default async function handler(req, res) {
                 });
             }
 
-            // Step 2: Send business email second (NICE TO HAVE)
+            // Step 2: Send business email second (NICE TO HAVE) - FROM orders@ email
             try {
                 console.log('Sending business email via Graph API...');
-                const businessResult = await sendEmailViaGraph(accessToken, businessEmailData);
+                const businessResult = await sendEmailViaGraph(accessToken, businessEmailData, SENDER_EMAIL);
                 results.businessEmailSent = true;
                 console.log(`Business email sent successfully. ID: ${businessResult.messageId}`);
             } catch (businessError) {
