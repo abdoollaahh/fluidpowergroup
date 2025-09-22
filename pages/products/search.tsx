@@ -622,7 +622,7 @@ const Search = () => {
                       type="text"
                       value={partSearchQuery}
                       onChange={(e) => setPartSearchQuery(e.target.value)}
-                      placeholder="Enter part number (e.g., SSTI, AJJ6J)"
+                      placeholder="Enter part number (e.g., SSTI, 2J9)"
                       className="
                         flex-1 min-w-0 px-3 sm:px-4 py-3 focus:outline-none
                         text-gray-800 text-sm sm:text-base
