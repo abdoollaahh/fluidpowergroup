@@ -29,6 +29,12 @@ const ProductPage = () => {
   const [subcategories, setSubcategories] = useState<any[]>([]);
 
   useEffect(() => {
+    if (router.isReady && id) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [id, router.isReady]);
+
+  useEffect(() => {
     const products = async () => {
       try {
         const prod = await axios.post(
