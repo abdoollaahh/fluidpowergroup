@@ -37,6 +37,20 @@ const ProductsPage = () => {
   // FIXED: Simplified cache management
   const categoryCache = useMemo(() => new Map(), []);
 
+  useEffect(() => {
+    if (router.isReady) {
+      // Scroll to top whenever the route changes
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [router.asPath, router.isReady]);
+  
+  // Also add this separate effect for when data loads
+  useEffect(() => {
+    if (router.isReady && targetSlugOrId) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [targetSlugOrId, router.isReady]);
+
   // Load more products function
   const loadMoreProducts = useCallback(async () => {
     if (!targetSlugOrId || loadingMore || !pagination.hasNext) return;
