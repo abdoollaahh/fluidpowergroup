@@ -22,51 +22,55 @@ const OptimizedImage = ({
   priority = false
 }: OptimizedImageProps) => {
   const [isError, setIsError] = useState(false);
+  const [useUnoptimized, setUseUnoptimized] = useState(false);
+  const [imgKey, setImgKey] = useState(0);
   
   if (!src || isError) {
     return (
       <div 
-        className={`flex items-center justify-center bg-gray-100 ${className}`} 
-        style={{ width: useContainMode ? '100%' : width, height: useContainMode ? '100%' : height }}
+        className={`flex items-center justify-center bg-gray-100 rounded-lg ${className}`} 
+        style={{ width: '100%', height: '100%', minHeight: '200px' }}
       >
-        <span className="text-gray-400">Image unavailable</span>
+        <div className="text-center">
+          <span className="text-gray-400 text-sm block">Loading Image</span>
+          <button 
+            onClick={() => {
+              setIsError(false);
+              setUseUnoptimized(false);
+              setImgKey(prev => prev + 1);
+            }}
+            className="mt-2 text-xs text-blue-600 hover:underline"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
   
-  if (useContainMode) {
-    return (
-      <div className="w-full h-full">
-        <Image
-          src={src}
-          alt={alt}
-          width={width}
-          height={height}
-          className={`w-full h-full object-contain ${className}`}
-          onError={() => setIsError(true)}
-          priority={priority}
-          quality={75}
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        />
-      </div>
-    );
-  }
+  const handleImageError = () => {
+    if (!useUnoptimized) {
+      console.warn(`Optimized image failed, trying unoptimized: ${src}`);
+      setUseUnoptimized(true);
+    } else {
+      console.error(`Image failed to load: ${src}`);
+      setIsError(true);
+    }
+  };
   
-  // Standard mode - no flex wrapper
   return (
-    <div style={{ width, height }}>
-      <Image
-        src={src}
-        alt={alt}
-        width={width}
-        height={height}
-        className={`object-contain ${className}`}
-        onError={() => setIsError(true)}
-        priority={priority}
-        quality={75}
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-      />
-    </div>
+    <Image
+      key={imgKey}
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      className={className}
+      onError={handleImageError}
+      priority={priority}
+      quality={75}
+      unoptimized={useUnoptimized}
+    />
   );
 };
 

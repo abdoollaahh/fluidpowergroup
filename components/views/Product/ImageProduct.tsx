@@ -2,13 +2,14 @@ import clsx from 'clsx';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState, useMemo, useEffect } from 'react';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import OptimizedImage from "../../../utils/OptimizedImage";
+import SafeImage from "../../../utils/SafeImage";
 
 type Props = {
   images: string[];
+  imageScale?: number; // Scale percentage for desktop (default 100)
 };
 
-const ImageProduct = ({ images = [] }: Props) => {
+const ImageProduct = ({ images = [], imageScale = 50 }: Props) => {
   const safeImages = useMemo(() => images || [], [images]);
   const [selectedImage, setSelectedImage] = useState(safeImages.length > 0 ? safeImages[0] : '');
   const [direction, setDirection] = useState(true);
@@ -20,9 +21,20 @@ const ImageProduct = ({ images = [] }: Props) => {
   }, [safeImages]);
 
   const variants = {
-    enter: { x: 100, opacity: 0 },
-    center: { zIndex: 1, x: 0, opacity: 1 },
-    exit: { zIndex: 0, x: -100, opacity: 0 },
+    enter: {
+      x: 100,
+      opacity: 0,
+    },
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1,
+    },
+    exit: {
+      zIndex: 0,
+      x: -100,
+      opacity: 0,
+    },
   };
 
   if (safeImages.length === 0 || !selectedImage) {
@@ -39,33 +51,65 @@ const ImageProduct = ({ images = [] }: Props) => {
 
   return (
     <div className="relative col-span-full lg:col-span-6 xl:col-span-7 w-full border rounded-3xl h-full overflow-hidden">
-      <div className="w-full h-full min-h-[200px] max-h-[350px] flex items-center justify-center p-4">
+      {/* Mobile: Original behavior with pt-[100%] for proper aspect ratio */}
+      <div className="w-full h-full min-h-[200px] max-h-[350px] flex items-center justify-center p-4 md:hidden">
         <AnimatePresence exitBeforeEnter>
           <motion.div
             variants={variants}
-            className="w-full h-full max-w-[300px] max-h-[300px]"
+            className="flex items-center justify-center max-w-[300px] max-h-[300px]"
             key={selectedImage}
             custom={direction}
-            transition={{ opacity: { duration: 0.2 } }}
+            transition={{
+              opacity: { duration: 0.2 },
+            }}
             initial="enter"
             animate="center"
             exit="exit">
-            <div className="w-full h-full flex items-center justify-center">
-              <OptimizedImage
-                src={selectedImage}
-                alt="Product"
-                width={300}
-                height={300}
-                className="!w-[200px] !h-[200px] md:!w-[250px] md:!h-[250px] lg:!w-[280px] lg:!h-[280px] xl:!w-[300px] xl:!h-[300px]"
-                useContainMode={true}
-                priority={imageIndex === 0}
-              />
-            </div>
+            <SafeImage
+              src={selectedImage}
+              alt="Product"
+              width={300}
+              height={300}
+              className="!w-[200px] !h-[200px] md:!w-[250px] md:!h-[250px] object-contain"
+              useContainMode={true}
+            />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Desktop: Scaled version with configurable imageScale */}
+      <div className="hidden md:flex w-full items-center justify-center p-8" style={{ minHeight: '400px', maxHeight: '600px', height: '500px' }}>
+        <AnimatePresence exitBeforeEnter>
+          <motion.div
+            variants={variants}
+            className="flex items-center justify-center"
+            key={selectedImage}
+            custom={direction}
+            transition={{
+              opacity: { duration: 0.2 },
+            }}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            style={{ 
+              width: `${imageScale}%`,
+              height: `${imageScale}%`,
+              maxWidth: '100%',
+              maxHeight: '100%'
+            }}>
+            <SafeImage
+              src={selectedImage}
+              alt="Product"
+              width={400}
+              height={400}
+              className="!w-full !h-full object-contain"
+              useContainMode={true}
+            />
           </motion.div>
         </AnimatePresence>
       </div>
       
-      {/* Navigation arrows - unchanged */}
+      {/* Navigation arrows */}
       {safeImages.length > 1 && (
         <>
           <div className="absolute h-full top-0 left-0 flex flex-col justify-center">
@@ -73,7 +117,12 @@ const ImageProduct = ({ images = [] }: Props) => {
               className="p-2 hover:bg-slate-300/20 rounded-full cursor-pointer z-10 m-2 group"
               onClick={() => {
                 setDirection(false);
-                setSelectedImage(safeImages[(imageIndex > 0 ? imageIndex - 1 : safeImages.length - 1) % safeImages.length]);
+                setSelectedImage(
+                  safeImages[
+                    (imageIndex > 0 ? imageIndex - 1 : safeImages.length - 1) %
+                      safeImages.length
+                  ]
+                );
               }}>
               <FiChevronLeft className="text-3xl text-black/60 group-hover:text-black group-hover:scale-110 transition-all duration-200" />
             </div>
@@ -84,7 +133,9 @@ const ImageProduct = ({ images = [] }: Props) => {
               className="p-2 hover:bg-slate-300/20 rounded-full cursor-pointer z-10 m-2 group"
               onClick={() => {
                 setDirection(true);
-                setSelectedImage(safeImages[(imageIndex + 1) % safeImages.length]);
+                setSelectedImage(
+                  safeImages[(imageIndex + 1) % safeImages.length]
+                );
               }}>
               <FiChevronRight className="text-3xl text-black/60 group-hover:text-black group-hover:scale-110 transition-all duration-200" />
             </div>
