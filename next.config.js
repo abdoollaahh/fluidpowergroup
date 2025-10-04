@@ -8,7 +8,7 @@ const nextConfig = {
       "cdn.schema.io",
       "cdn.swell.store" 
     ],
-    //unoptimized: true
+    formats: ['image/webp', 'image/avif'],
   },
   
   // For redirects (changing URL in browser)
