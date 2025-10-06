@@ -2,23 +2,37 @@ import clsx from 'clsx';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState, useMemo, useEffect } from 'react';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import NextImage from 'next/image';
 import SafeImage from "../../../utils/SafeImage";
 
 type Props = {
   images: string[];
+  imageScale?: number;
 };
 
-const ImageProduct = ({ images = [] }: Props) => {
+const ImageProduct = ({ images = [], imageScale = 30 }: Props) => {
   const safeImages = useMemo(() => images || [], [images]);
   const [selectedImage, setSelectedImage] = useState(safeImages.length > 0 ? safeImages[0] : '');
   const [direction, setDirection] = useState(true);
+  const [firstImageLoaded, setFirstImageLoaded] = useState(false);
 
-  // Reset to first image when images array changes
   useEffect(() => {
     if (safeImages.length > 0) {
       setSelectedImage(safeImages[0]);
     }
   }, [safeImages]);
+
+  // Preload remaining images after first image loads
+  useEffect(() => {
+    if (firstImageLoaded && safeImages.length > 1) {
+      safeImages.slice(1).forEach((imageSrc) => {
+        if (typeof window !== 'undefined') {
+          const img = window.Image ? new window.Image() : document.createElement('img');
+          img.src = imageSrc;
+        }
+      });
+    }
+  }, [firstImageLoaded, safeImages]);
 
   const variants = {
     enter: {
@@ -51,8 +65,8 @@ const ImageProduct = ({ images = [] }: Props) => {
 
   return (
     <div className="relative col-span-full lg:col-span-6 xl:col-span-7 w-full border rounded-3xl h-full overflow-hidden">
-      {/* Container adapts to image size */}
-      <div className="w-full h-full min-h-[200px] max-h-[350px] flex items-center justify-center p-4">
+      {/* Mobile: Original behavior */}
+      <div className="w-full h-full min-h-[200px] max-h-[350px] flex items-center justify-center p-4 md:hidden">
         <AnimatePresence exitBeforeEnter>
           <motion.div
             variants={variants}
@@ -70,12 +84,54 @@ const ImageProduct = ({ images = [] }: Props) => {
               alt="Product"
               width={300}
               height={300}
-              className="!w-[200px] !h-[200px] md:!w-[250px] md:!h-[250px] lg:!w-[280px] lg:!h-[280px] xl:!w-[300px] xl:!h-[300px] object-contain"
+              className="!w-[200px] !h-[200px] md:!w-[250px] md:!h-[250px] object-contain"
               useContainMode={true}
             />
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* Desktop: Scaled version - scale transform applied to image wrapper */}
+      <div className="hidden md:flex w-full items-center justify-center p-8" style={{ minHeight: '400px', maxHeight: '600px', height: '500px' }}>
+        <AnimatePresence exitBeforeEnter>
+          <motion.div
+            variants={variants}
+            className="flex items-center justify-center w-full h-full"
+            key={selectedImage}
+            custom={direction}
+            transition={{
+              opacity: { duration: 0.2 },
+            }}
+            initial="enter"
+            animate="center"
+            exit="exit">
+            <div style={{ transform: `scale(${imageScale / 100})` }}>
+              <SafeImage
+                src={selectedImage}
+                alt="Product"
+                width={400}
+                height={400}
+                className="!w-auto !h-auto max-w-full max-h-full object-contain"
+                useContainMode={true}
+              />
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Hidden preloader - triggers firstImageLoaded */}
+      {!firstImageLoaded && safeImages[0] && (
+        <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}>
+          <NextImage
+            src={safeImages[0]}
+            alt=""
+            width={1}
+            height={1}
+            onLoad={() => setFirstImageLoaded(true)}
+            onError={() => setFirstImageLoaded(true)}
+          />
+        </div>
+      )}
       
       {/* Navigation arrows */}
       {safeImages.length > 1 && (

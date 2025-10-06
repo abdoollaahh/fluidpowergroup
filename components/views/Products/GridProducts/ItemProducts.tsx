@@ -1,11 +1,10 @@
 // components/views/Products/GridProducts/ItemProducts.tsx
 import Anchor from "@/modules/Anchor";
 import { motion } from "framer-motion";
-import SafeImage from "../../../../utils/SafeImage";
+import OptimizedImage from "../../../../utils/OptimizedImage";
 
 const ItemProducts = ({ item, showDescription = false }: { item: any, showDescription?: boolean }) => {
   const getDescriptions = (description: string) => {
-    //get text before first break tag
     const text = description.split("<br>")[0];
     const stripped = text.replace(/(<([^>]+)>)/ig, "").replace(/&nbsp;/g, "");
     return stripped + "...";
@@ -28,27 +27,56 @@ const ItemProducts = ({ item, showDescription = false }: { item: any, showDescri
 
   return (
     <Anchor href={`/products/${item.id}`}>
-      <div className="flex flex-col w-full max-w-sm mx-auto group cursor-pointer border-slate-800 border-[1px] p-4 h-full shadow-xl rounded-2xl transition-all duration-300 ease-out hover:transform hover:-translate-y-2 hover:rotate-x-3 hover:shadow-2xl hover:shadow-gray-800/50">
-        <motion.div className="w-full pt-[100%] relative transition-all duration-500">
-          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-            <SafeImage
-              src={item.image}
-              alt={item.slug || item.name || "Product image"}
-              width={300}
-              height={300}
-              className="scale-75 group-hover:scale-[0.82] transition-all duration-300 object-contain"
-            />
+      <motion.div 
+        className="flex flex-col w-full max-w-sm mx-auto cursor-pointer border-slate-800 border-[1px] p-4 h-full shadow-xl rounded-2xl"
+        initial={{ y: 0 }}
+        whileHover={{ 
+          y: -8,
+          boxShadow: "0 25px 50px -12px rgba(31, 41, 55, 0.5)"
+        }}
+        transition={{ 
+          duration: 0.2,
+          ease: "easeOut"
+        }}
+      >
+        {/* Fixed image container - centers content and handles hover scaling properly */}
+        <div className="w-full pt-[100%] relative overflow-visible">
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <motion.div 
+              className="relative w-full h-full"
+              initial={{ scale: 0.85 }}
+              whileHover={{ scale: 1.0 }}
+              transition={{ 
+                duration: 0.2,
+                ease: "easeOut"
+              }}
+            >
+              <OptimizedImage
+                src={item.image}
+                alt={item.slug || item.name || "Product image"}
+                width={300}
+                height={300}
+                className="object-contain"
+                useContainMode={true}
+              />
+            </motion.div>
           </div>
-        </motion.div>
-        <div className="text-xl px-3 py-1.5 font-light flex justify-center gap-12">
-          <h3 className="text-xl font-semibold"><b>{item.name || item.title}</b></h3>
         </div>
-        {showDescription && <div className="text-center">
-          <span className="text-xs font-semibold text-slate-700">
-            {item.description && getDescriptions(item.description)}
-          </span>
-        </div>}
-      </div>
+        
+        <div className="text-xl px-3 py-1.5 font-light flex justify-center gap-12">
+          <h3 className="text-xl font-semibold">
+            <b>{item.name || item.title}</b>
+          </h3>
+        </div>
+        
+        {showDescription && (
+          <div className="text-center">
+            <span className="text-xs font-semibold text-slate-700">
+              {item.description && getDescriptions(item.description)}
+            </span>
+          </div>
+        )}
+      </motion.div>
     </Anchor>
   );
 };
