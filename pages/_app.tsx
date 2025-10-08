@@ -1,18 +1,23 @@
 import Footer from "@/modules/Footer";
 import Header from "@/modules/Header";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useRouter } from 'next/router';
-import CartWrapper from "context/CartWrapper";
+import CartWrapper, { CartContext } from "context/CartWrapper";
 import { AnimatePresence, motion } from "framer-motion";
 import type { AppProps } from "next/app";
+import InAppChat from '../components/InAppChat';
 import Head from "next/head";
 import "styles/globals.css";
 import axios from "axios";
 import { Category } from "types/products";
 
-function MyApp({ Component, pageProps, router }: AppProps) {
+// Create a new component that has access to CartContext
+function AppContent({ Component, pageProps, router }: AppProps) {
   const [categories, setCategories] = useState<Category[]>([]);
-  const nextRouter = useRouter(); // Get router instance for logging
+  const nextRouter = useRouter();
+  
+  // Access cart context here
+  const { open: isCartOpen } = useContext(CartContext);
 
   useEffect(() => {
     const categories = async () => {
@@ -51,31 +56,45 @@ function MyApp({ Component, pageProps, router }: AppProps) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <CartWrapper>
-        <Header categories={categories} />
-        <main className="flex-grow">
-          <Head>
-            <title>FluidPower Group</title>
-          </Head>
+      <Header categories={categories} />
+      <main className="flex-grow">
+        <Head>
+          <title>FluidPower Group</title>
+        </Head>
 
-          <AnimatePresence
-            exitBeforeEnter
-            onExitComplete={() => window.scrollTo(0, 0)}
+        <AnimatePresence
+          exitBeforeEnter
+          onExitComplete={() => window.scrollTo(0, 0)}
+        >
+          <motion.div
+            key={router.route}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="h-full"
           >
-            <motion.div
-              key={router.route}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="h-full"
-            >
-              <Component {...pageProps} />
-            </motion.div>
-          </AnimatePresence>
-        </main>
-      </CartWrapper>
+            <Component {...pageProps} />
+          </motion.div>
+        </AnimatePresence>
+      </main>
       <Footer />
+
+      {/* Chat component now has access to cart state */}
+      <InAppChat 
+        buttonColor="#ffc100" 
+        companyName="FluidPower Group"
+        customerName="Guest"
+        hideWhenCartOpen={isCartOpen}
+      />
     </div>
+  );
+}
+
+function MyApp(props: AppProps) {
+  return (
+    <CartWrapper>
+      <AppContent {...props} />
+    </CartWrapper>
   );
 }
 

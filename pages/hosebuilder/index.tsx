@@ -116,6 +116,28 @@ const HoseBuilder = () => {
             right: 20px;
             z-index: 1000;
           }
+
+          /* Ensure chat button stays visible and clickable on PWA page */
+          #fpg-chat-button {
+            position: fixed !important;
+            bottom: 20px !important;
+            right: 20px !important;
+            z-index: 10000 !important;
+            pointer-events: auto !important;
+          }
+
+          #fpg-chat-modal {
+            position: fixed !important;
+            z-index: 10001 !important;
+            pointer-events: auto !important;
+          }
+
+          /* Prevent PWA container from affecting chat */
+          .hosebuilder-container {
+            position: relative;
+            z-index: 1;
+          }
+
         `}</style>
         <link rel="icon" type="image/png" sizes="16x16" href="/hosebuilder/favicon-16.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/hosebuilder/favicon-32.png" />
