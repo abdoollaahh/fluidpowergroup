@@ -1,7 +1,34 @@
-require('dotenv').config({ path: '.env.local' });
+// Read environment variables from .env.local manually
+const fs = require('fs');
+const path = require('path');
+
+function loadEnvFile() {
+  const envPath = path.join(__dirname, '..', '.env.local');
+  
+  if (!fs.existsSync(envPath)) {
+    console.error('❌ .env.local file not found');
+    process.exit(1);
+  }
+
+  const envFile = fs.readFileSync(envPath, 'utf8');
+  const envVars = {};
+
+  envFile.split('\n').forEach(line => {
+    const trimmedLine = line.trim();
+    if (trimmedLine && !trimmedLine.startsWith('#')) {
+      const [key, ...valueParts] = trimmedLine.split('=');
+      if (key && valueParts.length > 0) {
+        envVars[key.trim()] = valueParts.join('=').trim();
+      }
+    }
+  });
+
+  return envVars;
+}
 
 async function setupWebhook() {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const env = loadEnvFile();
+  const token = env.TELEGRAM_BOT_TOKEN;
   
   if (!token) {
     console.error('❌ TELEGRAM_BOT_TOKEN not found in .env.local');
