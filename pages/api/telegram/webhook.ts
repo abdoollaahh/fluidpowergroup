@@ -1,9 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { updateConversation } from '../../../utils/db';
+import { updateConversation, getConversation } from '../../../utils/db';
 import { sendTelegramMessage } from '../../../utils/telegram';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Log everything that comes in
   console.log('🔔 Webhook received:', JSON.stringify(req.body, null, 2));
   
   if (req.method !== 'POST') {
@@ -12,19 +17,62 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   
   try {
     const update = req.body;
+    const chatId = update.message?.chat?.id || update.callback_query?.message?.chat?.id;
     
-    // Handle direct replies from supplier
-    if (update.message && update.message.reply_to_message) {
-      console.log('📩 Reply detected');
+    // Handle callback queries from "Reply" button
+    if (update.callback_query) {
+      console.log('🔘 Button callback detected');
       
-      const originalMessage = update.message.reply_to_message.text;
-      const customerIdMatch = originalMessage.match(/ID: (cust_\w+)\)/);
+      const callbackData = update.callback_query.data;
       
-      console.log('🔍 Original message:', originalMessage);
-      console.log('🔍 Customer ID match:', customerIdMatch);
+      if (callbackData.startsWith('reply_')) {
+        const customerId = callbackData.replace('reply_', '');
+        
+        console.log('📤 Setting active customer for chat:', chatId);
+        
+        // Store which customer this chat is replying to (expires in 1 hour)
+        await redis.set(`reply_context:${chatId}`, customerId, { ex: 3600 });
+        
+        await sendTelegramMessage(
+          chatId.toString(),
+          `💬 Ready to reply to customer ${customerId}\n\n👉 Send your message now (it will be sent to the customer)`,
+        );
+        
+        console.log('✅ Reply context set');
+      }
+    }
+    
+    // Handle incoming messages (replies from supplier)
+    if (update.message && update.message.text) {
+      console.log('💬 Message received from supplier');
       
-      if (customerIdMatch && customerIdMatch[1]) {
-        const customerId = customerIdMatch[1];
+      let customerId: string | null = null;
+      
+      // Method 1: Check if this is a direct reply to a bot message
+      if (update.message.reply_to_message) {
+        const originalMessage = update.message.reply_to_message.text;
+        const customerIdMatch = originalMessage.match(/ID: (cust_\w+)\)/);
+        
+        if (customerIdMatch && customerIdMatch[1]) {
+          customerId = customerIdMatch[1];
+          console.log('✅ Customer ID found from reply:', customerId);
+        }
+      }
+      
+      // Method 2: Check if there's an active reply context from clicking "Reply" button
+      if (!customerId) {
+        const contextCustomerId = await redis.get<string>(`reply_context:${chatId}`);
+        if (contextCustomerId) {
+          customerId = contextCustomerId;
+          console.log('✅ Customer ID found from context:', customerId);
+          
+          // Clear the context after use
+          await redis.del(`reply_context:${chatId}`);
+        }
+      }
+      
+      // Save the reply if we found a customer ID
+      if (customerId) {
         const replyText = update.message.text;
         
         console.log('💾 Saving reply for customer:', customerId);
@@ -36,33 +84,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           timestamp: new Date()
         });
         
+        // Confirm to supplier
+        await sendTelegramMessage(
+          chatId.toString(),
+          '✅ Message sent to customer!'
+        );
+        
         console.log('✅ Reply saved successfully');
       } else {
-        console.log('⚠️  No customer ID found in message');
-      }
-    }
-    
-    // Handle callback queries from "Reply" button
-    if (update.callback_query) {
-      console.log('🔘 Button callback detected');
-      
-      const callbackData = update.callback_query.data;
-      const chatId = update.callback_query.message.chat.id;
-      
-      if (callbackData.startsWith('reply_')) {
-        const customerId = callbackData.replace('reply_', '');
-        
-        console.log('📤 Prompting supplier to reply to:', customerId);
+        console.log('⚠️  Could not determine which customer to reply to');
         
         await sendTelegramMessage(
           chatId.toString(),
-          `Reply to customer (ID: ${customerId}):`,
-          {
-            reply_to_message_id: update.callback_query.message.message_id
-          }
+          '⚠️ Please use the "Reply" button on customer messages to send replies.'
         );
-        
-        console.log('✅ Prompt sent');
       }
     }
     
