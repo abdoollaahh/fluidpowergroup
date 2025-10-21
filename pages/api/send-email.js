@@ -1,17 +1,36 @@
 // pages/api/send-email.js
 import fetch from 'node-fetch';
 
+// ========================================
+// TESTING MODE CONFIGURATION
+// ========================================
+// Set TESTING_MODE="true" in Vercel environment variables for testing branch
+// Remove or set to "false" for production
+const TESTING_MODE = process.env.TESTING_MODE === 'true';
+
 // --- Environment Variables ---
 const AZURE_TENANT_ID = process.env.AZURE_TENANT_ID;
 const AZURE_CLIENT_ID = process.env.AZURE_CLIENT_ID;
 const AZURE_CLIENT_SECRET = process.env.AZURE_CLIENT_SECRET;
 
-// Email configuration
-const BUSINESS_EMAIL = process.env.BUSINESS_EMAIL; // Where to send business notifications
-const SENDER_EMAIL = process.env.SENDER_EMAIL;     // What email to send FROM
+// Email configuration - Use TEST versions when TESTING_MODE is enabled
+const BUSINESS_EMAIL = TESTING_MODE 
+    ? (process.env.BUSINESS_EMAIL_TEST || 'info@agcomponents.com.au')
+    : process.env.BUSINESS_EMAIL;
+
+const SENDER_EMAIL = TESTING_MODE
+    ? (process.env.SENDER_EMAIL_TEST || process.env.SENDER_EMAIL)
+    : process.env.SENDER_EMAIL;
+
 const VALID_SERVER_KEY = process.env.VALID_SERVER_KEY;
 
-// --- Allowed Origins Definition --- (UNCHANGED)
+// Log testing mode status
+if (TESTING_MODE) {
+    console.log('🧪 EMAIL TESTING MODE ENABLED');
+    console.log(`📧 Test emails will be sent to: ${BUSINESS_EMAIL}`);
+}
+
+// --- Allowed Origins Definition ---
 const allowedOrigins = [
     process.env.LOCAL_DEV_URL,
     process.env.API_BASE_URL,
@@ -80,11 +99,14 @@ async function sendEmailViaGraph(accessToken, emailData, fromEmail) {
     }
 }
 
-// --- Format Email for Graph API ---
-function formatEmailForGraph(toEmail, subject, htmlContent, pdfAttachment, orderNumber) {
+// --- Format Email for Graph API with Multiple PDF Support ---
+function formatEmailForGraph(toEmail, subject, htmlContent, pdfAttachments, orderNumber) {
+    // Add testing mode prefix to subject if in test mode
+    const finalSubject = TESTING_MODE ? `[TEST] ${subject}` : subject;
+
     const emailData = {
         message: {
-            subject: subject,
+            subject: finalSubject,
             body: {
                 contentType: 'HTML',
                 content: htmlContent
@@ -100,16 +122,16 @@ function formatEmailForGraph(toEmail, subject, htmlContent, pdfAttachment, order
         saveToSentItems: true
     };
 
-    // Add PDF attachment if provided
-    if (pdfAttachment) {
-        emailData.message.attachments = [
-            {
-                '@odata.type': '#microsoft.graph.fileAttachment',
-                name: `Order-${orderNumber}.pdf`,
-                contentType: 'application/pdf',
-                contentBytes: pdfAttachment
-            }
-        ];
+    // Add multiple PDF attachments if provided
+    if (pdfAttachments && Array.isArray(pdfAttachments) && pdfAttachments.length > 0) {
+        emailData.message.attachments = pdfAttachments.map((pdf, index) => ({
+            '@odata.type': '#microsoft.graph.fileAttachment',
+            name: pdf.name || `Order-${orderNumber}-Attachment-${index + 1}.pdf`,
+            contentType: 'application/pdf',
+            contentBytes: pdf.contentBytes
+        }));
+        
+        console.log(`Added ${pdfAttachments.length} PDF attachment(s) to email`);
     }
 
     return emailData;
@@ -119,7 +141,7 @@ function formatEmailForGraph(toEmail, subject, htmlContent, pdfAttachment, order
 export default async function handler(req, res) {
     const origin = req.headers.origin;
 
-    // --- CORS Logic --- (UNCHANGED)
+    // --- CORS Logic ---
     let isOriginAllowed = false;
     if (origin) {
         if (allowedOrigins.includes(origin) || vercelPreviewPattern.test(origin)) {
@@ -136,7 +158,7 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-server-key');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
 
-    // --- Handle OPTIONS preflight request --- (UNCHANGED)
+    // --- Handle OPTIONS preflight request ---
     if (req.method === 'OPTIONS') {
         if (!isOriginAllowed && origin) {
              console.warn(`CORS preflight denied for origin: ${origin}`);
@@ -148,7 +170,7 @@ export default async function handler(req, res) {
 
     // --- Handle POST request ---
     if (req.method === 'POST') {
-        // --- Authentication --- (UNCHANGED)
+        // --- Authentication ---
         const serverKey = req.headers['x-server-key'];
         if (!VALID_SERVER_KEY) {
              console.error("FATAL: VALID_SERVER_KEY is not configured.");
@@ -161,6 +183,9 @@ export default async function handler(req, res) {
 
         try {
             console.log('Graph email endpoint accessed (/api/send-email)');
+            if (TESTING_MODE) {
+                console.log('🧪 Running in TESTING MODE - using test email addresses');
+            }
 
             // --- Validate Graph Configuration ---
             if (!AZURE_TENANT_ID || !AZURE_CLIENT_ID || !AZURE_CLIENT_SECRET) {
@@ -177,9 +202,10 @@ export default async function handler(req, res) {
             const {
                 orderNumber,
                 userDetails,
-                pdfAttachment,
+                pdfAttachments, // Array of PDF objects
                 emailTemplates,
-                userEmail
+                userEmail,
+                testingMode // Can also be passed from capture-order.js
             } = req.body;
 
             // Validate required data
@@ -191,17 +217,22 @@ export default async function handler(req, res) {
             
             const currentOrderNumber = orderNumber || 'Unknown';
 
+            // Log attachment info
+            if (pdfAttachments && Array.isArray(pdfAttachments)) {
+                console.log(`Processing ${pdfAttachments.length} PDF attachment(s) for order ${currentOrderNumber}`);
+            }
+
             // --- Get Graph Access Token ---
             console.log('Getting Microsoft Graph access token...');
             const accessToken = await getGraphAccessToken();
             console.log('Graph access token obtained successfully');
 
-            // --- Prepare emails ---
+            // --- Prepare emails with multiple PDF attachments ---
             const customerEmailData = formatEmailForGraph(
                 customerEmailAddress,
                 `Your Order Confirmation - Order #${currentOrderNumber}`,
                 emailTemplates.customerEmailContent,
-                pdfAttachment,
+                pdfAttachments,
                 currentOrderNumber
             );
 
@@ -209,7 +240,7 @@ export default async function handler(req, res) {
                 BUSINESS_EMAIL,
                 `New Order Received - Order #${currentOrderNumber}`,
                 emailTemplates.businessEmailContent,
-                pdfAttachment,
+                pdfAttachments,
                 currentOrderNumber
             );
 
@@ -229,7 +260,7 @@ export default async function handler(req, res) {
                 console.log('Sending customer email via Graph API...');
                 const customerResult = await sendEmailViaGraph(accessToken, customerEmailData, SENDER_EMAIL);
                 results.customerEmailSent = true;
-                console.log(`Customer email sent successfully. ID: ${customerResult.messageId}`);
+                console.log(`✓ Customer email sent successfully. ID: ${customerResult.messageId}`);
             } catch (customerError) {
                 console.error('CRITICAL: Customer email failed:', customerError.message);
                 return res.status(500).json({ 
@@ -244,7 +275,7 @@ export default async function handler(req, res) {
                 console.log('Sending business email via Graph API...');
                 const businessResult = await sendEmailViaGraph(accessToken, businessEmailData, SENDER_EMAIL);
                 results.businessEmailSent = true;
-                console.log(`Business email sent successfully. ID: ${businessResult.messageId}`);
+                console.log(`✓ Business email sent successfully. ID: ${businessResult.messageId}`);
             } catch (businessError) {
                 console.error('Business email failed (customer email succeeded):', businessError.message);
                 results.warnings.push('Business notification email failed to send');
@@ -255,14 +286,18 @@ export default async function handler(req, res) {
                 res.status(200).json({ 
                     success: true,
                     message: 'Order processed and all emails sent successfully via Microsoft Graph',
-                    method: 'Microsoft Graph API'
+                    method: 'Microsoft Graph API',
+                    attachmentCount: pdfAttachments?.length || 0,
+                    testingMode: TESTING_MODE
                 });
             } else if (results.customerEmailSent && !results.businessEmailSent) {
                 res.status(200).json({ 
                     success: true,
                     message: 'Order processed and customer notified successfully via Microsoft Graph',
                     warnings: results.warnings,
-                    method: 'Microsoft Graph API'
+                    method: 'Microsoft Graph API',
+                    attachmentCount: pdfAttachments?.length || 0,
+                    testingMode: TESTING_MODE
                 });
             } else {
                 res.status(500).json({ 
