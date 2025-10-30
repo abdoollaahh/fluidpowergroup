@@ -508,6 +508,26 @@ export default async function handler(req, res) {
     const PAYPAL_CLIENT_SECRET = TESTING_MODE
         ? (USE_SANDBOX ? process.env.SANDBOX_SECRET_TEST : process.env.PRODUCTION_SECRET_TEST)
         : (USE_SANDBOX ? process.env.SANDBOX_SECRET : process.env.PRODUCTION_SECRET);
+
+    // 🔧 ADD THIS DEBUG BLOCK
+    console.log('=== CREDENTIAL DEBUG ===');
+    console.log('TESTING_MODE:', TESTING_MODE);
+    console.log('USE_SANDBOX:', USE_SANDBOX);
+    console.log('Selected CLIENT_ID var:', TESTING_MODE 
+        ? (USE_SANDBOX ? 'SANDBOX_CLIENT_ID_TEST' : 'PRODUCTION_CLIENT_ID_TEST')
+        : (USE_SANDBOX ? 'SANDBOX_CLIENT_ID' : 'PRODUCTION_CLIENT_ID'));
+    console.log('CLIENT_ID value:', PAYPAL_CLIENT_ID ? `${PAYPAL_CLIENT_ID.substring(0, 10)}...` : 'UNDEFINED');
+    console.log('CLIENT_SECRET value:', PAYPAL_CLIENT_SECRET ? `${PAYPAL_CLIENT_SECRET.substring(0, 5)}...` : 'UNDEFINED');
+    console.log('========================');
+
+    // Validation check
+    if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
+        console.error('❌ CRITICAL: PayPal credentials are undefined!');
+        return res.status(500).json({ 
+            success: false, 
+            error: 'PayPal configuration error. Please contact support.' 
+        });
+    }    
         
     const PAYPAL_API_BASE = USE_SANDBOX
         ? 'https://api-m.sandbox.paypal.com'
