@@ -129,7 +129,22 @@ async function sendOrderEmail(orderData, VALID_SERVER_KEY, TESTING_MODE) {
                 };
             });
 
-        const emailResponse = await fetch(`${process.env.API_BASE_URL || 'http://localhost:3000'}/api/send-email`, {
+        // ⭐ NEW: Smart URL detection - respects TESTING_MODE
+        let baseUrl;
+
+        if (TESTING_MODE) {
+            baseUrl = process.env.API_BASE_URL_TEST || 
+                      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+            console.log('🧪 Using TEST API URL for emails');
+        } else {
+            baseUrl = process.env.API_BASE_URL || 
+                      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+            console.log('🌐 Using LIVE API URL for emails');
+        }
+
+        console.log(`📧 Sending emails via: ${baseUrl}/api/send-email`);
+
+        const emailResponse = await fetch(`${baseUrl}/api/send-email`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
