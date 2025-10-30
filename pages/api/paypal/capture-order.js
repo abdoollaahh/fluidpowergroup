@@ -461,31 +461,55 @@ function generateEmailTemplates(orderNumber, userDetails, websiteProducts, pwaOr
 // MAIN API HANDLER
 // ========================================
 export default async function handler(req, res) {
-    // --- Enhanced CORS (MUST BE FIRST) ---
+    // ENHANCED CORS HANDLING
+// ========================================
     const origin = req.headers.origin;
-    
+
+    console.log('📍 Request origin:', origin);
+    console.log('📍 Request method:', req.method);
+
+    // Allowed origins
     const allowedOrigins = [
         'http://localhost:3000',
         'http://localhost:3001',
         'https://fluidpowergroup.com.au',
-        process.env.API_BASE_URL
+        'https://www.fluidpowergroup.com.au',
     ];
 
-    if (origin && allowedOrigins.includes(origin)) {
+    // Add all Vercel preview URLs
+    if (origin && origin.includes('.vercel.app')) {
+        allowedOrigins.push(origin);
+    }
+
+    // Check if origin is allowed
+    const isAllowed = allowedOrigins.includes(origin);
+
+    // Set CORS headers
+    if (isAllowed && origin) {
         res.setHeader('Access-Control-Allow-Origin', origin);
+        console.log('✅ CORS: Allowed origin:', origin);
     } else if (!origin) {
+        // No origin = same-origin or direct API call
         res.setHeader('Access-Control-Allow-Origin', '*');
+        console.log('✅ CORS: No origin header (allowing all)');
+    } else {
+        // Fallback - allow it anyway for development
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        console.warn('⚠️ CORS: Origin not in allowlist but allowing:', origin);
     }
 
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-server-key');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
 
-    // Handle preflight
+    // Handle preflight OPTIONS request
     if (req.method === 'OPTIONS') {
+        console.log('✅ CORS preflight handled successfully');
         return res.status(200).end();
     }
 
+    // Only allow POST after preflight
     if (req.method !== 'POST') { 
         res.setHeader('Allow', ['POST', 'OPTIONS']); 
         return res.status(405).json({ success: false, error: `Method ${req.method} Not Allowed` }); 
