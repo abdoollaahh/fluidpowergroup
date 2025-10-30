@@ -496,44 +496,92 @@ export default async function handler(req, res) {
 
     // Environment determination
     const isVercelPreview = process.env.VERCEL_ENV === 'preview';
-    const forceSandbox = process.env.PAYPAL_MODE === 'sandbox';
-    const forceProduction = process.env.PAYPAL_MODE === 'production';
-    const USE_SANDBOX = forceProduction ? false : (forceSandbox || isVercelPreview || process.env.NODE_ENV !== 'production');
 
-    // PayPal credentials
-    const PAYPAL_CLIENT_ID = TESTING_MODE 
-        ? (USE_SANDBOX ? process.env.SANDBOX_CLIENT_ID_TEST : process.env.PRODUCTION_CLIENT_ID_TEST)
-        : (USE_SANDBOX ? process.env.SANDBOX_CLIENT_ID : process.env.PRODUCTION_CLIENT_ID);
+    // 🔧 DUAL CREDENTIAL SYSTEM
+    // If TESTING_MODE=true, use separate _TEST credentials (your test PayPal account)
+    // If TESTING_MODE=false, use regular credentials (live website's PayPal account)
+
+    let PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_API_BASE;
+
+    if (TESTING_MODE) {
+        // ========================================
+        // TESTING MODE: Use separate test credentials
+        // ========================================
+        console.log('🧪 TESTING MODE: Using dedicated test credentials');
         
-    const PAYPAL_CLIENT_SECRET = TESTING_MODE
-        ? (USE_SANDBOX ? process.env.SANDBOX_SECRET_TEST : process.env.PRODUCTION_SECRET_TEST)
-        : (USE_SANDBOX ? process.env.SANDBOX_SECRET : process.env.PRODUCTION_SECRET);
+        // For testing, you can choose sandbox or production test account
+        const useTestSandbox = process.env.TEST_USE_SANDBOX !== 'false'; // Default to sandbox for testing
+        
+        PAYPAL_CLIENT_ID = useTestSandbox 
+            ? process.env.SANDBOX_CLIENT_ID_TEST 
+            : process.env.PRODUCTION_CLIENT_ID_TEST;
+            
+        PAYPAL_CLIENT_SECRET = useTestSandbox 
+            ? process.env.SANDBOX_SECRET_TEST 
+            : process.env.PRODUCTION_SECRET_TEST;
+            
+        PAYPAL_API_BASE = useTestSandbox
+            ? 'https://api-m.sandbox.paypal.com'
+            : 'https://api-m.paypal.com';
+            
+        console.log(`   Using TEST ${useTestSandbox ? 'SANDBOX' : 'PRODUCTION'} credentials`);
+        
+    } else {
+        // ========================================
+        // LIVE MODE: Use regular website credentials
+        // ========================================
+        console.log('🌐 LIVE MODE: Using website credentials');
+        
+        const forceSandbox = process.env.PAYPAL_MODE === 'sandbox';
+        const forceProduction = process.env.PAYPAL_MODE === 'production';
+        const USE_SANDBOX = forceProduction ? false : (forceSandbox || isVercelPreview || process.env.NODE_ENV !== 'production');
+        
+        PAYPAL_CLIENT_ID = USE_SANDBOX 
+            ? process.env.SANDBOX_CLIENT_ID 
+            : process.env.PRODUCTION_CLIENT_ID;
+            
+        PAYPAL_CLIENT_SECRET = USE_SANDBOX 
+            ? process.env.SANDBOX_SECRET 
+            : process.env.PRODUCTION_SECRET;
+            
+        PAYPAL_API_BASE = USE_SANDBOX
+            ? 'https://api-m.sandbox.paypal.com'
+            : 'https://api-m.paypal.com';
+            
+        console.log(`   Using LIVE ${USE_SANDBOX ? 'SANDBOX' : 'PRODUCTION'} credentials`);
+    }
 
-    // 🔧 ADD THIS DEBUG BLOCK
+    // 🔧 CREDENTIAL DEBUG (runs for BOTH testing and live mode)
     console.log('=== CREDENTIAL DEBUG ===');
     console.log('TESTING_MODE:', TESTING_MODE);
-    console.log('USE_SANDBOX:', USE_SANDBOX);
-    console.log('Selected CLIENT_ID var:', TESTING_MODE 
-        ? (USE_SANDBOX ? 'SANDBOX_CLIENT_ID_TEST' : 'PRODUCTION_CLIENT_ID_TEST')
-        : (USE_SANDBOX ? 'SANDBOX_CLIENT_ID' : 'PRODUCTION_CLIENT_ID'));
     console.log('CLIENT_ID value:', PAYPAL_CLIENT_ID ? `${PAYPAL_CLIENT_ID.substring(0, 10)}...` : 'UNDEFINED');
     console.log('CLIENT_SECRET value:', PAYPAL_CLIENT_SECRET ? `${PAYPAL_CLIENT_SECRET.substring(0, 5)}...` : 'UNDEFINED');
+    console.log('API_BASE:', PAYPAL_API_BASE);
     console.log('========================');
 
-    // Validation check
+    // Validation check (runs for BOTH modes)
     if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
-        console.error('❌ CRITICAL: PayPal credentials are undefined!');
+        const missingVar = TESTING_MODE 
+            ? 'SANDBOX_CLIENT_ID_TEST or SANDBOX_SECRET_TEST'
+            : 'SANDBOX_CLIENT_ID or SANDBOX_SECRET';
+        
+        console.error(`❌ CRITICAL: Missing PayPal credentials: ${missingVar}`);
+        
         return res.status(500).json({ 
             success: false, 
-            error: 'PayPal configuration error. Please contact support.' 
+            error: 'PayPal configuration error. Please contact support.',
+            debug: TESTING_MODE ? 'Missing TEST credentials' : 'Missing LIVE credentials'
         });
-    }    
-        
-    const PAYPAL_API_BASE = USE_SANDBOX
-        ? 'https://api-m.sandbox.paypal.com'
-        : 'https://api-m.paypal.com';
+    }
+
+    console.log('✅ PayPal credentials loaded successfully');
 
     const VALID_SERVER_KEY = process.env.VALID_SERVER_KEY;
+
+    // Additional debug info
+    console.log('SWELL init: storeId present?', !!process.env.SWELL_STORE_ID);
+    console.log('SWELL init: secret present?', !!process.env.SWELL_SECRET_KEY);
+    console.log("Received request to /api/paypal/capture-order");
 
     if (TESTING_MODE) {
         console.log('🧪 TESTING MODE ENABLED - Using test credentials');
