@@ -24,6 +24,13 @@ const SENDER_EMAIL = TESTING_MODE
 
 const VALID_SERVER_KEY = process.env.VALID_SERVER_KEY;
 
+// 🔍 DEBUG: Check if key exists
+console.log('=== SEND-EMAIL DEBUG ===');
+console.log('🔑 VALID_SERVER_KEY exists?', !!VALID_SERVER_KEY);
+console.log('🔑 Value length:', VALID_SERVER_KEY?.length || 0);
+console.log('🔑 First 5 chars:', VALID_SERVER_KEY?.substring(0, 5) || 'MISSING');
+console.log('========================');
+
 // Log testing mode status
 if (TESTING_MODE) {
     console.log('🧪 EMAIL TESTING MODE ENABLED');
