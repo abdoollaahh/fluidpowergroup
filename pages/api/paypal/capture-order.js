@@ -5,43 +5,14 @@ import swell from 'swell-node';
 // ========================================
 // TESTING MODE CONFIGURATION
 // ========================================
-// Set TESTING_MODE="true" in Vercel environment variables for testing branch
-// Remove or set to "false" for production
 const TESTING_MODE = process.env.TESTING_MODE === 'true';
 
-// Initialize Swell
-swell.init(process.env.NODE_PUBLIC_SWELL_STORE_ID, process.env.NODE_PUBLIC_SWELL_SECRET_KEY);
-
-// More precise environment determination
-const isVercelPreview = process.env.VERCEL_ENV === 'preview';
-const forceSandbox = process.env.PAYPAL_MODE === 'sandbox';
-const forceProduction = process.env.PAYPAL_MODE === 'production';
-
-// If PAYPAL_MODE is explicitly set, use that, otherwise use environment detection
-const USE_SANDBOX = forceProduction ? false : (forceSandbox || isVercelPreview || process.env.NODE_ENV !== 'production');
-
-// PayPal credentials - Use TEST versions when TESTING_MODE is enabled
-const PAYPAL_CLIENT_ID = TESTING_MODE 
-    ? (USE_SANDBOX ? process.env.SANDBOX_CLIENT_ID_TEST : process.env.PRODUCTION_CLIENT_ID_TEST)
-    : (USE_SANDBOX ? process.env.SANDBOX_CLIENT_ID : process.env.PRODUCTION_CLIENT_ID);
-    
-const PAYPAL_CLIENT_SECRET = TESTING_MODE
-    ? (USE_SANDBOX ? process.env.SANDBOX_SECRET_TEST : process.env.PRODUCTION_SECRET_TEST)
-    : (USE_SANDBOX ? process.env.SANDBOX_SECRET : process.env.PRODUCTION_SECRET);
-    
-const PAYPAL_API_BASE = USE_SANDBOX
-    ? 'https://api-m.sandbox.paypal.com'
-    : 'https://api-m.paypal.com';
-
-const VALID_SERVER_KEY = process.env.VALID_SERVER_KEY;
-
-// Log testing mode status (helpful for debugging)
-if (TESTING_MODE) {
-    console.log('🧪 TESTING MODE ENABLED - Using test credentials');
-}
+// ========================================
+// HELPER FUNCTIONS
+// ========================================
 
 // --- Helper: Get PayPal Access Token ---
-async function getPayPalAccessToken() {
+async function getPayPalAccessToken(PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_API_BASE) {
     const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString('base64');
     const url = `${PAYPAL_API_BASE}/v1/oauth2/token`;
     try {
@@ -66,69 +37,66 @@ async function getPayPalAccessToken() {
 }
 
 // --- Helper: Update Swell Inventory ---
-async function updateSwellInventory(websiteProducts) {
+async function updateSwellInventory(websiteProducts, orderId) {
     if (!websiteProducts || websiteProducts.length === 0) {
         console.log('No website products to update inventory for.');
         return { success: true, message: 'No inventory to update' };
     }
 
     const results = [];
-    
+
     for (const item of websiteProducts) {
         try {
-            console.log(`Updating inventory for product: ${item.id} (${item.name})`);
-            
-            // Fetch current product data from Swell
-            const product = await swell.get('/products', item.id);
-            
-            if (!product) {
-                console.error(`Product not found in Swell: ${item.id}`);
-                results.push({ 
-                    id: item.id, 
-                    success: false, 
-                    error: 'Product not found' 
-                });
-                continue;
-            }
+            console.log(`\n📦 Processing: ${item.name} (${item.id})`);
+            console.log(`   Quantity sold: ${item.quantity}`);
 
-            const currentStock = product.stock_level || 0;
-            const newStock = currentStock - item.quantity;
-
-            console.log(`Product ${item.id}: Current stock: ${currentStock}, Ordered: ${item.quantity}, New stock: ${newStock}`);
-
-            // Update the product stock in Swell
-            await swell.put(`/products/${item.id}`, {
-                stock_level: Math.max(0, newStock) // Ensure stock doesn't go negative
+            // Create stock adjustment using Swell's stock API
+            const adjustment = await swell.post('/products:stock', {
+                parent_id: item.id,
+                quantity: -item.quantity,  // Negative to decrease
+                reason: 'sold',
+                reason_message: `PayPal Order ${orderId}`
             });
 
-            console.log(`✓ Successfully updated inventory for ${item.id}`);
-            results.push({ 
-                id: item.id, 
-                success: true, 
-                oldStock: currentStock, 
-                newStock: Math.max(0, newStock) 
+            console.log(`✅ Stock updated successfully!`);
+            console.log(`   Previous level: ${adjustment.level + item.quantity}`);
+            console.log(`   New level: ${adjustment.level}`);
+            console.log(`   Adjustment ID: ${adjustment.id}`);
+
+            results.push({
+                productId: item.id,
+                productName: item.name,
+                success: true,
+                newStockLevel: adjustment.level
             });
 
         } catch (error) {
-            console.error(`Failed to update inventory for ${item.id}:`, error);
-            results.push({ 
-                id: item.id, 
-                success: false, 
-                error: error.message 
+            console.error(`❌ Failed to update stock for ${item.id}:`, error.message);
+            results.push({
+                productId: item.id,
+                productName: item.name,
+                success: false,
+                error: error.message
             });
         }
     }
 
-    const allSuccessful = results.every(r => r.success);
-    return { 
-        success: allSuccessful, 
-        results,
-        message: allSuccessful ? 'All inventory updated' : 'Some inventory updates failed'
+    console.log('\n✅ Inventory update complete!');
+    
+    const successCount = results.filter(r => r.success).length;
+    const failCount = results.filter(r => !r.success).length;
+    
+    return {
+        success: failCount === 0,
+        totalProcessed: results.length,
+        successCount,
+        failCount,
+        details: results
     };
 }
 
 // --- Helper: Send Order Confirmation Email ---
-async function sendOrderEmail(orderData) {
+async function sendOrderEmail(orderData, VALID_SERVER_KEY, TESTING_MODE) {
     const { 
         orderNumber, 
         userDetails, 
@@ -141,21 +109,19 @@ async function sendOrderEmail(orderData) {
     try {
         console.log(`Preparing to send order confirmation emails for order #${orderNumber}`);
 
-        // Generate email templates
         const emailTemplates = generateEmailTemplates(
             orderNumber,
             userDetails,
             websiteProducts,
             pwaOrders,
             totals,
-            paypalCaptureID
+            paypalCaptureID,
+            TESTING_MODE
         );
 
-        // Prepare PDF attachments array (base64 encoded)
         const pdfAttachments = pwaOrders
             .filter(order => order.pdfDataUrl)
             .map(order => {
-                // Extract base64 from data URL (remove "data:application/pdf;base64," prefix)
                 const base64Data = order.pdfDataUrl.split(',')[1];
                 return {
                     name: `Custom-Hose-Assembly-${order.cartId || 'order'}.pdf`,
@@ -163,7 +129,6 @@ async function sendOrderEmail(orderData) {
                 };
             });
 
-        // Call the email API
         const emailResponse = await fetch(`${process.env.API_BASE_URL || 'http://localhost:3000'}/api/send-email`, {
             method: 'POST',
             headers: {
@@ -176,7 +141,7 @@ async function sendOrderEmail(orderData) {
                 userEmail: userDetails.email,
                 emailTemplates,
                 pdfAttachments: pdfAttachments.length > 0 ? pdfAttachments : null,
-                testingMode: TESTING_MODE // Pass testing mode flag to email API
+                testingMode: TESTING_MODE
             })
         });
 
@@ -196,143 +161,154 @@ async function sendOrderEmail(orderData) {
 }
 
 // --- Helper: Generate Email Templates ---
-function generateEmailTemplates(orderNumber, userDetails, websiteProducts, pwaOrders, totals, paypalCaptureID) {
+function generateEmailTemplates(orderNumber, userDetails, websiteProducts, pwaOrders, totals, paypalCaptureID, TESTING_MODE) {
     const currentDate = new Date().toLocaleDateString('en-AU', { 
         year: 'numeric', 
         month: 'long', 
         day: 'numeric' 
     });
 
-    // Determine business email based on testing mode
     const businessEmailDisplay = TESTING_MODE 
         ? process.env.BUSINESS_EMAIL_TEST || 'info@agcomponents.com.au'
         : process.env.BUSINESS_EMAIL;
-
-    // Testing mode banner for emails (only shows in test mode)
-    const testingBanner = TESTING_MODE ? `
-        <div style="background-color: #ff6b6b; color: white; padding: 10px; text-align: center; font-weight: bold; margin-bottom: 20px;">
-            🧪 TESTING MODE - This is a test email
-        </div>
-    ` : '';
 
     // Customer Email Template
     const customerEmailContent = `
         <!DOCTYPE html>
         <html>
         <head>
-            <meta charset="utf-8">
+            <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
-                .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-                .header { background-color: #FACC15; padding: 30px; text-align: center; }
-                .header h1 { margin: 0; color: #000; font-size: 28px; }
-                .content { padding: 30px; }
-                .order-info { background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0; }
-                .order-info h2 { margin-top: 0; color: #FACC15; }
-                .product-item { display: flex; gap: 15px; padding: 15px; border-bottom: 1px solid #eee; align-items: center; }
-                .product-item:last-child { border-bottom: none; }
-                .product-image { width: 80px; height: 80px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; background: white; padding: 5px; }
-                .product-details { flex: 1; }
-                .product-name { font-weight: bold; margin-bottom: 5px; }
-                .product-price { color: #666; }
-                .custom-badge { display: inline-block; background-color: #FACC15; color: #000; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-top: 5px; }
-                .totals { margin-top: 20px; padding-top: 20px; border-top: 2px solid #FACC15; }
-                .total-row { display: flex; justify-content: space-between; margin: 8px 0; }
-                .total-row.final { font-size: 20px; font-weight: bold; color: #FACC15; margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd; }
-                .shipping-info { background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; }
-                .footer { background-color: #333; color: #fff; padding: 20px; text-align: center; font-size: 12px; }
-                .footer a { color: #FACC15; text-decoration: none; }
-            </style>
+            <title>Order Confirmation</title>
         </head>
-        <body>
-            <div class="container">
-                ${testingBanner}
-                <div class="header">
-                    <h1>Thank You For Your Order!</h1>
+        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+            <div style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div style="background-color: #e74c3c; padding: 30px 20px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 28px;">Thank You for Your Order!</h1>
                 </div>
-                
-                <div class="content">
-                    <p>Hi ${userDetails.firstName || 'Customer'},</p>
-                    <p>Thank you for your order! We've received your payment and your order is being processed.</p>
-                    
-                    <div class="order-info">
-                        <h2>Order Details</h2>
-                        <p><strong>Order Number:</strong> #${orderNumber}</p>
-                        <p><strong>Order Date:</strong> ${currentDate}</p>
-                        <p><strong>Payment ID:</strong> ${paypalCaptureID}</p>
+                <div style="padding: 30px 20px;">
+                    <p style="font-size: 16px; color: #333333; margin-bottom: 20px;">
+                        Dear ${userDetails.firstName} ${userDetails.lastName},
+                    </p>
+                    <p style="font-size: 16px; color: #333333; margin-bottom: 20px;">
+                        We've received your order and will begin processing it right away. Here are your order details:
+                    </p>
+                    <div style="background-color: #f8f9fa; border-left: 4px solid #e74c3c; padding: 15px; margin: 20px 0;">
+                        <p style="margin: 5px 0; color: #333333;"><strong>Order Number:</strong> #${orderNumber}</p>
+                        <p style="margin: 5px 0; color: #333333;"><strong>Order Date:</strong> ${currentDate}</p>
+                        <p style="margin: 5px 0; color: #333333;"><strong>PayPal Transaction ID:</strong> ${paypalCaptureID}</p>
                     </div>
-
-                    <h3>Order Summary</h3>
-                    
                     ${websiteProducts.length > 0 ? `
-                        <div style="margin: 20px 0;">
-                            ${websiteProducts.map(item => `
-                                <div class="product-item">
-                                    <img src="${item.image || 'https://fluidpowergroup.com.au/cartImage.jpeg'}" alt="${item.name}" class="product-image" />
-                                    <div class="product-details">
-                                        <div class="product-name">${item.name}</div>
-                                        <div class="product-price">Qty: ${item.quantity} × $${item.price.toFixed(2)} = $${(item.price * item.quantity).toFixed(2)}</div>
-                                    </div>
-                                </div>
+                    <h2 style="color: #e74c3c; font-size: 20px; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #e74c3c; padding-bottom: 10px;">
+                        Website Products
+                    </h2>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                        <thead>
+                            <tr style="background-color: #f8f9fa;">
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Product</th>
+                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">Qty</th>
+                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${websiteProducts.map(product => `
+                                <tr>
+                                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">
+                                        ${product.image ? `<img src="${product.image}" alt="${product.name}" style="width: 50px; height: 50px; object-fit: cover; margin-right: 10px; vertical-align: middle; border-radius: 4px;">` : ''}
+                                        <span style="vertical-align: middle;">${product.name}</span>
+                                    </td>
+                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">${product.quantity}</td>
+                                    <td style="padding: 12px; text-align: right; border-bottom: 1px solid #dee2e6;">$${(product.price * product.quantity).toFixed(2)}</td>
+                                </tr>
                             `).join('')}
-                        </div>
+                        </tbody>
+                    </table>
                     ` : ''}
-
                     ${pwaOrders.length > 0 ? `
-                        <div style="margin: 20px 0;">
+                    <h2 style="color: #e74c3c; font-size: 20px; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #e74c3c; padding-bottom: 10px;">
+                        Custom Hose Assemblies
+                    </h2>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                        <thead>
+                            <tr style="background-color: #f8f9fa;">
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Assembly</th>
+                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">Qty</th>
+                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                             ${pwaOrders.map(order => `
-                                <div class="product-item">
-                                    <img src="${order.image || 'https://fluidpowergroup.com.au/cartImage.jpeg'}" alt="${order.name}" class="product-image" />
-                                    <div class="product-details">
-                                        <div class="product-name">${order.name}</div>
-                                        <span class="custom-badge">Custom Order</span>
-                                        <div class="product-price">Qty: ${order.quantity} × $${order.totalPrice.toFixed(2)}</div>
-                                    </div>
-                                </div>
+                                <tr>
+                                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">
+                                        ${order.image ? `<img src="${order.image}" alt="${order.name}" style="width: 50px; height: 50px; object-fit: cover; margin-right: 10px; vertical-align: middle; border-radius: 4px;">` : ''}
+                                        <span style="vertical-align: middle;">${order.name}</span>
+                                        <br>
+                                        
+                                    </td>
+                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">${order.quantity}</td>
+                                    <td style="padding: 12px; text-align: right; border-bottom: 1px solid #dee2e6;">$${order.totalPrice.toFixed(2)}</td>
+                                </tr>
                             `).join('')}
-                            <p style="margin-top: 15px; padding: 10px; background-color: #fffbeb; border-left: 4px solid #FACC15; font-size: 14px;">
-                                📎 Your custom hose assembly specifications are attached as PDF${pwaOrders.length > 1 ? 's' : ''} to this email.
-                            </p>
-                        </div>
+                        </tbody>
+                    </table>
+                    <p style="font-size: 14px; color: #666; margin-top: 10px;">
+                        📎 Detailed specifications for your custom hose assemblies are attached to this email as PDF files.
+                    </p>
                     ` : ''}
-
-                    <div class="totals">
-                        <div class="total-row">
-                            <span>Subtotal:</span>
-                            <span>$${totals.subtotal.toFixed(2)}</span>
-                        </div>
-                        <div class="total-row">
-                            <span>Shipping:</span>
-                            <span>$${totals.shipping.toFixed(2)}</span>
-                        </div>
-                        <div class="total-row">
-                            <span>GST (10%):</span>
-                            <span>$${totals.gst.toFixed(2)}</span>
-                        </div>
-                        <div class="total-row final">
-                            <span>Total Paid:</span>
-                            <span>$${totals.total.toFixed(2)}</span>
+                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 30px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 8px 0; color: #333333;">Subtotal:</td>
+                                <td style="padding: 8px 0; text-align: right; color: #333333;">$${totals.subtotal.toFixed(2)}</td>
+                            </tr>
+                            ${totals.discount > 0 ? `
+                            <tr>
+                                <td style="padding: 8px 0; color: #28a745;">Discount:</td>
+                                <td style="padding: 8px 0; text-align: right; color: #28a745;">-$${totals.discount.toFixed(2)}</td>
+                            </tr>
+                            ` : ''}
+                            ${totals.shipping > 0 ? `
+                            <tr>
+                                <td style="padding: 8px 0; color: #333333;">Shipping:</td>
+                                <td style="padding: 8px 0; text-align: right; color: #333333;">$${totals.shipping.toFixed(2)}</td>
+                            </tr>
+                            ` : ''}
+                            <tr>
+                                <td style="padding: 8px 0; color: #333333;">GST (10%):</td>
+                                <td style="padding: 8px 0; text-align: right; color: #333333;">$${totals.gst.toFixed(2)}</td>
+                            </tr>
+                            <tr style="border-top: 2px solid #dee2e6;">
+                                <td style="padding: 12px 0; font-size: 18px; font-weight: bold; color: #e74c3c;">Total:</td>
+                                <td style="padding: 12px 0; text-align: right; font-size: 18px; font-weight: bold; color: #e74c3c;">$${totals.total.toFixed(2)}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div style="margin-top: 30px;">
+                        <h3 style="color: #e74c3c; font-size: 18px; margin-bottom: 10px;">Shipping Address</h3>
+                        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+                            <p style="margin: 5px 0; color: #333333;">${userDetails.firstName} ${userDetails.lastName}</p>
+                            ${userDetails.companyName ? `<p style="margin: 5px 0; color: #333333;">${userDetails.companyName}</p>` : ''}
+                            <p style="margin: 5px 0; color: #333333;">${userDetails.address}</p>
+                            <p style="margin: 5px 0; color: #333333;">${userDetails.city}, ${userDetails.state} ${userDetails.postcode}</p>
+                            <p style="margin: 5px 0; color: #333333;">${userDetails.country}</p>
                         </div>
                     </div>
-
-                    <div class="shipping-info">
-                        <h3 style="margin-top: 0;">Shipping Address</h3>
-                        <p style="margin: 5px 0;">${userDetails.firstName} ${userDetails.lastName}</p>
-                        <p style="margin: 5px 0;">${userDetails.address}</p>
-                        <p style="margin: 5px 0;">${userDetails.city}, ${userDetails.state} ${userDetails.postcode}</p>
-                        <p style="margin: 5px 0;">${userDetails.country}</p>
-                        ${userDetails.phone ? `<p style="margin: 5px 0;">Phone: ${userDetails.phone}</p>` : ''}
+                    <div style="margin-top: 30px; padding: 20px; background-color: #e8f4f8; border-radius: 8px;">
+                        <h3 style="color: #e74c3c; font-size: 18px; margin-top: 0;">What's Next?</h3>
+                        <ul style="color: #333333; line-height: 1.8; margin: 10px 0; padding-left: 20px;">
+                            <li>We'll prepare your order for shipment</li>
+                            <li>You'll receive a tracking number once shipped</li>
+                            <li>Contact us if you have any questions</li>
+                        </ul>
                     </div>
-
-                    <p>We'll send you another email once your order has been shipped with tracking information.</p>
-                    <p>If you have any questions about your order, please don't hesitate to contact us.</p>
+                    <div style="margin-top: 30px; text-align: center; color: #666666; font-size: 14px;">
+                        <p>Questions about your order?</p>
+                        <p style="color: #e74c3c; font-weight: bold;">${businessEmailDisplay}</p>
+                    </div>
                 </div>
-
-                <div class="footer">
-                    <p><strong>FluidPower Group</strong></p>
-                    <p>Email: <a href="mailto:${businessEmailDisplay}">${businessEmailDisplay}</a></p>
-                    <p>Website: <a href="https://fluidpowergroup.com.au">fluidpowergroup.com.au</a></p>
+                <div style="background-color: #333333; color: #ffffff; padding: 20px; text-align: center; font-size: 12px;">
+                    <p style="margin: 0;">&copy; ${new Date().getFullYear()} FluidPower Group. All rights reserved.</p>
+                    ${TESTING_MODE ? '<p style="margin: 10px 0 0 0; color: #ffc107;">⚠️ TEST MODE - This is a test order</p>' : ''}
                 </div>
             </div>
         </body>
@@ -344,118 +320,124 @@ function generateEmailTemplates(orderNumber, userDetails, websiteProducts, pwaOr
         <!DOCTYPE html>
         <html>
         <head>
-            <meta charset="utf-8">
+            <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
-                .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-                .header { background-color: #333; padding: 30px; text-align: center; }
-                .header h1 { margin: 0; color: #FACC15; font-size: 28px; }
-                .content { padding: 30px; }
-                .alert-box { background-color: #FACC15; color: #000; padding: 15px; border-radius: 8px; margin: 20px 0; font-weight: bold; text-align: center; }
-                .order-info { background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0; }
-                .product-item { display: flex; gap: 15px; padding: 15px; border-bottom: 1px solid #eee; align-items: center; }
-                .product-item:last-child { border-bottom: none; }
-                .product-image { width: 80px; height: 80px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; background: white; padding: 5px; }
-                .product-details { flex: 1; }
-                .product-name { font-weight: bold; margin-bottom: 5px; }
-                .custom-badge { display: inline-block; background-color: #FACC15; color: #000; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-top: 5px; }
-                .totals { margin-top: 20px; padding-top: 20px; border-top: 2px solid #FACC15; }
-                .total-row { display: flex; justify-content: space-between; margin: 8px 0; }
-                .total-row.final { font-size: 20px; font-weight: bold; color: #FACC15; margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd; }
-                .customer-info { background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; }
-            </style>
+            <title>New Order Notification</title>
         </head>
-        <body>
-            <div class="container">
-                ${testingBanner}
-                <div class="header">
-                    <h1>🔔 New Order Received</h1>
+        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+            <div style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div style="background-color: #2c3e50; padding: 30px 20px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 28px;">🔔 New Order Received</h1>
+                    ${TESTING_MODE ? '<p style="color: #ffc107; margin: 10px 0 0 0; font-size: 16px;">⚠️ TEST MODE</p>' : ''}
                 </div>
-                
-                <div class="content">
-                    <div class="alert-box">
-                        New Order #${orderNumber} - Action Required
+                <div style="padding: 30px 20px;">
+                    <div style="background-color: #e8f4f8; border-left: 4px solid #3498db; padding: 15px; margin: 20px 0;">
+                        <p style="margin: 5px 0; color: #333333;"><strong>Order Number:</strong> #${orderNumber}</p>
+                        <p style="margin: 5px 0; color: #333333;"><strong>Order Date:</strong> ${currentDate}</p>
+                        <p style="margin: 5px 0; color: #333333;"><strong>PayPal Transaction ID:</strong> ${paypalCaptureID}</p>
                     </div>
-                    
-                    <div class="order-info">
-                        <h2 style="margin-top: 0; color: #FACC15;">Order Information</h2>
-                        <p><strong>Order Number:</strong> #${orderNumber}</p>
-                        <p><strong>Order Date:</strong> ${currentDate}</p>
-                        <p><strong>PayPal Capture ID:</strong> ${paypalCaptureID}</p>
-                        <p><strong>Payment Status:</strong> ✅ COMPLETED</p>
+                    <h2 style="color: #2c3e50; font-size: 20px; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+                        Customer Information
+                    </h2>
+                    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+                        <p style="margin: 5px 0; color: #333333;"><strong>Name:</strong> ${userDetails.firstName} ${userDetails.lastName}</p>
+                        ${userDetails.companyName ? `<p style="margin: 5px 0; color: #333333;"><strong>Company:</strong> ${userDetails.companyName}</p>` : ''}
+                        <p style="margin: 5px 0; color: #333333;"><strong>Email:</strong> ${userDetails.email}</p>
+                        <p style="margin: 5px 0; color: #333333;"><strong>Phone:</strong> ${userDetails.phone}</p>
+                        <p style="margin: 5px 0; color: #333333;"><strong>Address:</strong> ${userDetails.address}, ${userDetails.city}, ${userDetails.state} ${userDetails.postcode}, ${userDetails.country}</p>
                     </div>
-
-                    <div class="customer-info">
-                        <h3 style="margin-top: 0;">Customer Details</h3>
-                        <p><strong>Name:</strong> ${userDetails.firstName} ${userDetails.lastName}</p>
-                        <p><strong>Email:</strong> ${userDetails.email}</p>
-                        ${userDetails.phone ? `<p><strong>Phone:</strong> ${userDetails.phone}</p>` : ''}
-                        <p><strong>Shipping Address:</strong><br/>
-                        ${userDetails.address}<br/>
-                        ${userDetails.city}, ${userDetails.state} ${userDetails.postcode}<br/>
-                        ${userDetails.country}</p>
-                    </div>
-
-                    <h3>Order Items</h3>
-                    
                     ${websiteProducts.length > 0 ? `
-                        <h4>Website Products (${websiteProducts.length})</h4>
-                        <div style="margin: 20px 0;">
-                            ${websiteProducts.map(item => `
-                                <div class="product-item">
-                                    <img src="${item.image || 'https://fluidpowergroup.com.au/cartImage.jpeg'}" alt="${item.name}" class="product-image" />
-                                    <div class="product-details">
-                                        <div class="product-name">${item.name}</div>
-                                        <div>Product ID: ${item.id}</div>
-                                        <div>Qty: ${item.quantity} × $${item.price.toFixed(2)} = $${(item.price * item.quantity).toFixed(2)}</div>
-                                    </div>
-                                </div>
+                    <h2 style="color: #2c3e50; font-size: 20px; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+                        Website Products (${websiteProducts.length})
+                    </h2>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                        <thead>
+                            <tr style="background-color: #2c3e50; color: #ffffff;">
+                                <th style="padding: 12px; text-align: left;">Product</th>
+                                <th style="padding: 12px; text-align: center;">Qty</th>
+                                <th style="padding: 12px; text-align: right;">Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${websiteProducts.map(product => `
+                                <tr style="border-bottom: 1px solid #dee2e6;">
+                                    <td style="padding: 12px;">
+                                        ${product.image ? `<img src="${product.image}" alt="${product.name}" style="width: 50px; height: 50px; object-fit: cover; margin-right: 10px; vertical-align: middle; border-radius: 4px;">` : ''}
+                                        <span style="vertical-align: middle;">${product.name}</span>
+                                    </td>
+                                    <td style="padding: 12px; text-align: center;">${product.quantity}</td>
+                                    <td style="padding: 12px; text-align: right;">$${(product.price * product.quantity).toFixed(2)}</td>
+                                </tr>
                             `).join('')}
-                        </div>
-                    ` : '<p>No website products in this order.</p>'}
-
+                        </tbody>
+                    </table>
+                    ` : ''}
                     ${pwaOrders.length > 0 ? `
-                        <h4>Custom Hose Assemblies (${pwaOrders.length})</h4>
-                        <div style="margin: 20px 0;">
+                    <h2 style="color: #2c3e50; font-size: 20px; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+                        Custom Hose Assemblies (${pwaOrders.length})
+                    </h2>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                        <thead>
+                            <tr style="background-color: #2c3e50; color: #ffffff;">
+                                <th style="padding: 12px; text-align: left;">Assembly Details</th>
+                                <th style="padding: 12px; text-align: center;">Qty</th>
+                                <th style="padding: 12px; text-align: right;">Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                             ${pwaOrders.map(order => `
-                                <div class="product-item">
-                                    <img src="${order.image || 'https://fluidpowergroup.com.au/cartImage.jpeg'}" alt="${order.name}" class="product-image" />
-                                    <div class="product-details">
-                                        <div class="product-name">${order.name}</div>
-                                        <span class="custom-badge">Custom Order</span>
-                                        <div>Cart ID: ${order.cartId}</div>
-                                        <div>Price: $${order.totalPrice.toFixed(2)}</div>
-                                    </div>
-                                </div>
+                                <tr style="border-bottom: 1px solid #dee2e6;">
+                                    <td style="padding: 12px;">
+                                        ${order.image ? `<img src="${order.image}" alt="${order.name}" style="width: 50px; height: 50px; object-fit: cover; margin-right: 10px; vertical-align: middle; border-radius: 4px;">` : ''}
+                                        <div style="display: inline-block; vertical-align: middle;">
+                                            <strong>${order.name}</strong><br>
+                                            <small style="color: #666;">PWA Order ID: ${order.pwaOrderNumber || `PWA-${order.cartId}` || 'N/A'}</small>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 12px; text-align: center;">${order.quantity}</td>
+                                    <td style="padding: 12px; text-align: right;">$${order.totalPrice.toFixed(2)}</td>
+                                </tr>
                             `).join('')}
-                            <p style="margin-top: 15px; padding: 10px; background-color: #fffbeb; border-left: 4px solid #FACC15;">
-                                📎 Custom order specifications are attached as PDF${pwaOrders.length > 1 ? 's' : ''}.
-                            </p>
-                        </div>
-                    ` : '<p>No custom orders in this order.</p>'}
-
-                    <div class="totals">
-                        <div class="total-row">
-                            <span>Subtotal:</span>
-                            <span>$${totals.subtotal.toFixed(2)}</span>
-                        </div>
-                        <div class="total-row">
-                            <span>Shipping:</span>
-                            <span>$${totals.shipping.toFixed(2)}</span>
-                        </div>
-                        <div class="total-row">
-                            <span>GST (10%):</span>
-                            <span>$${totals.gst.toFixed(2)}</span>
-                        </div>
-                        <div class="total-row final">
-                            <span>Total Received:</span>
-                            <span>$${totals.total.toFixed(2)}</span>
-                        </div>
+                        </tbody>
+                    </table>
+                    <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 15px 0;">
+                        <p style="margin: 0; color: #856404;">
+                            📎 <strong>Detailed specifications attached as PDF(s)</strong><br>
+                            Review the attached PDF files for complete assembly specifications.
+                        </p>
                     </div>
-
-                    <div style="margin-top: 30px; padding: 20px; background-color: #fffbeb; border-left: 4px solid #FACC15;">
-                        <h3 style="margin-top: 0;">⚡ Next Steps</h3>
+                    ` : ''}
+                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 30px;">
+                        <h3 style="color: #2c3e50; margin-top: 0;">Order Summary</h3>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 8px 0; color: #333333;">Subtotal:</td>
+                                <td style="padding: 8px 0; text-align: right; color: #333333;">$${totals.subtotal.toFixed(2)}</td>
+                            </tr>
+                            ${totals.discount > 0 ? `
+                            <tr>
+                                <td style="padding: 8px 0; color: #28a745;">Discount:</td>
+                                <td style="padding: 8px 0; text-align: right; color: #28a745;">-$${totals.discount.toFixed(2)}</td>
+                            </tr>
+                            ` : ''}
+                            ${totals.shipping > 0 ? `
+                            <tr>
+                                <td style="padding: 8px 0; color: #333333;">Shipping:</td>
+                                <td style="padding: 8px 0; text-align: right; color: #333333;">$${totals.shipping.toFixed(2)}</td>
+                            </tr>
+                            ` : ''}
+                            <tr>
+                                <td style="padding: 8px 0; color: #333333;">GST (10%):</td>
+                                <td style="padding: 8px 0; text-align: right; color: #333333;">$${totals.gst.toFixed(2)}</td>
+                            </tr>
+                            <tr style="border-top: 2px solid #dee2e6;">
+                                <td style="padding: 12px 0; font-size: 18px; font-weight: bold; color: #2c3e50;">Total:</td>
+                                <td style="padding: 12px 0; text-align: right; font-size: 18px; font-weight: bold; color: #2c3e50;">$${totals.total.toFixed(2)}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div style="margin-top: 30px; padding: 20px; background-color: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <h3 style="color: #155724; margin-top: 0;">📋 Action Items</h3>
                         <ul style="margin: 10px 0; padding-left: 20px;">
                             ${websiteProducts.length > 0 ? '<li>Check inventory levels (already updated automatically)</li>' : ''}
                             ${pwaOrders.length > 0 ? '<li>Review custom hose assembly specifications in attached PDF(s)</li>' : ''}
@@ -475,17 +457,79 @@ function generateEmailTemplates(orderNumber, userDetails, websiteProducts, pwaOr
     };
 }
 
-// --- Main API Handler ---
+// ========================================
+// MAIN API HANDLER
+// ========================================
 export default async function handler(req, res) {
-    // --- Keep Basic CORS ---
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    // --- Enhanced CORS (MUST BE FIRST) ---
+    const origin = req.headers.origin;
+    
+    const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'https://fluidpowergroup.com.au',
+        process.env.API_BASE_URL
+    ];
+
+    if (origin && allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    } else if (!origin) {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+    }
+
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    if (req.method === 'OPTIONS') { return res.status(204).end(); }
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+    // Handle preflight
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     if (req.method !== 'POST') { 
         res.setHeader('Allow', ['POST', 'OPTIONS']); 
         return res.status(405).json({ success: false, error: `Method ${req.method} Not Allowed` }); 
     }
+
+    // Initialize Swell
+    swell.init(process.env.SWELL_STORE_ID, process.env.SWELL_SECRET_KEY);
+
+    // Environment determination
+    const isVercelPreview = process.env.VERCEL_ENV === 'preview';
+    const forceSandbox = process.env.PAYPAL_MODE === 'sandbox';
+    const forceProduction = process.env.PAYPAL_MODE === 'production';
+    const USE_SANDBOX = forceProduction ? false : (forceSandbox || isVercelPreview || process.env.NODE_ENV !== 'production');
+
+    // PayPal credentials
+    const PAYPAL_CLIENT_ID = TESTING_MODE 
+        ? (USE_SANDBOX ? process.env.SANDBOX_CLIENT_ID_TEST : process.env.PRODUCTION_CLIENT_ID_TEST)
+        : (USE_SANDBOX ? process.env.SANDBOX_CLIENT_ID : process.env.PRODUCTION_CLIENT_ID);
+        
+    const PAYPAL_CLIENT_SECRET = TESTING_MODE
+        ? (USE_SANDBOX ? process.env.SANDBOX_SECRET_TEST : process.env.PRODUCTION_SECRET_TEST)
+        : (USE_SANDBOX ? process.env.SANDBOX_SECRET : process.env.PRODUCTION_SECRET);
+        
+    const PAYPAL_API_BASE = USE_SANDBOX
+        ? 'https://api-m.sandbox.paypal.com'
+        : 'https://api-m.paypal.com';
+
+    const VALID_SERVER_KEY = process.env.VALID_SERVER_KEY;
+
+    if (TESTING_MODE) {
+        console.log('🧪 TESTING MODE ENABLED - Using test credentials');
+    }
+
+    console.log('=== PAYPAL CONFIG DEBUG ===');
+    console.log('TESTING_MODE:', TESTING_MODE);
+    console.log('USE_SANDBOX:', USE_SANDBOX);
+    console.log('PAYPAL_CLIENT_ID exists:', !!PAYPAL_CLIENT_ID);
+    console.log('PAYPAL_CLIENT_ID first 10 chars:', PAYPAL_CLIENT_ID?.substring(0, 10));
+    console.log('PAYPAL_CLIENT_SECRET exists:', !!PAYPAL_CLIENT_SECRET);
+    console.log('PAYPAL_CLIENT_SECRET first 5 chars:', PAYPAL_CLIENT_SECRET?.substring(0, 5));
+    console.log('===========================');
+
+    console.log('SWELL init: storeId present?', !!process.env.SWELL_STORE_ID);
+    console.log('SWELL init: secret present?', !!process.env.SWELL_SECRET_KEY);
 
     console.log("Received request to /api/paypal/capture-order");
     if (TESTING_MODE) {
@@ -513,12 +557,12 @@ export default async function handler(req, res) {
 
     try {
         console.log(`Attempting to capture PayPal order ID: ${orderID}, Payer ID: ${payerID}`);
-        const accessToken = await getPayPalAccessToken();
+        const accessToken = await getPayPalAccessToken(PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_API_BASE);
         console.log("Obtained PayPal Access Token for capture.");
 
         const captureUrl = `${PAYPAL_API_BASE}/v2/checkout/orders/${orderID}/capture`;
 
-        // --- Call PayPal Capture API ---
+        // Call PayPal Capture API
         const captureResponse = await fetch(captureUrl, {
             method: 'POST',
             headers: { 
@@ -530,7 +574,7 @@ export default async function handler(req, res) {
             error_text: await captureResponse.text() 
         }));
 
-        // --- Handle Capture Response ---
+        // Handle Capture Response
         if (!captureResponse.ok) {
             console.error(`PayPal capture failed for order ${orderID}. Status: ${captureResponse.status}`, captureData);
             const errorMessage = captureData?.details?.[0]?.description || captureData?.message || captureData?.error_text || 'Payment capture failed.';
@@ -577,13 +621,13 @@ export default async function handler(req, res) {
 
         console.log(`✓ Payment captured successfully for order ${orderID}`);
 
-        // --- STEP 2: Update Swell Inventory (for website products only) ---
+        // STEP 2: Update Swell Inventory
         let inventoryResult = { success: true, message: 'No inventory to update' };
         
         if (websiteProducts.length > 0) {
             console.log(`Updating inventory for ${websiteProducts.length} website product(s)...`);
             try {
-                inventoryResult = await updateSwellInventory(websiteProducts);
+                inventoryResult = await updateSwellInventory(websiteProducts, captureId);
                 
                 if (inventoryResult.success) {
                     console.log(`✓ Inventory updated successfully`);
@@ -600,7 +644,7 @@ export default async function handler(req, res) {
             }
         }
 
-        // --- STEP 3: Send Order Confirmation Emails ---
+        // STEP 3: Send Order Confirmation Emails
         console.log(`Sending order confirmation emails...`);
         let emailResult = { success: true, message: 'Emails sent' };
         
@@ -612,7 +656,7 @@ export default async function handler(req, res) {
                 pwaOrders,
                 totals,
                 paypalCaptureID: captureId
-            });
+            }, VALID_SERVER_KEY, TESTING_MODE);
 
             if (emailResult.success) {
                 console.log(`✓ Order confirmation emails sent successfully`);
@@ -628,7 +672,7 @@ export default async function handler(req, res) {
             };
         }
 
-        // --- Final Response ---
+        // Final Response
         const warnings = [];
         if (!inventoryResult.success) warnings.push('Inventory update incomplete');
         if (!emailResult.success) warnings.push('Email notification failed');
@@ -653,3 +697,11 @@ export default async function handler(req, res) {
         });
     }
 }
+
+export const config = {
+    api: {
+        bodyParser: {
+            sizeLimit: '10mb',
+        },
+    },
+};

@@ -35,6 +35,7 @@ const allowedOrigins = [
     process.env.LOCAL_DEV_URL,
     process.env.API_BASE_URL,
     'http://localhost:3000',
+    'http://localhost:3001',
     'http://localhost:19006',
     'https://fluidpowergroup.com.au'
 ];
