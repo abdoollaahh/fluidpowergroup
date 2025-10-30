@@ -611,15 +611,6 @@ export default async function handler(req, res) {
         console.log('🧪 TESTING MODE ENABLED - Using test credentials');
     }
 
-    console.log('=== PAYPAL CONFIG DEBUG ===');
-    console.log('TESTING_MODE:', TESTING_MODE);
-    console.log('USE_SANDBOX:', USE_SANDBOX);
-    console.log('PAYPAL_CLIENT_ID exists:', !!PAYPAL_CLIENT_ID);
-    console.log('PAYPAL_CLIENT_ID first 10 chars:', PAYPAL_CLIENT_ID?.substring(0, 10));
-    console.log('PAYPAL_CLIENT_SECRET exists:', !!PAYPAL_CLIENT_SECRET);
-    console.log('PAYPAL_CLIENT_SECRET first 5 chars:', PAYPAL_CLIENT_SECRET?.substring(0, 5));
-    console.log('===========================');
-
     console.log('SWELL init: storeId present?', !!process.env.SWELL_STORE_ID);
     console.log('SWELL init: secret present?', !!process.env.SWELL_SECRET_KEY);
 
