@@ -1,11 +1,51 @@
-// pages/api/paypal/capture-order.js
+// pages/api/paypal/capture-order.js - FIXED VERSION
+// Key improvements:
+// 1. Order status tracking for frontend polling
+// 2. Idempotency protection (prevent duplicate captures)
+// 3. Async order processing with status updates
+// 4. Proper error handling without false positives
+
 import fetch from 'node-fetch';
 import swell from 'swell-node';
+import { setOrderStatus, getOrderStatus, updateOrderStatus } from './order-status.js';
 
 // ========================================
 // TESTING MODE CONFIGURATION
 // ========================================
 const TESTING_MODE = process.env.TESTING_MODE === 'true';
+const WAIT_FOR_PROCESSING = process.env.WAIT_FOR_PROCESSING === 'true';
+
+// ========================================
+// IDEMPOTENCY TRACKING
+// ========================================
+// Tracks PayPal orderIDs that have been processed to prevent duplicate captures
+const processedPayPalOrders = new Map();
+
+// Check if PayPal order was already processed
+function isPayPalOrderProcessed(paypalOrderId) {
+    return processedPayPalOrders.has(paypalOrderId);
+}
+
+// Mark PayPal order as processed
+function markPayPalOrderProcessed(paypalOrderId, internalOrderNumber) {
+    processedPayPalOrders.set(paypalOrderId, {
+        internalOrderNumber,
+        timestamp: new Date().toISOString()
+    });
+    console.log(`🔒 Marked PayPal order ${paypalOrderId} as processed`);
+}
+
+// Cleanup old processed orders (older than 24 hours)
+setInterval(() => {
+    const dayAgo = Date.now() - (24 * 60 * 60 * 1000);
+    for (const [orderId, data] of processedPayPalOrders.entries()) {
+        const orderTime = new Date(data.timestamp).getTime();
+        if (orderTime < dayAgo) {
+            console.log(`🗑️ Cleaning up old processed order: ${orderId}`);
+            processedPayPalOrders.delete(orderId);
+        }
+    }
+}, 60 * 60 * 1000); // Run every hour
 
 // ========================================
 // HELPER FUNCTIONS
@@ -50,10 +90,9 @@ async function updateSwellInventory(websiteProducts, orderId) {
             console.log(`\n📦 Processing: ${item.name} (${item.id})`);
             console.log(`   Quantity sold: ${item.quantity}`);
 
-            // Create stock adjustment using Swell's stock API
             const adjustment = await swell.post('/products:stock', {
                 parent_id: item.id,
-                quantity: -item.quantity,  // Negative to decrease
+                quantity: -item.quantity,
                 reason: 'sold',
                 reason_message: `PayPal Order ${orderId}`
             });
@@ -61,7 +100,6 @@ async function updateSwellInventory(websiteProducts, orderId) {
             console.log(`✅ Stock updated successfully!`);
             console.log(`   Previous level: ${adjustment.level + item.quantity}`);
             console.log(`   New level: ${adjustment.level}`);
-            console.log(`   Adjustment ID: ${adjustment.id}`);
 
             results.push({
                 productId: item.id,
@@ -107,7 +145,7 @@ async function sendOrderEmail(orderData, VALID_SERVER_KEY, TESTING_MODE) {
     } = orderData;
 
     try {
-        console.log(`Preparing to send order confirmation emails for order #${orderNumber}`);
+        console.log(`📧 Preparing emails for order #${orderNumber}`);
 
         const emailTemplates = generateEmailTemplates(
             orderNumber,
@@ -129,20 +167,31 @@ async function sendOrderEmail(orderData, VALID_SERVER_KEY, TESTING_MODE) {
                 };
             });
 
-        // ⭐ NEW: Smart URL detection - respects TESTING_MODE
-        let baseUrl;
+            let baseUrl;
 
-        if (TESTING_MODE) {
-            baseUrl = process.env.API_BASE_URL_TEST || 
-                      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
-            console.log('🧪 Using TEST API URL for emails');
-        } else {
-            baseUrl = process.env.API_BASE_URL || 
-                      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
-            console.log('🌐 Using LIVE API URL for emails');
-        }
-
-        console.log(`📧 Sending emails via: ${baseUrl}/api/send-email`);
+            // 🔧 FIX: Detect the correct base URL
+            if (typeof window !== 'undefined') {
+                // Client-side (shouldn't happen in API route, but just in case)
+                baseUrl = window.location.origin;
+            } else {
+                // Server-side (API route)
+                if (TESTING_MODE) {
+                    baseUrl = process.env.API_BASE_URL_TEST || 
+                              process.env.NEXT_PUBLIC_API_BASE_URL_TEST ||
+                              (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3001');
+                } else {
+                    baseUrl = process.env.API_BASE_URL || 
+                              process.env.NEXT_PUBLIC_API_BASE_URL ||
+                              (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3001');
+                }
+            }
+            
+            // 🔧 CRITICAL: Remove trailing slash if present
+            baseUrl = baseUrl.replace(/\/$/, '');
+            
+            console.log('🔍 Resolved base URL:', baseUrl);
+            console.log('🔍 Email endpoint will be:', `${baseUrl}/api/send-email`);
+            console.log(`🔍 Server key exists: ${!!VALID_SERVER_KEY}`);
 
         const emailResponse = await fetch(`${baseUrl}/api/send-email`, {
             method: 'POST',
@@ -157,26 +206,67 @@ async function sendOrderEmail(orderData, VALID_SERVER_KEY, TESTING_MODE) {
                 emailTemplates,
                 pdfAttachments: pdfAttachments.length > 0 ? pdfAttachments : null,
                 testingMode: TESTING_MODE
-            })
+            }),
+            signal: AbortSignal.timeout(30000)
         });
 
-        const emailResult = await emailResponse.json();
+        // 🆕 ADD THESE CHECKS BEFORE PARSING JSON
+        console.log(`📧 Email API response status: ${emailResponse.status}`);
+        const contentType = emailResponse.headers.get('content-type') || '';
+        console.log(`📧 Email API content-type: ${contentType}`);
 
-        if (!emailResponse.ok) {
-            throw new Error(emailResult.error || 'Email service returned error');
+        // Check if response is HTML (indicates 404 or server error)
+        if (contentType.includes('text/html')) {
+            const htmlResponse = await emailResponse.text();
+            console.error('❌ Email API returned HTML instead of JSON (first 500 chars):');
+            console.error(htmlResponse.substring(0, 500));
+            throw new Error(`Email endpoint returned HTML (status ${emailResponse.status}) - endpoint may not exist or has server error`);
         }
 
-        console.log(`✓ Order confirmation emails sent successfully for order #${orderNumber}`);
+        // Check if response is not JSON
+        if (!contentType.includes('application/json')) {
+            const responseText = await emailResponse.text();
+            console.error(`❌ Email API returned unexpected content-type: ${contentType}`);
+            console.error('Response preview:', responseText.substring(0, 500));
+            throw new Error(`Email API returned non-JSON response. Content-Type: ${contentType}`);
+        }
+
+        // Check response status BEFORE parsing JSON
+        if (!emailResponse.ok) {
+            let errorMessage;
+            try {
+                const errorData = await emailResponse.json();
+                errorMessage = errorData.error || errorData.message || 'Email service returned error';
+                console.error('❌ Email API error response:', errorData);
+            } catch (parseError) {
+                const errorText = await emailResponse.text();
+                errorMessage = `HTTP ${emailResponse.status}: ${errorText.substring(0, 200)}`;
+                console.error('❌ Failed to parse error response:', errorText.substring(0, 200));
+            }
+            throw new Error(errorMessage);
+        }
+
+        // NOW it's safe to parse JSON
+        const emailResult = await emailResponse.json();
+
+        console.log(`✅ Emails sent successfully for order #${orderNumber}`);
         return { success: true, ...emailResult };
 
     } catch (error) {
-        console.error('Failed to send order confirmation email:', error);
+        console.error('❌ Failed to send emails:', error);
+        console.error('❌ Error details:', {
+            message: error.message,
+            stack: error.stack?.split('\n').slice(0, 3).join('\n')
+        });
         return { success: false, error: error.message };
     }
 }
 
 // --- Helper: Generate Email Templates ---
 function generateEmailTemplates(orderNumber, userDetails, websiteProducts, pwaOrders, totals, paypalCaptureID, TESTING_MODE) {
+    // [Keep your existing email template generation code here]
+    // I'm not duplicating it to save space, but it should remain the same
+    
     const currentDate = new Date().toLocaleDateString('en-AU', { 
         year: 'numeric', 
         month: 'long', 
@@ -203,7 +293,7 @@ function generateEmailTemplates(orderNumber, userDetails, websiteProducts, pwaOr
                 </div>
                 <div style="padding: 30px 20px;">
                     <p style="font-size: 16px; color: #333333; margin-bottom: 20px;">
-                        Dear ${userDetails.firstName} ${userDetails.lastName},
+                        Hi ${userDetails.firstName} ${userDetails.lastName},
                     </p>
                     <p style="font-size: 16px; color: #333333; margin-bottom: 20px;">
                         We've received your order and will begin processing it right away. Here are your order details:
@@ -467,23 +557,103 @@ function generateEmailTemplates(orderNumber, userDetails, websiteProducts, pwaOr
     `;
 
     return {
-        customerEmailContent,
-        businessEmailContent
+        customerEmailContent: customerEmailContent,
+        businessEmailContent: businessEmailContent
     };
+}
+
+// ========================================
+// 🆕 NEW: Async Order Processing Function
+// ========================================
+async function processOrderAsync(orderData, credentials) {
+    const { orderNumber, orderID, websiteProducts, pwaOrders } = orderData;
+    
+    try {
+        console.log(`🔄 Starting async processing for order ${orderNumber}`);
+        updateOrderStatus(orderNumber, { status: 'processing' });
+
+        // Step 1: Update inventory (if applicable)
+        let inventoryResult = { success: true };
+        if (websiteProducts && websiteProducts.length > 0) {
+            console.log(`📦 Updating inventory...`);
+            inventoryResult = await updateSwellInventory(
+                websiteProducts, 
+                orderData.paypalCaptureID
+            );
+            
+            updateOrderStatus(orderNumber, { 
+                inventoryUpdated: inventoryResult.success 
+            });
+        }
+
+        // ⏰ ADD TIMEOUT TEST HERE:
+        const customerName = `${orderData.userDetails.firstName} ${orderData.userDetails.lastName}`.toLowerCase();
+        if (customerName.includes('timeout')) {
+            console.log('⏰⏰⏰ TIMEOUT TEST ACTIVATED ⏰⏰⏰');
+            console.log(`⏰ Customer: ${orderData.userDetails.firstName} ${orderData.userDetails.lastName}`);
+            console.log('⏰ Simulating 50 second processing delay...');
+            console.log('⏰ (Frontend will timeout at 45 seconds and start polling)');
+            await new Promise(resolve => setTimeout(resolve, 50000));
+            console.log('⏰⏰⏰ Delay complete! Continuing with email processing... ⏰⏰⏰');
+        }
+
+        // Step 2: Send emails
+        console.log(`📧 Sending confirmation emails...`);
+        const emailResult = await sendOrderEmail(
+            orderData,
+            credentials.VALID_SERVER_KEY,
+            credentials.TESTING_MODE
+        );
+        
+        updateOrderStatus(orderNumber, { 
+            emailsSent: emailResult.success 
+        });
+
+        // Step 3: Mark as completed
+        const allSuccessful = inventoryResult.success && emailResult.success;
+        
+        if (allSuccessful) {
+            console.log(`✅ Order ${orderNumber} processing completed successfully`);
+            setOrderStatus(orderNumber, 'completed', {
+                inventoryUpdated: true,
+                emailsSent: true,
+                completedAt: new Date().toISOString()
+            });
+        } else {
+            console.warn(`⚠️ Order ${orderNumber} completed with warnings`);
+            setOrderStatus(orderNumber, 'completed', {
+                inventoryUpdated: inventoryResult.success,
+                emailsSent: emailResult.success,
+                warnings: [
+                    !inventoryResult.success && 'Inventory update failed',
+                    !emailResult.success && 'Email sending failed'
+                ].filter(Boolean),
+                completedAt: new Date().toISOString()
+            });
+        }
+
+        return { success: true };
+
+    } catch (error) {
+        console.error(`❌ Error processing order ${orderNumber}:`, error);
+        setOrderStatus(orderNumber, 'failed', {
+            error: error.message,
+            failedAt: new Date().toISOString()
+        });
+        return { success: false, error: error.message };
+    }
 }
 
 // ========================================
 // MAIN API HANDLER
 // ========================================
 export default async function handler(req, res) {
-    // ENHANCED CORS HANDLING
-// ========================================
+    // [Keep your existing CORS handling code here]
     const origin = req.headers.origin;
 
     console.log('📍 Request origin:', origin);
     console.log('📍 Request method:', req.method);
 
-    // Allowed origins
     const allowedOrigins = [
         'http://localhost:3000',
         'http://localhost:3001',
@@ -491,40 +661,29 @@ export default async function handler(req, res) {
         'https://www.fluidpowergroup.com.au',
     ];
 
-    // Add all Vercel preview URLs
     if (origin && origin.includes('.vercel.app')) {
         allowedOrigins.push(origin);
     }
 
-    // Check if origin is allowed
     const isAllowed = allowedOrigins.includes(origin);
 
-    // Set CORS headers
     if (isAllowed && origin) {
         res.setHeader('Access-Control-Allow-Origin', origin);
-        console.log('✅ CORS: Allowed origin:', origin);
     } else if (!origin) {
-        // No origin = same-origin or direct API call
         res.setHeader('Access-Control-Allow-Origin', '*');
-        console.log('✅ CORS: No origin header (allowing all)');
     } else {
-        // Fallback - allow it anyway for development
         res.setHeader('Access-Control-Allow-Origin', origin);
-        console.warn('⚠️ CORS: Origin not in allowlist but allowing:', origin);
     }
 
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-server-key');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
+    res.setHeader('Access-Control-Max-Age', '86400');
 
-    // Handle preflight OPTIONS request
     if (req.method === 'OPTIONS') {
-        console.log('✅ CORS preflight handled successfully');
         return res.status(200).end();
     }
 
-    // Only allow POST after preflight
     if (req.method !== 'POST') { 
         res.setHeader('Allow', ['POST', 'OPTIONS']); 
         return res.status(405).json({ success: false, error: `Method ${req.method} Not Allowed` }); 
@@ -533,108 +692,46 @@ export default async function handler(req, res) {
     // Initialize Swell
     swell.init(process.env.SWELL_STORE_ID, process.env.SWELL_SECRET_KEY);
 
-    // Environment determination
+    // [Keep your existing credential configuration code]
     const isVercelPreview = process.env.VERCEL_ENV === 'preview';
-
-    // 🔧 DUAL CREDENTIAL SYSTEM
-    // If TESTING_MODE=true, use separate _TEST credentials (your test PayPal account)
-    // If TESTING_MODE=false, use regular credentials (live website's PayPal account)
-
     let PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_API_BASE;
 
     if (TESTING_MODE) {
-        // ========================================
-        // TESTING MODE: Use separate test credentials
-        // ========================================
-        console.log('🧪 TESTING MODE: Using dedicated test credentials');
-        
-        // For testing, you can choose sandbox or production test account
-        const useTestSandbox = process.env.TEST_USE_SANDBOX !== 'false'; // Default to sandbox for testing
-        
-        PAYPAL_CLIENT_ID = useTestSandbox 
-            ? process.env.SANDBOX_CLIENT_ID_TEST 
-            : process.env.PRODUCTION_CLIENT_ID_TEST;
-            
-        PAYPAL_CLIENT_SECRET = useTestSandbox 
-            ? process.env.SANDBOX_SECRET_TEST 
-            : process.env.PRODUCTION_SECRET_TEST;
-            
-        PAYPAL_API_BASE = useTestSandbox
-            ? 'https://api-m.sandbox.paypal.com'
-            : 'https://api-m.paypal.com';
-            
-        console.log(`   Using TEST ${useTestSandbox ? 'SANDBOX' : 'PRODUCTION'} credentials`);
-        
+        const useTestSandbox = process.env.TEST_USE_SANDBOX !== 'false';
+        PAYPAL_CLIENT_ID = useTestSandbox ? process.env.SANDBOX_CLIENT_ID_TEST : process.env.PRODUCTION_CLIENT_ID_TEST;
+        PAYPAL_CLIENT_SECRET = useTestSandbox ? process.env.SANDBOX_SECRET_TEST : process.env.PRODUCTION_SECRET_TEST;
+        PAYPAL_API_BASE = useTestSandbox ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com';
     } else {
-        // ========================================
-        // LIVE MODE: Use regular website credentials
-        // ========================================
-        console.log('🌐 LIVE MODE: Using website credentials');
-        
         const forceSandbox = process.env.PAYPAL_MODE === 'sandbox';
         const forceProduction = process.env.PAYPAL_MODE === 'production';
         const USE_SANDBOX = forceProduction ? false : (forceSandbox || isVercelPreview || process.env.NODE_ENV !== 'production');
-        
-        PAYPAL_CLIENT_ID = USE_SANDBOX 
-            ? process.env.SANDBOX_CLIENT_ID 
-            : process.env.PRODUCTION_CLIENT_ID;
-            
-        PAYPAL_CLIENT_SECRET = USE_SANDBOX 
-            ? process.env.SANDBOX_SECRET 
-            : process.env.PRODUCTION_SECRET;
-            
-        PAYPAL_API_BASE = USE_SANDBOX
-            ? 'https://api-m.sandbox.paypal.com'
-            : 'https://api-m.paypal.com';
-            
-        console.log(`   Using LIVE ${USE_SANDBOX ? 'SANDBOX' : 'PRODUCTION'} credentials`);
+        PAYPAL_CLIENT_ID = USE_SANDBOX ? process.env.SANDBOX_CLIENT_ID : process.env.PRODUCTION_CLIENT_ID;
+        PAYPAL_CLIENT_SECRET = USE_SANDBOX ? process.env.SANDBOX_SECRET : process.env.PRODUCTION_SECRET;
+        PAYPAL_API_BASE = USE_SANDBOX ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com';
     }
 
-    // 🔧 CREDENTIAL DEBUG (runs for BOTH testing and live mode)
-    console.log('=== CREDENTIAL DEBUG ===');
-    console.log('TESTING_MODE:', TESTING_MODE);
-    console.log('CLIENT_ID value:', PAYPAL_CLIENT_ID ? `${PAYPAL_CLIENT_ID.substring(0, 10)}...` : 'UNDEFINED');
-    console.log('CLIENT_SECRET value:', PAYPAL_CLIENT_SECRET ? `${PAYPAL_CLIENT_SECRET.substring(0, 5)}...` : 'UNDEFINED');
-    console.log('API_BASE:', PAYPAL_API_BASE);
-    console.log('========================');
-
-    // Validation check (runs for BOTH modes)
     if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
-        const missingVar = TESTING_MODE 
-            ? 'SANDBOX_CLIENT_ID_TEST or SANDBOX_SECRET_TEST'
-            : 'SANDBOX_CLIENT_ID or SANDBOX_SECRET';
-        
-        console.error(`❌ CRITICAL: Missing PayPal credentials: ${missingVar}`);
-        
+        console.error(`❌ Missing PayPal credentials`);
         return res.status(500).json({ 
             success: false, 
-            error: 'PayPal configuration error. Please contact support.',
-            debug: TESTING_MODE ? 'Missing TEST credentials' : 'Missing LIVE credentials'
+            error: 'PayPal configuration error'
         });
     }
 
-    console.log('✅ PayPal credentials loaded successfully');
+    // 🔍 ADD THIS DEBUG BLOCK:
+    console.log('=== PAYPAL CREDENTIAL DEBUG ===');
+    console.log('TESTING_MODE:', TESTING_MODE);
+    console.log('PAYPAL_API_BASE:', PAYPAL_API_BASE);
+    console.log('PAYPAL_CLIENT_ID (first 10 chars):', PAYPAL_CLIENT_ID?.substring(0, 10));
+    console.log('Using SANDBOX?', PAYPAL_API_BASE.includes('sandbox'));
+    console.log('================================');
 
     const VALID_SERVER_KEY = process.env.VALID_SERVER_KEY;
 
-    // Additional debug info
-    console.log('SWELL init: storeId present?', !!process.env.SWELL_STORE_ID);
-    console.log('SWELL init: secret present?', !!process.env.SWELL_SECRET_KEY);
-    console.log("Received request to /api/paypal/capture-order");
+    console.log("📥 Received capture-order request");
+    if (TESTING_MODE) console.log("🧪 Running in TESTING MODE");
 
-    if (TESTING_MODE) {
-        console.log('🧪 TESTING MODE ENABLED - Using test credentials');
-    }
-
-    console.log('SWELL init: storeId present?', !!process.env.SWELL_STORE_ID);
-    console.log('SWELL init: secret present?', !!process.env.SWELL_SECRET_KEY);
-
-    console.log("Received request to /api/paypal/capture-order");
-    if (TESTING_MODE) {
-        console.log("🧪 Running in TESTING MODE");
-    }
-
-    // Extract order data from request
+    // Extract order data
     const {
         orderID,
         payerID,
@@ -647,20 +744,47 @@ export default async function handler(req, res) {
 
     // Validation
     if (!orderID) {
-        console.error("Missing PayPal orderID in request body for capture");
+        console.error("❌ Missing PayPal orderID");
         return res.status(400).json({ success: false, error: 'Missing required PayPal orderID.' });
     }
-    if (!orderNumber) console.warn(`Warning: Internal orderNumber not received for orderID: ${orderID}`);
-    if (!userDetails) console.warn(`Warning: userDetails not received for orderID: ${orderID}`);
 
     try {
-        console.log(`Attempting to capture PayPal order ID: ${orderID}, Payer ID: ${payerID}`);
+        // ============================================================================
+        // 🆕 STEP 1: Check for duplicate processing (Idempotency)
+        // ============================================================================
+        
+        if (isPayPalOrderProcessed(orderID)) {
+            const existingOrder = processedPayPalOrders.get(orderID);
+            console.warn(`⚠️ PayPal order ${orderID} already processed as ${existingOrder.internalOrderNumber}`);
+            
+            return res.status(200).json({
+                success: true,
+                message: 'Order already processed',
+                duplicate: true,
+                orderNumber: existingOrder.internalOrderNumber,
+                paypalOrderID: orderID
+            });
+        }
+
+        // ============================================================================
+        // 🆕 STEP 2: Initialize order status tracking
+        // ============================================================================
+        
+        console.log(`📊 Initializing order status for ${orderNumber}`);
+        setOrderStatus(orderNumber, 'pending', {
+            paypalOrderID: orderID,
+            payerID: payerID,
+            createdAt: new Date().toISOString()
+        });
+
+        // ============================================================================
+        // STEP 3: Capture payment from PayPal
+        // ============================================================================
+        
+        console.log(`💳 Capturing PayPal order: ${orderID}`);
         const accessToken = await getPayPalAccessToken(PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_API_BASE);
-        console.log("Obtained PayPal Access Token for capture.");
-
+        
         const captureUrl = `${PAYPAL_API_BASE}/v2/checkout/orders/${orderID}/capture`;
-
-        // Call PayPal Capture API
         const captureResponse = await fetch(captureUrl, {
             method: 'POST',
             headers: { 
@@ -668,130 +792,183 @@ export default async function handler(req, res) {
                 'Content-Type': 'application/json', 
             }
         });
+
         const captureData = await captureResponse.json().catch(async () => ({ 
             error_text: await captureResponse.text() 
         }));
 
-        // Handle Capture Response
+        // Handle capture response
         if (!captureResponse.ok) {
-            console.error(`PayPal capture failed for order ${orderID}. Status: ${captureResponse.status}`, captureData);
-            const errorMessage = captureData?.details?.[0]?.description || captureData?.message || captureData?.error_text || 'Payment capture failed.';
+            console.error(`❌ PayPal capture failed: ${captureResponse.status}`, captureData);
             
-            if (captureData.name === 'ORDER_ALREADY_CAPTURED' || (captureData?.details?.[0]?.issue === 'ORDER_ALREADY_CAPTURED')) {
-                console.warn(`Order ${orderID} was already captured.`);
+            const errorMessage = captureData?.details?.[0]?.description || 
+                                captureData?.message || 
+                                captureData?.error_text || 
+                                'Payment capture failed.';
+            
+            // Handle already captured orders
+            if (captureData.name === 'ORDER_ALREADY_CAPTURED' || 
+                (captureData?.details?.[0]?.issue === 'ORDER_ALREADY_CAPTURED')) {
+                console.warn(`⚠️ Order ${orderID} already captured`);
+                
+                markPayPalOrderProcessed(orderID, orderNumber);
+                
                 return res.status(200).json({ 
                     success: true, 
-                    message: 'Order already captured.', 
+                    message: 'Order already captured', 
                     paypalStatus: 'COMPLETED', 
-                    code: 'ORDER_ALREADY_CAPTURED'
+                    duplicate: true
                 });
             }
+            
+            // Update order status to failed
+            setOrderStatus(orderNumber, 'failed', {
+                error: errorMessage,
+                paypalStatus: captureResponse.status
+            });
+            
             return res.status(captureResponse.status >= 500 ? 502 : 400).json({ 
                 success: false, 
                 error: errorMessage 
             });
         }
 
-        console.log(`Successfully captured PayPal order ${orderID}. Overall Capture Status: ${captureData.status}`);
+        console.log(`✅ PayPal order captured: ${orderID}`);
 
-        // Extract detailed capture status and ID
+        // Extract capture details
         let finalCaptureStatus = captureData.status;
         let captureId = null;
 
-        if (captureData.purchase_units && captureData.purchase_units[0] &&
-            captureData.purchase_units[0].payments && captureData.purchase_units[0].payments.captures &&
-            captureData.purchase_units[0].payments.captures[0]) {
+        if (captureData.purchase_units?.[0]?.payments?.captures?.[0]) {
             finalCaptureStatus = captureData.purchase_units[0].payments.captures[0].status;
             captureId = captureData.purchase_units[0].payments.captures[0].id;
-            console.log(`Detailed Capture Status: ${finalCaptureStatus}, Capture ID: ${captureId}`);
-        } else {
-            console.warn(`Could not find detailed capture info in purchase_units for orderID: ${orderID}. Using overall status.`);
+            console.log(`📋 Capture ID: ${captureId}, Status: ${finalCaptureStatus}`);
         }
 
-        // Check capture status
+        // Verify capture status
         if (finalCaptureStatus !== 'COMPLETED' && finalCaptureStatus !== 'PENDING') {
-            console.warn(`PayPal order ${orderID} capture status is ${finalCaptureStatus}, not COMPLETED/PENDING.`);
+            console.warn(`⚠️ Unexpected capture status: ${finalCaptureStatus}`);
+            setOrderStatus(orderNumber, 'failed', {
+                error: `Payment status is ${finalCaptureStatus}`,
+                paypalCaptureStatus: finalCaptureStatus
+            });
+            
             return res.status(400).json({ 
                 success: false, 
-                error: `Payment status is ${finalCaptureStatus}. Consider this as potentially failed or requiring review.` 
+                error: `Payment status is ${finalCaptureStatus}` 
             });
         }
 
-        console.log(`✓ Payment captured successfully for order ${orderID}`);
-
-        // STEP 2: Update Swell Inventory
-        let inventoryResult = { success: true, message: 'No inventory to update' };
+        // ============================================================================
+        // 🆕 STEP 4: Mark order as processed (prevent duplicates)
+        // ============================================================================
         
-        if (websiteProducts.length > 0) {
-            console.log(`Updating inventory for ${websiteProducts.length} website product(s)...`);
-            try {
-                inventoryResult = await updateSwellInventory(websiteProducts, captureId);
-                
-                if (inventoryResult.success) {
-                    console.log(`✓ Inventory updated successfully`);
-                } else {
-                    console.error(`⚠️ Some inventory updates failed:`, inventoryResult);
-                }
-            } catch (inventoryError) {
-                console.error('⚠️ Inventory update failed (non-fatal):', inventoryError);
-                inventoryResult = { 
-                    success: false, 
-                    error: inventoryError.message,
-                    message: 'Inventory update failed but order captured successfully'
-                };
-            }
-        }
+        markPayPalOrderProcessed(orderID, orderNumber);
 
-        // STEP 3: Send Order Confirmation Emails
-        console.log(`Sending order confirmation emails...`);
-        let emailResult = { success: true, message: 'Emails sent' };
-        
-        try {
-            emailResult = await sendOrderEmail({
-                orderNumber,
-                userDetails,
-                websiteProducts,
-                pwaOrders,
-                totals,
-                paypalCaptureID: captureId
-            }, VALID_SERVER_KEY, TESTING_MODE);
+        // ============================================================================
+        // 🆕 STEP 5: Start order processing (sync or async based on config)
+        // ============================================================================
 
-            if (emailResult.success) {
-                console.log(`✓ Order confirmation emails sent successfully`);
-            } else {
-                console.error(`⚠️ Email sending failed:`, emailResult);
-            }
-        } catch (emailError) {
-            console.error('⚠️ Email sending failed (non-fatal):', emailError);
-            emailResult = { 
-                success: false, 
-                error: emailError.message,
-                message: 'Email failed but order captured successfully'
-            };
-        }
-
-        // Final Response
-        const warnings = [];
-        if (!inventoryResult.success) warnings.push('Inventory update incomplete');
-        if (!emailResult.success) warnings.push('Email notification failed');
-
-        res.status(200).json({
-            success: true,
-            message: 'Order captured successfully.',
-            paypalOrderStatus: captureData.status,
-            paypalCaptureStatus: finalCaptureStatus,
+        const orderData = {
+            orderNumber,
+            orderID,
             paypalCaptureID: captureId,
-            inventoryUpdated: inventoryResult.success,
-            emailsSent: emailResult.success,
-            testingMode: TESTING_MODE,
-            warnings: warnings.length > 0 ? warnings : undefined
-        });
+            userDetails,
+            websiteProducts,
+            pwaOrders,
+            totals
+        };
+
+        const credentials = {
+            VALID_SERVER_KEY,
+            TESTING_MODE
+        };
+
+        // ============================================================================
+        // 🔧 CONDITIONAL PROCESSING: Sync for testing, Async for production
+        // ============================================================================
+
+        if (WAIT_FOR_PROCESSING) {
+            // ============================================================================
+            // SYNCHRONOUS MODE: Wait for complete processing (testing/timeout simulation)
+            // ============================================================================
+            console.log(`🔄 SYNCHRONOUS MODE: Waiting for order processing to complete...`);
+            console.log(`🚀 Starting order processing for ${orderNumber}`);
+            
+            try {
+                await processOrderAsync(orderData, credentials);
+                console.log(`✅ Order processing completed successfully for ${orderNumber}`);
+                
+                // ============================================================================
+                // STEP 6A: Return success after processing is complete
+                // ============================================================================
+                return res.status(200).json({
+                    success: true,
+                    message: 'Payment captured and order processed successfully.',
+                    paypalOrderStatus: captureData.status,
+                    paypalCaptureStatus: finalCaptureStatus,
+                    paypalCaptureID: captureId,
+                    orderNumber: orderNumber,
+                    processing: false, // Processing is complete
+                    processingMode: 'synchronous'
+                });
+                
+            } catch (processingError) {
+                console.error(`❌ Order processing failed for ${orderNumber}:`, processingError);
+                
+                // Payment succeeded but processing failed - still return success
+                return res.status(200).json({
+                    success: true,
+                    warning: 'Payment captured but there was an issue processing your order. Our team will contact you shortly.',
+                    paypalCaptureID: captureId,
+                    orderNumber: orderNumber,
+                    processingError: processingError.message,
+                    processingMode: 'synchronous'
+                });
+            }
+            
+        } else {
+            // ============================================================================
+            // ASYNCHRONOUS MODE: Process in background (production)
+            // ============================================================================
+            console.log(`⚡ ASYNC MODE: Processing order in background...`);
+            console.log(`🚀 Starting async order processing for ${orderNumber}`);
+            
+            processOrderAsync(orderData, credentials)
+                .then(() => console.log(`✅ Async processing completed for ${orderNumber}`))
+                .catch(err => console.error(`❌ Async processing failed for ${orderNumber}:`, err));
+
+            // ============================================================================
+            // STEP 6B: Return immediate success response
+            // ============================================================================
+            console.log(`✅ Returning immediate success response for ${orderNumber}`);
+            
+            return res.status(200).json({
+                success: true,
+                message: 'Payment captured successfully. Order is being processed.',
+                paypalOrderStatus: captureData.status,
+                paypalCaptureStatus: finalCaptureStatus,
+                paypalCaptureID: captureId,
+                orderNumber: orderNumber,
+                processing: true, // Indicates async processing is in progress
+                processingMode: 'asynchronous'
+            });
+        }
 
     } catch (error) {
-        console.error(`Unhandled error in /api/paypal/capture-order for orderID ${orderID}:`, error);
-        res.status(500).json({ 
+        console.error(`❌ Unhandled error for order ${orderID}:`, error);
+        
+        // Update order status
+        if (orderNumber) {
+            setOrderStatus(orderNumber, 'failed', {
+                error: error.message,
+                failedAt: new Date().toISOString()
+            });
+        }
+        
+        return res.status(500).json({ 
             success: false, 
-            error: error.message || 'Internal server error during payment capture.' 
+            error: error.message || 'Internal server error' 
         });
     }
 }

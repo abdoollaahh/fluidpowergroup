@@ -170,7 +170,7 @@ export default async function handler(req, res) {
     if (req.method === 'OPTIONS') {
         if (!isOriginAllowed && origin) {
              console.warn(`CORS preflight denied for origin: ${origin}`);
-             return res.status(403).end('Forbidden');
+             return res.status(403).json({ error: 'Forbidden' });
         }
         console.log(`CORS preflight OK for origin: ${origin}`);
         return res.status(204).end();
@@ -178,6 +178,8 @@ export default async function handler(req, res) {
 
     // --- Handle POST request ---
     if (req.method === 'POST') {
+        // Set JSON content type explicitly
+        res.setHeader('Content-Type', 'application/json');
         // --- Authentication ---
         const serverKey = req.headers['x-server-key'];
         if (!VALID_SERVER_KEY) {
