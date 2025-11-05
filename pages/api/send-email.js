@@ -22,7 +22,7 @@ const SENDER_EMAIL = TESTING_MODE
     ? (process.env.SENDER_EMAIL_TEST || process.env.SENDER_EMAIL)
     : process.env.SENDER_EMAIL;
 
-const VALID_SERVER_KEY = process.env.VALID_SERVER_KEY;
+//const VALID_SERVER_KEY = process.env.VALID_SERVER_KEY;
 
 // 🔍 DEBUG: Check if key exists
 console.log('=== SEND-EMAIL DEBUG ===');
@@ -189,7 +189,7 @@ export default async function handler(req, res) {
         //if (serverKey !== VALID_SERVER_KEY) {
           //  console.error(`Unauthorized access attempt. Key: ${serverKey ? 'Provided (mismatch)' : 'Missing'}`);
             //return res.status(403).json({ error: 'Unauthorized' });
-        //} */}
+        //}
 
         try {
             console.log('Graph email endpoint accessed (/api/send-email)');
