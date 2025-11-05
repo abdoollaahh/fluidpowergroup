@@ -182,14 +182,14 @@ export default async function handler(req, res) {
         res.setHeader('Content-Type', 'application/json');
         // --- Authentication ---
         const serverKey = req.headers['x-server-key'];
-        if (!VALID_SERVER_KEY) {
+        {/*if (!VALID_SERVER_KEY) {
              console.error("FATAL: VALID_SERVER_KEY is not configured.");
              return res.status(500).json({ error: 'Server configuration error.' });
         }
         if (serverKey !== VALID_SERVER_KEY) {
             console.error(`Unauthorized access attempt. Key: ${serverKey ? 'Provided (mismatch)' : 'Missing'}`);
             return res.status(403).json({ error: 'Unauthorized' });
-        }
+        } */}
 
         try {
             console.log('Graph email endpoint accessed (/api/send-email)');
