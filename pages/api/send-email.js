@@ -25,11 +25,11 @@ const SENDER_EMAIL = TESTING_MODE
 //const VALID_SERVER_KEY = process.env.VALID_SERVER_KEY;
 
 // 🔍 DEBUG: Check if key exists
-console.log('=== SEND-EMAIL DEBUG ===');
-console.log('🔑 VALID_SERVER_KEY exists?', !!VALID_SERVER_KEY);
-console.log('🔑 Value length:', VALID_SERVER_KEY?.length || 0);
-console.log('🔑 First 5 chars:', VALID_SERVER_KEY?.substring(0, 5) || 'MISSING');
-console.log('========================');
+//console.log('=== SEND-EMAIL DEBUG ===');
+//console.log('🔑 VALID_SERVER_KEY exists?', !!VALID_SERVER_KEY);
+//console.log('🔑 Value length:', VALID_SERVER_KEY?.length || 0);
+//console.log('🔑 First 5 chars:', VALID_SERVER_KEY?.substring(0, 5) || 'MISSING');
+//console.log('========================');
 
 // Log testing mode status
 if (TESTING_MODE) {
@@ -182,14 +182,16 @@ export default async function handler(req, res) {
         res.setHeader('Content-Type', 'application/json');
         // --- Authentication ---
         const serverKey = req.headers['x-server-key'];
-        //{if (!VALID_SERVER_KEY) {
-          //   console.error("FATAL: VALID_SERVER_KEY is not configured.");
-            // return res.status(500).json({ error: 'Server configuration error.' });
-        //}
-        //if (serverKey !== VALID_SERVER_KEY) {
-          //  console.error(`Unauthorized access attempt. Key: ${serverKey ? 'Provided (mismatch)' : 'Missing'}`);
-            //return res.status(403).json({ error: 'Unauthorized' });
-        //}
+        /*
+        {if (!VALID_SERVER_KEY) {
+             console.error("FATAL: VALID_SERVER_KEY is not configured.");
+             return res.status(500).json({ error: 'Server configuration error.' });
+        }
+        if (serverKey !== VALID_SERVER_KEY) {
+            console.error(`Unauthorized access attempt. Key: ${serverKey ? 'Provided (mismatch)' : 'Missing'}`);
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+        */    
 
         try {
             console.log('Graph email endpoint accessed (/api/send-email)');
