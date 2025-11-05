@@ -182,6 +182,8 @@ export default async function handler(req, res) {
         res.setHeader('Content-Type', 'application/json');
         // --- Authentication ---
         const serverKey = req.headers['x-server-key'];
+
+        //try again
         /*
         {if (!VALID_SERVER_KEY) {
              console.error("FATAL: VALID_SERVER_KEY is not configured.");
