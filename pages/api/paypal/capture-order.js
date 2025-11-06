@@ -170,9 +170,9 @@ async function sendOrderEmail(orderData, VALID_SERVER_KEY, TESTING_MODE) {
             baseUrl = window.location.origin;
         } else {
             if (TESTING_MODE) {
-                baseUrl = process.env.API_BASE_URL_TEST || 
-                          process.env.NEXT_PUBLIC_API_BASE_URL_TEST ||
-                          (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3001');
+                baseUrl = process.env.VERCEL_URL 
+                    ? `https://${process.env.VERCEL_URL}` 
+                    : (process.env.API_BASE_URL_TEST || 'http://localhost:3001');
             } else {
                 baseUrl = process.env.API_BASE_URL || 
                           process.env.NEXT_PUBLIC_API_BASE_URL ||
