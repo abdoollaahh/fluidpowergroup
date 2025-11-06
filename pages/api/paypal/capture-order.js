@@ -407,20 +407,138 @@ function generateEmailTemplates(orderNumber, userDetails, websiteProducts, pwaOr
         </html>
     `;
 
-    // Business Email Template (simplified for brevity - keep your full version)
+    // Business Email Template
     const businessEmailContent = `
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>New Order Notification</title>
         </head>
-        <body style="font-family: Arial, sans-serif;">
-            <h1>New Order: #${orderNumber}</h1>
-            <p>Customer: ${userDetails.firstName} ${userDetails.lastName}</p>
-            <p>Email: ${userDetails.email}</p>
-            <p>Total: $${totals.total.toFixed(2)}</p>
-            ${TESTING_MODE ? '<p style="color: #ffc107;">⚠️ TEST MODE</p>' : ''}
+        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+            <div style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div style="background-color: #2c3e50; padding: 30px 20px; text-align: center;">
+                    <h1 style="color: #ffffff; margin: 0; font-size: 28px;">🔔 New Order Received</h1>
+                    ${TESTING_MODE ? '<p style="color: #ffc107; margin: 10px 0 0 0; font-size: 16px;">⚠️ TEST MODE</p>' : ''}
+                </div>
+                <div style="padding: 30px 20px;">
+                    <div style="background-color: #e8f4f8; border-left: 4px solid #3498db; padding: 15px; margin: 20px 0;">
+                        <p style="margin: 5px 0; color: #333333;"><strong>Order Number:</strong> #${orderNumber}</p>
+                        <p style="margin: 5px 0; color: #333333;"><strong>Order Date:</strong> ${currentDate}</p>
+                        <p style="margin: 5px 0; color: #333333;"><strong>PayPal Transaction ID:</strong> ${paypalCaptureID}</p>
+                    </div>
+                    <h2 style="color: #2c3e50; font-size: 20px; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+                        Customer Information
+                    </h2>
+                    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
+                        <p style="margin: 5px 0; color: #333333;"><strong>Name:</strong> ${userDetails.firstName} ${userDetails.lastName}</p>
+                        ${userDetails.companyName ? `<p style="margin: 5px 0; color: #333333;"><strong>Company:</strong> ${userDetails.companyName}</p>` : ''}
+                        <p style="margin: 5px 0; color: #333333;"><strong>Email:</strong> ${userDetails.email}</p>
+                        <p style="margin: 5px 0; color: #333333;"><strong>Phone:</strong> ${userDetails.phone}</p>
+                        <p style="margin: 5px 0; color: #333333;"><strong>Address:</strong> ${userDetails.address}, ${userDetails.city}, ${userDetails.state} ${userDetails.postcode}, ${userDetails.country}</p>
+                    </div>
+                    ${websiteProducts.length > 0 ? `
+                    <h2 style="color: #2c3e50; font-size: 20px; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+                        Website Products (${websiteProducts.length})
+                    </h2>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                        <thead>
+                            <tr style="background-color: #2c3e50; color: #ffffff;">
+                                <th style="padding: 12px; text-align: left;">Product</th>
+                                <th style="padding: 12px; text-align: center;">Qty</th>
+                                <th style="padding: 12px; text-align: right;">Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${websiteProducts.map(product => `
+                                <tr style="border-bottom: 1px solid #dee2e6;">
+                                    <td style="padding: 12px;">
+                                        ${product.image ? `<img src="${product.image}" alt="${product.name}" style="width: 50px; height: 50px; object-fit: cover; margin-right: 10px; vertical-align: middle; border-radius: 4px;">` : ''}
+                                        <span style="vertical-align: middle;">${product.name}</span>
+                                    </td>
+                                    <td style="padding: 12px; text-align: center;">${product.quantity}</td>
+                                    <td style="padding: 12px; text-align: right;">$${(product.price * product.quantity).toFixed(2)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    ` : ''}
+                    ${pwaOrders.length > 0 ? `
+                    <h2 style="color: #2c3e50; font-size: 20px; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+                        Custom Hose Assemblies (${pwaOrders.length})
+                    </h2>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                        <thead>
+                            <tr style="background-color: #2c3e50; color: #ffffff;">
+                                <th style="padding: 12px; text-align: left;">Assembly Details</th>
+                                <th style="padding: 12px; text-align: center;">Qty</th>
+                                <th style="padding: 12px; text-align: right;">Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pwaOrders.map(order => `
+                                <tr style="border-bottom: 1px solid #dee2e6;">
+                                    <td style="padding: 12px;">
+                                        ${order.image ? `<img src="${order.image}" alt="${order.name}" style="width: 50px; height: 50px; object-fit: cover; margin-right: 10px; vertical-align: middle; border-radius: 4px;">` : ''}
+                                        <div style="display: inline-block; vertical-align: middle;">
+                                            <strong>${order.name}</strong><br>
+                                            <small style="color: #666;">PWA Order ID: ${order.pwaOrderNumber || `PWA-${order.cartId}` || 'N/A'}</small>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 12px; text-align: center;">${order.quantity}</td>
+                                    <td style="padding: 12px; text-align: right;">$${order.totalPrice.toFixed(2)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 15px 0;">
+                        <p style="margin: 0; color: #856404;">
+                            📎 <strong>Detailed specifications attached as PDF(s)</strong><br>
+                            Review the attached PDF files for complete assembly specifications.
+                        </p>
+                    </div>
+                    ` : ''}
+                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 30px;">
+                        <h3 style="color: #2c3e50; margin-top: 0;">Order Summary</h3>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 8px 0; color: #333333;">Subtotal:</td>
+                                <td style="padding: 8px 0; text-align: right; color: #333333;">$${totals.subtotal.toFixed(2)}</td>
+                            </tr>
+                            ${totals.discount > 0 ? `
+                            <tr>
+                                <td style="padding: 8px 0; color: #28a745;">Discount:</td>
+                                <td style="padding: 8px 0; text-align: right; color: #28a745;">-$${totals.discount.toFixed(2)}</td>
+                            </tr>
+                            ` : ''}
+                            ${totals.shipping > 0 ? `
+                            <tr>
+                                <td style="padding: 8px 0; color: #333333;">Shipping:</td>
+                                <td style="padding: 8px 0; text-align: right; color: #333333;">$${totals.shipping.toFixed(2)}</td>
+                            </tr>
+                            ` : ''}
+                            <tr>
+                                <td style="padding: 8px 0; color: #333333;">GST (10%):</td>
+                                <td style="padding: 8px 0; text-align: right; color: #333333;">$${totals.gst.toFixed(2)}</td>
+                            </tr>
+                            <tr style="border-top: 2px solid #dee2e6;">
+                                <td style="padding: 12px 0; font-size: 18px; font-weight: bold; color: #2c3e50;">Total:</td>
+                                <td style="padding: 12px 0; text-align: right; font-size: 18px; font-weight: bold; color: #2c3e50;">$${totals.total.toFixed(2)}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div style="margin-top: 30px; padding: 20px; background-color: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
+                        <h3 style="color: #155724; margin-top: 0;">📋 Action Items</h3>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            ${websiteProducts.length > 0 ? '<li>Check inventory levels (already updated automatically)</li>' : ''}
+                            ${pwaOrders.length > 0 ? '<li>Review custom hose assembly specifications in attached PDF(s)</li>' : ''}
+                            <li>Prepare items for shipping</li>
+                            <li>Send tracking information to customer</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
         </body>
         </html>
     `;
