@@ -6,7 +6,7 @@
 import fetch from 'node-fetch';
 import swell from 'swell-node';
 import { setOrderStatus, getOrderStatus, updateOrderStatus } from './order-status.js';
-import { pushToQStash, prepareEmailData } from '../../../lib/qstash-helper';
+import { pushToQStash, prepareEmailData } from '../../../lib/qstash-helper.js';
 
 // ========================================
 // TESTING MODE CONFIGURATION
