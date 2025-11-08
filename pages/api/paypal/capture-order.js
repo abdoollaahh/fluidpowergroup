@@ -6,7 +6,7 @@
 import fetch from 'node-fetch';
 import swell from 'swell-node';
 import { setOrderStatus, getOrderStatus, updateOrderStatus } from './order-status.js';
-import { pushToQStash, prepareEmailData } from '../../../lib/qstash-helper.js';
+import { pushToQStash, prepareEmailData } from '../../../lib/qstash-helper';
 
 // ========================================
 // TESTING MODE CONFIGURATION
@@ -386,14 +386,20 @@ export default async function handler(req, res) {
         // Determine callback URL (your send-email endpoint)
         let callbackUrl;
         if (TESTING_MODE) {
-            callbackUrl = process.env.VERCEL_URL 
-                ? `https://${process.env.VERCEL_URL}/api/send-email`
-                : (process.env.API_BASE_URL_TEST || 'http://localhost:3001') + '/api/send-email';
+            const baseUrl = process.env.VERCEL_URL 
+                ? `https://${process.env.VERCEL_URL}`
+                : (process.env.API_BASE_URL_TEST || 'http://localhost:3001');
+            callbackUrl = `${baseUrl}/api/send-email`;
         } else {
             const baseUrl = process.env.API_BASE_URL || 
                           process.env.NEXT_PUBLIC_API_BASE_URL ||
-                          (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3001');
+                          (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://fluidpowergroup.com.au');
             callbackUrl = `${baseUrl}/api/send-email`;
+        }
+
+        // Ensure URL is properly formatted
+        if (!callbackUrl.startsWith('http://') && !callbackUrl.startsWith('https://')) {
+            callbackUrl = `https://${callbackUrl}`;
         }
 
         console.log(`🔍 QStash will call: ${callbackUrl}`);
@@ -424,7 +430,7 @@ export default async function handler(req, res) {
         setOrderStatus(orderNumber, 'processing', {
             paymentCaptured: true,
             inventoryUpdated: inventoryResult.success,
-            emailsQueued: queueSuccess,
+            emailsQueued: qstashResult.success,
             completedAt: new Date().toISOString()
         });
 
