@@ -5,8 +5,6 @@ import { del } from '@vercel/blob';
 // ========================================
 // TESTING MODE CONFIGURATION
 // ========================================
-// Set TESTING_MODE="true" in Vercel environment variables for testing branch
-// Remove or set to "false" for production
 const TESTING_MODE = process.env.TESTING_MODE === 'true';
 
 // --- Environment Variables ---
@@ -14,7 +12,6 @@ const AZURE_TENANT_ID = process.env.AZURE_TENANT_ID;
 const AZURE_CLIENT_ID = process.env.AZURE_CLIENT_ID;
 const AZURE_CLIENT_SECRET = process.env.AZURE_CLIENT_SECRET;
 
-// Email configuration - Use TEST versions when TESTING_MODE is enabled
 const BUSINESS_EMAIL = TESTING_MODE 
     ? (process.env.BUSINESS_EMAIL_TEST || 'info@agcomponents.com.au')
     : process.env.BUSINESS_EMAIL;
@@ -25,14 +22,12 @@ const SENDER_EMAIL = TESTING_MODE
 
 const VALID_SERVER_KEY = process.env.VALID_SERVER_KEY;
 
-// 🔍 DEBUG: Check if key exists
 console.log('=== SEND-EMAIL DEBUG ===');
 console.log('🔑 VALID_SERVER_KEY exists?', !!VALID_SERVER_KEY);
 console.log('🔑 Value length:', VALID_SERVER_KEY?.length || 0);
 console.log('🔑 First 5 chars:', VALID_SERVER_KEY?.substring(0, 5) || 'MISSING');
 console.log('========================');
 
-// Log testing mode status
 if (TESTING_MODE) {
     console.log('🧪 EMAIL TESTING MODE ENABLED');
     console.log(`📧 Test emails will be sent to: ${BUSINESS_EMAIL}`);
@@ -95,7 +90,6 @@ async function sendEmailViaGraph(accessToken, emailData, fromEmail) {
             body: JSON.stringify(emailData)
         });
 
-        // Graph API returns 202 Accepted for successful email submissions
         if (response.status === 202) {
             return { success: true, messageId: response.headers.get('request-id') || 'sent' };
         } else {
@@ -110,7 +104,6 @@ async function sendEmailViaGraph(accessToken, emailData, fromEmail) {
 
 // --- Format Email for Graph API with Multiple PDF Support ---
 function formatEmailForGraph(toEmail, subject, htmlContent, pdfAttachments, orderNumber) {
-    // Add testing mode prefix to subject if in test mode
     const finalSubject = TESTING_MODE ? `[TEST] ${subject}` : subject;
 
     const emailData = {
@@ -131,7 +124,6 @@ function formatEmailForGraph(toEmail, subject, htmlContent, pdfAttachments, orde
         saveToSentItems: true
     };
 
-    // Add multiple PDF attachments if provided
     if (pdfAttachments && Array.isArray(pdfAttachments) && pdfAttachments.length > 0) {
         emailData.message.attachments = pdfAttachments.map((pdf, index) => ({
             '@odata.type': '#microsoft.graph.fileAttachment',
@@ -179,13 +171,11 @@ export default async function handler(req, res) {
 
     // --- Handle POST request ---
     if (req.method === 'POST') {
-        // Set JSON content type explicitly
         res.setHeader('Content-Type', 'application/json');
         
         // --- Authentication ---
         const serverKey = req.headers['x-server-key'];
         
-        // ✅ FIXED: Proper syntax for security checks
         if (!VALID_SERVER_KEY) {
              console.error("FATAL: VALID_SERVER_KEY is not configured.");
              return res.status(500).json({ error: 'Server configuration error.' });
@@ -202,6 +192,12 @@ export default async function handler(req, res) {
                 console.log('🧪 Running in TESTING MODE - using test email addresses');
             }
 
+            // ============================================
+            // 🔍 DEBUG: Log the entire request body
+            // ============================================
+            console.log('📦 Raw request body keys:', Object.keys(req.body));
+            console.log('📦 Request body structure:', JSON.stringify(req.body, null, 2).substring(0, 500));
+
             // --- Validate Graph Configuration ---
             if (!AZURE_TENANT_ID || !AZURE_CLIENT_ID || !AZURE_CLIENT_SECRET) {
                 console.error("FATAL: Microsoft Graph configuration missing.");
@@ -213,28 +209,61 @@ export default async function handler(req, res) {
                 return res.status(500).json({ success: false, error: "Email service configuration error." });
             }
 
-            // Extract request data - NOW WITH BLOB SUPPORT
+            // ============================================
+            // FIXED: Handle both direct and QStash payloads
+            // ============================================
+            // QStash wraps the payload in a 'body' property
+            const payload = req.body.body || req.body;
+            
+            console.log('📦 Using payload from:', req.body.body ? 'QStash wrapper' : 'direct body');
+
             const {
                 orderNumber,
                 userDetails,
-                pdfAttachments, // Direct attachments (backward compatibility)
-                blobUrls, // NEW - Blob URLs from capture-order
+                pdfAttachments,
+                blobUrls,
                 emailTemplates,
                 userEmail,
-                testingMode // Can also be passed from capture-order.js
-            } = req.body;
+                testingMode
+            } = payload;
+
+            // ============================================
+            // 🔍 DEBUG: Log extracted values
+            // ============================================
+            console.log('📧 Customer email from userDetails:', userDetails?.email);
+            console.log('📧 Customer email from userEmail:', userEmail);
+            console.log('📋 Email templates present:', !!emailTemplates);
+            console.log('📋 Customer template present:', !!emailTemplates?.customerEmailContent);
+            console.log('📋 Business template present:', !!emailTemplates?.businessEmailContent);
+            console.log('📎 Blob URLs count:', blobUrls?.length || 0);
+            console.log('📎 Direct attachments count:', pdfAttachments?.length || 0);
 
             // Validate required data
             const customerEmailAddress = userDetails?.email || userEmail;
             if (!customerEmailAddress || !emailTemplates || !emailTemplates.customerEmailContent || !emailTemplates.businessEmailContent) {
-                 console.error('Validation Failed: Missing crucial email content or customer email.');
-                 return res.status(400).json({ success: false, error: "Missing required email content or recipient data." });
+                 console.error('❌ Validation Failed: Missing crucial email content or customer email.');
+                 console.error('Missing:', {
+                     customerEmail: !customerEmailAddress,
+                     emailTemplates: !emailTemplates,
+                     customerContent: !emailTemplates?.customerEmailContent,
+                     businessContent: !emailTemplates?.businessEmailContent
+                 });
+                 return res.status(400).json({ 
+                     success: false, 
+                     error: "Missing required email content or recipient data.",
+                     debug: {
+                         hasCustomerEmail: !!customerEmailAddress,
+                         hasEmailTemplates: !!emailTemplates,
+                         hasCustomerContent: !!emailTemplates?.customerEmailContent,
+                         hasBusinessContent: !!emailTemplates?.businessEmailContent
+                     }
+                 });
             }
             
             const currentOrderNumber = orderNumber || 'Unknown';
 
             // ============================================
-            // NEW: Download PDFs from Blob if provided
+            // Download PDFs from Blob if provided
             // ============================================
             let actualPdfAttachments = [];
 
@@ -259,18 +288,15 @@ export default async function handler(req, res) {
                         console.log(`✅ Downloaded from Blob: ${blobInfo.name} (${(buffer.length / 1024).toFixed(2)}KB)`);
                     } catch (error) {
                         console.error(`❌ Failed to download ${blobInfo.name} from Blob:`, error.message);
-                        // Continue with other PDFs - don't fail entire email
                     }
                 }
                 
                 console.log(`✅ Downloaded ${actualPdfAttachments.length}/${blobUrls.length} PDF(s) from Blob`);
             } else if (pdfAttachments) {
-                // Fallback: Use direct attachments if provided (backward compatibility)
                 actualPdfAttachments = pdfAttachments;
                 console.log(`📎 Using direct PDF attachments (${pdfAttachments.length})`);
             }
 
-            // Log attachment info
             if (actualPdfAttachments && actualPdfAttachments.length > 0) {
                 console.log(`Processing ${actualPdfAttachments.length} PDF attachment(s) for order ${currentOrderNumber}`);
             }
@@ -285,7 +311,7 @@ export default async function handler(req, res) {
                 customerEmailAddress,
                 `Your Order Confirmation - Order #${currentOrderNumber}`,
                 emailTemplates.customerEmailContent,
-                actualPdfAttachments, // Use actualPdfAttachments instead of pdfAttachments
+                actualPdfAttachments,
                 currentOrderNumber
             );
 
@@ -293,7 +319,7 @@ export default async function handler(req, res) {
                 BUSINESS_EMAIL,
                 `New Order Received - Order #${currentOrderNumber}`,
                 emailTemplates.businessEmailContent,
-                actualPdfAttachments, // Use actualPdfAttachments instead of pdfAttachments
+                actualPdfAttachments,
                 currentOrderNumber
             );
 
@@ -308,7 +334,7 @@ export default async function handler(req, res) {
                 warnings: []
             };
 
-            // Step 1: Send customer email first (CRITICAL) - FROM orders@ email
+            // Step 1: Send customer email
             try {
                 console.log('Sending customer email via Graph API...');
                 const customerResult = await sendEmailViaGraph(accessToken, customerEmailData, SENDER_EMAIL);
@@ -323,7 +349,7 @@ export default async function handler(req, res) {
                 });
             }
 
-            // Step 2: Send business email second (NICE TO HAVE) - FROM orders@ email
+            // Step 2: Send business email
             try {
                 console.log('Sending business email via Graph API...');
                 const businessResult = await sendEmailViaGraph(accessToken, businessEmailData, SENDER_EMAIL);
@@ -335,7 +361,7 @@ export default async function handler(req, res) {
             }
 
             // ============================================
-            // NEW: Clean up Blob storage after successful send
+            // Clean up Blob storage after successful send
             // ============================================
             if (blobUrls && blobUrls.length > 0) {
                 console.log(`🗑️ Cleaning up ${blobUrls.length} PDF(s) from Vercel Blob...`);
@@ -346,7 +372,6 @@ export default async function handler(req, res) {
                         console.log(`✅ Deleted from Blob: ${blobInfo.url.split('/').pop()}`);
                     } catch (error) {
                         console.error(`⚠️ Failed to delete from Blob ${blobInfo.url}:`, error.message);
-                        // Don't fail the request - cleanup is best effort
                     }
                 }
                 
@@ -386,13 +411,11 @@ export default async function handler(req, res) {
             });
         }
     } else {
-        // Handle unsupported methods
         res.setHeader('Allow', ['POST', 'OPTIONS']);
         res.status(405).json({ error: `Method ${req.method} Not Allowed` });
     }
 }
 
-// Keep the same size limit
 export const config = {
     api: {
       bodyParser: {
