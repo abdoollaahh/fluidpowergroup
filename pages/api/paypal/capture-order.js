@@ -7,7 +7,7 @@ import fetch from 'node-fetch';
 import swell from 'swell-node';
 import { put } from '@vercel/blob';
 import { setOrderStatus, getOrderStatus, updateOrderStatus } from './order-status.js';
-import { pushToQStash, prepareEmailData } from '../../../lib/qstash-helper';
+import { pushToQStash, generateEmailTemplates } from '../../../lib/qstash-helper';
 
 // ========================================
 // TESTING MODE CONFIGURATION
@@ -426,6 +426,25 @@ export default async function handler(req, res) {
         
         console.log(`📧 Preparing order ${orderNumber} for QStash...`);
         
+        // ✅ Generate email templates BEFORE creating payload
+        console.log('📧 Generating email templates...');
+        const emailTemplates = generateEmailTemplates(
+            orderNumber,
+            userDetails,
+            websiteProducts,
+            pwaOrders,
+            totals,
+            captureId,
+            TESTING_MODE
+        );
+        
+        console.log('✅ Email templates generated:', {
+            hasCustomerEmail: !!emailTemplates.customerEmailContent,
+            hasBusinessEmail: !!emailTemplates.businessEmailContent,
+            customerLength: emailTemplates.customerEmailContent?.length || 0,
+            businessLength: emailTemplates.businessEmailContent?.length || 0
+        });
+        
         // Prepare email data WITHOUT PDF base64 data (use Blob URLs instead)
         const emailData = {
             orderNumber,
@@ -438,7 +457,8 @@ export default async function handler(req, res) {
             })),
             blobUrls, // Include Blob URLs instead
             totals,
-            testingMode: TESTING_MODE
+            testingMode: TESTING_MODE,
+            emailTemplates: emailTemplates // ✅ NOW INCLUDED!
         };
 
         // Check payload size
