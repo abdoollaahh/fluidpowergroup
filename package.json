@@ -2,6 +2,7 @@
   "name": "fluidpowergroup",
   "version": "2.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,11 +13,12 @@
   },
   "dependencies": {
     "@headlessui/react": "^1.6.1",
+    "@upstash/redis": "^1.35.6",
     "axios": "^1.9.0",
     "body-parser": "^2.2.0",
     "clsx": "^1.1.1",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
+    "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "framer-motion": "^6.2.8",
     "fs": "^0.0.1-security",

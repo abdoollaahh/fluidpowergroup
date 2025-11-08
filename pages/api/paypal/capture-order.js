@@ -1,10 +1,11 @@
-// pages/api/paypal/capture-order.js - SYNCHRONOUS VERSION
-// This version waits for emails to send BEFORE returning response to frontend
-// ⚠️ WARNING: This will timeout on Vercel Hobby plan if emails take >10 seconds
+// pages/api/paypal/capture-order.js - QUEUE VERSION
+// This version captures payment + updates inventory, then queues emails for background processing
+// ✅ Works within Vercel Hobby plan 10-second timeout limit
 
 import fetch from 'node-fetch';
 import swell from 'swell-node';
 import { setOrderStatus, getOrderStatus, updateOrderStatus } from './order-status.js';
+import { addToQueue } from '../../../lib/order-queue.js';
 
 // ========================================
 // TESTING MODE CONFIGURATION
@@ -129,426 +130,6 @@ async function updateSwellInventory(websiteProducts, orderId) {
     };
 }
 
-// --- Helper: Send Order Confirmation Email ---
-async function sendOrderEmail(orderData, VALID_SERVER_KEY, TESTING_MODE) {
-    const { 
-        orderNumber, 
-        userDetails, 
-        websiteProducts, 
-        pwaOrders, 
-        totals,
-        paypalCaptureID 
-    } = orderData;
-
-    try {
-        console.log(`📧 Preparing emails for order #${orderNumber}`);
-
-        const emailTemplates = generateEmailTemplates(
-            orderNumber,
-            userDetails,
-            websiteProducts,
-            pwaOrders,
-            totals,
-            paypalCaptureID,
-            TESTING_MODE
-        );
-
-        const pdfAttachments = pwaOrders
-            .filter(order => order.pdfDataUrl)
-            .map(order => {
-                const base64Data = order.pdfDataUrl.split(',')[1];
-                return {
-                    name: `Custom-Hose-Assembly-${order.cartId || 'order'}.pdf`,
-                    contentBytes: base64Data
-                };
-            });
-
-        let baseUrl;
-
-        // Detect the correct base URL
-        if (typeof window !== 'undefined') {
-            baseUrl = window.location.origin;
-        } else {
-            if (TESTING_MODE) {
-                baseUrl = process.env.VERCEL_URL 
-                    ? `https://${process.env.VERCEL_URL}` 
-                    : (process.env.API_BASE_URL_TEST || 'http://localhost:3001');
-            } else {
-                baseUrl = process.env.API_BASE_URL || 
-                          process.env.NEXT_PUBLIC_API_BASE_URL ||
-                          (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3001');
-            }
-        }
-        
-        baseUrl = baseUrl.replace(/\/$/, '');
-        
-        console.log('🔍 Resolved base URL:', baseUrl);
-        console.log('🔍 Email endpoint will be:', `${baseUrl}/api/send-email`);
-        console.log(`🔍 Server key exists: ${!!VALID_SERVER_KEY}`);
-
-        const emailResponse = await fetch(`${baseUrl}/api/send-email`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-server-key': VALID_SERVER_KEY
-            },
-            body: JSON.stringify({
-                orderNumber,
-                userDetails,
-                userEmail: userDetails.email,
-                emailTemplates,
-                pdfAttachments: pdfAttachments.length > 0 ? pdfAttachments : null,
-                testingMode: TESTING_MODE
-            }),
-            signal: AbortSignal.timeout(30000)
-        });
-
-        console.log(`📧 Email API response status: ${emailResponse.status}`);
-        const contentType = emailResponse.headers.get('content-type') || '';
-        console.log(`📧 Email API content-type: ${contentType}`);
-
-        // Check if response is HTML (indicates 404 or server error)
-        if (contentType.includes('text/html')) {
-            const htmlResponse = await emailResponse.text();
-            console.error('❌ Email API returned HTML instead of JSON (first 500 chars):');
-            console.error(htmlResponse.substring(0, 500));
-            throw new Error(`Email endpoint returned HTML (status ${emailResponse.status}) - endpoint may not exist or has server error`);
-        }
-
-        // Check if response is not JSON
-        if (!contentType.includes('application/json')) {
-            const responseText = await emailResponse.text();
-            console.error(`❌ Email API returned unexpected content-type: ${contentType}`);
-            console.error('Response preview:', responseText.substring(0, 500));
-            throw new Error(`Email API returned non-JSON response. Content-Type: ${contentType}`);
-        }
-
-        // Check response status BEFORE parsing JSON
-        if (!emailResponse.ok) {
-            let errorMessage;
-            try {
-                const errorData = await emailResponse.json();
-                errorMessage = errorData.error || errorData.message || 'Email service returned error';
-                console.error('❌ Email API error response:', errorData);
-            } catch (parseError) {
-                const errorText = await emailResponse.text();
-                errorMessage = `HTTP ${emailResponse.status}: ${errorText.substring(0, 200)}`;
-                console.error('❌ Failed to parse error response:', errorText.substring(0, 200));
-            }
-            throw new Error(errorMessage);
-        }
-
-        // NOW it's safe to parse JSON
-        const emailResult = await emailResponse.json();
-
-        console.log(`✅ Emails sent successfully for order #${orderNumber}`);
-        return { success: true, ...emailResult };
-
-    } catch (error) {
-        console.error('❌ Failed to send emails:', error);
-        console.error('❌ Error details:', {
-            message: error.message,
-            stack: error.stack?.split('\n').slice(0, 3).join('\n')
-        });
-        return { success: false, error: error.message };
-    }
-}
-
-// --- Helper: Generate Email Templates ---
-function generateEmailTemplates(orderNumber, userDetails, websiteProducts, pwaOrders, totals, paypalCaptureID, TESTING_MODE) {
-    const currentDate = new Date().toLocaleDateString('en-AU', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    });
-
-    const businessEmailDisplay = TESTING_MODE 
-        ? process.env.BUSINESS_EMAIL_TEST || 'info@agcomponents.com.au'
-        : process.env.BUSINESS_EMAIL;
-
-    // Customer Email Template
-    const customerEmailContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Order Confirmation</title>
-        </head>
-        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
-            <div style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <div style="background-color: #e74c3c; padding: 30px 20px; text-align: center;">
-                    <h1 style="color: #ffffff; margin: 0; font-size: 28px;">Thank You for Your Order!</h1>
-                </div>
-                <div style="padding: 30px 20px;">
-                    <p style="font-size: 16px; color: #333333; margin-bottom: 20px;">
-                        Hi ${userDetails.firstName} ${userDetails.lastName},
-                    </p>
-                    <p style="font-size: 16px; color: #333333; margin-bottom: 20px;">
-                        We've received your order and will begin processing it right away. Here are your order details:
-                    </p>
-                    <div style="background-color: #f8f9fa; border-left: 4px solid #e74c3c; padding: 15px; margin: 20px 0;">
-                        <p style="margin: 5px 0; color: #333333;"><strong>Order Number:</strong> #${orderNumber}</p>
-                        <p style="margin: 5px 0; color: #333333;"><strong>Order Date:</strong> ${currentDate}</p>
-                        <p style="margin: 5px 0; color: #333333;"><strong>PayPal Transaction ID:</strong> ${paypalCaptureID}</p>
-                    </div>
-                    ${websiteProducts.length > 0 ? `
-                    <h2 style="color: #e74c3c; font-size: 20px; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #e74c3c; padding-bottom: 10px;">
-                        Website Products
-                    </h2>
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                        <thead>
-                            <tr style="background-color: #f8f9fa;">
-                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Product</th>
-                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">Qty</th>
-                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">Price</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${websiteProducts.map(product => `
-                                <tr>
-                                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">
-                                        ${product.image ? `<img src="${product.image}" alt="${product.name}" style="width: 50px; height: 50px; object-fit: cover; margin-right: 10px; vertical-align: middle; border-radius: 4px;">` : ''}
-                                        <span style="vertical-align: middle;">${product.name}</span>
-                                    </td>
-                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">${product.quantity}</td>
-                                    <td style="padding: 12px; text-align: right; border-bottom: 1px solid #dee2e6;">$${(product.price * product.quantity).toFixed(2)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                    ` : ''}
-                    ${pwaOrders.length > 0 ? `
-                    <h2 style="color: #e74c3c; font-size: 20px; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #e74c3c; padding-bottom: 10px;">
-                        Custom Hose Assemblies
-                    </h2>
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                        <thead>
-                            <tr style="background-color: #f8f9fa;">
-                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Assembly</th>
-                                <th style="padding: 12px; text-align: center; border-bottom: 2px solid #dee2e6;">Qty</th>
-                                <th style="padding: 12px; text-align: right; border-bottom: 2px solid #dee2e6;">Price</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${pwaOrders.map(order => `
-                                <tr>
-                                    <td style="padding: 12px; border-bottom: 1px solid #dee2e6;">
-                                        ${order.image ? `<img src="${order.image}" alt="${order.name}" style="width: 50px; height: 50px; object-fit: cover; margin-right: 10px; vertical-align: middle; border-radius: 4px;">` : ''}
-                                        <span style="vertical-align: middle;">${order.name}</span>
-                                    </td>
-                                    <td style="padding: 12px; text-align: center; border-bottom: 1px solid #dee2e6;">${order.quantity}</td>
-                                    <td style="padding: 12px; text-align: right; border-bottom: 1px solid #dee2e6;">$${order.totalPrice.toFixed(2)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                    <p style="font-size: 14px; color: #666; margin-top: 10px;">
-                        📎 Detailed specifications for your custom hose assemblies are attached to this email as PDF files.
-                    </p>
-                    ` : ''}
-                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 30px;">
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr>
-                                <td style="padding: 8px 0; color: #333333;">Subtotal:</td>
-                                <td style="padding: 8px 0; text-align: right; color: #333333;">$${totals.subtotal.toFixed(2)}</td>
-                            </tr>
-                            ${totals.discount > 0 ? `
-                            <tr>
-                                <td style="padding: 8px 0; color: #28a745;">Discount:</td>
-                                <td style="padding: 8px 0; text-align: right; color: #28a745;">-$${totals.discount.toFixed(2)}</td>
-                            </tr>
-                            ` : ''}
-                            ${totals.shipping > 0 ? `
-                            <tr>
-                                <td style="padding: 8px 0; color: #333333;">Shipping:</td>
-                                <td style="padding: 8px 0; text-align: right; color: #333333;">$${totals.shipping.toFixed(2)}</td>
-                            </tr>
-                            ` : ''}
-                            <tr>
-                                <td style="padding: 8px 0; color: #333333;">GST (10%):</td>
-                                <td style="padding: 8px 0; text-align: right; color: #333333;">$${totals.gst.toFixed(2)}</td>
-                            </tr>
-                            <tr style="border-top: 2px solid #dee2e6;">
-                                <td style="padding: 12px 0; font-size: 18px; font-weight: bold; color: #e74c3c;">Total:</td>
-                                <td style="padding: 12px 0; text-align: right; font-size: 18px; font-weight: bold; color: #e74c3c;">$${totals.total.toFixed(2)}</td>
-                            </tr>
-                        </table>
-                    </div>
-                    <div style="margin-top: 30px;">
-                        <h3 style="color: #e74c3c; font-size: 18px; margin-bottom: 10px;">Shipping Address</h3>
-                        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
-                            <p style="margin: 5px 0; color: #333333;">${userDetails.firstName} ${userDetails.lastName}</p>
-                            ${userDetails.companyName ? `<p style="margin: 5px 0; color: #333333;">${userDetails.companyName}</p>` : ''}
-                            <p style="margin: 5px 0; color: #333333;">${userDetails.address}</p>
-                            <p style="margin: 5px 0; color: #333333;">${userDetails.city}, ${userDetails.state} ${userDetails.postcode}</p>
-                            <p style="margin: 5px 0; color: #333333;">${userDetails.country}</p>
-                        </div>
-                    </div>
-                    <div style="margin-top: 30px; padding: 20px; background-color: #e8f4f8; border-radius: 8px;">
-                        <h3 style="color: #e74c3c; font-size: 18px; margin-top: 0;">What's Next?</h3>
-                        <ul style="color: #333333; line-height: 1.8; margin: 10px 0; padding-left: 20px;">
-                            <li>We'll prepare your order for shipment</li>
-                            <li>You'll receive a tracking number once shipped</li>
-                            <li>Contact us if you have any questions</li>
-                        </ul>
-                    </div>
-                    <div style="margin-top: 30px; text-align: center; color: #666666; font-size: 14px;">
-                        <p>Questions about your order?</p>
-                        <p style="color: #e74c3c; font-weight: bold;">${businessEmailDisplay}</p>
-                    </div>
-                </div>
-                <div style="background-color: #333333; color: #ffffff; padding: 20px; text-align: center; font-size: 12px;">
-                    <p style="margin: 0;">&copy; ${new Date().getFullYear()} FluidPower Group. All rights reserved.</p>
-                    ${TESTING_MODE ? '<p style="margin: 10px 0 0 0; color: #ffc107;">⚠️ TEST MODE - This is a test order</p>' : ''}
-                </div>
-            </div>
-        </body>
-        </html>
-    `;
-
-    // Business Email Template
-    const businessEmailContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>New Order Notification</title>
-        </head>
-        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
-            <div style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <div style="background-color: #2c3e50; padding: 30px 20px; text-align: center;">
-                    <h1 style="color: #ffffff; margin: 0; font-size: 28px;">🔔 New Order Received</h1>
-                    ${TESTING_MODE ? '<p style="color: #ffc107; margin: 10px 0 0 0; font-size: 16px;">⚠️ TEST MODE</p>' : ''}
-                </div>
-                <div style="padding: 30px 20px;">
-                    <div style="background-color: #e8f4f8; border-left: 4px solid #3498db; padding: 15px; margin: 20px 0;">
-                        <p style="margin: 5px 0; color: #333333;"><strong>Order Number:</strong> #${orderNumber}</p>
-                        <p style="margin: 5px 0; color: #333333;"><strong>Order Date:</strong> ${currentDate}</p>
-                        <p style="margin: 5px 0; color: #333333;"><strong>PayPal Transaction ID:</strong> ${paypalCaptureID}</p>
-                    </div>
-                    <h2 style="color: #2c3e50; font-size: 20px; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
-                        Customer Information
-                    </h2>
-                    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px;">
-                        <p style="margin: 5px 0; color: #333333;"><strong>Name:</strong> ${userDetails.firstName} ${userDetails.lastName}</p>
-                        ${userDetails.companyName ? `<p style="margin: 5px 0; color: #333333;"><strong>Company:</strong> ${userDetails.companyName}</p>` : ''}
-                        <p style="margin: 5px 0; color: #333333;"><strong>Email:</strong> ${userDetails.email}</p>
-                        <p style="margin: 5px 0; color: #333333;"><strong>Phone:</strong> ${userDetails.phone}</p>
-                        <p style="margin: 5px 0; color: #333333;"><strong>Address:</strong> ${userDetails.address}, ${userDetails.city}, ${userDetails.state} ${userDetails.postcode}, ${userDetails.country}</p>
-                    </div>
-                    ${websiteProducts.length > 0 ? `
-                    <h2 style="color: #2c3e50; font-size: 20px; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
-                        Website Products (${websiteProducts.length})
-                    </h2>
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                        <thead>
-                            <tr style="background-color: #2c3e50; color: #ffffff;">
-                                <th style="padding: 12px; text-align: left;">Product</th>
-                                <th style="padding: 12px; text-align: center;">Qty</th>
-                                <th style="padding: 12px; text-align: right;">Price</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${websiteProducts.map(product => `
-                                <tr style="border-bottom: 1px solid #dee2e6;">
-                                    <td style="padding: 12px;">
-                                        ${product.image ? `<img src="${product.image}" alt="${product.name}" style="width: 50px; height: 50px; object-fit: cover; margin-right: 10px; vertical-align: middle; border-radius: 4px;">` : ''}
-                                        <span style="vertical-align: middle;">${product.name}</span>
-                                    </td>
-                                    <td style="padding: 12px; text-align: center;">${product.quantity}</td>
-                                    <td style="padding: 12px; text-align: right;">$${(product.price * product.quantity).toFixed(2)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                    ` : ''}
-                    ${pwaOrders.length > 0 ? `
-                    <h2 style="color: #2c3e50; font-size: 20px; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
-                        Custom Hose Assemblies (${pwaOrders.length})
-                    </h2>
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                        <thead>
-                            <tr style="background-color: #2c3e50; color: #ffffff;">
-                                <th style="padding: 12px; text-align: left;">Assembly Details</th>
-                                <th style="padding: 12px; text-align: center;">Qty</th>
-                                <th style="padding: 12px; text-align: right;">Price</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${pwaOrders.map(order => `
-                                <tr style="border-bottom: 1px solid #dee2e6;">
-                                    <td style="padding: 12px;">
-                                        ${order.image ? `<img src="${order.image}" alt="${order.name}" style="width: 50px; height: 50px; object-fit: cover; margin-right: 10px; vertical-align: middle; border-radius: 4px;">` : ''}
-                                        <div style="display: inline-block; vertical-align: middle;">
-                                            <strong>${order.name}</strong><br>
-                                            <small style="color: #666;">PWA Order ID: ${order.pwaOrderNumber || `PWA-${order.cartId}` || 'N/A'}</small>
-                                        </div>
-                                    </td>
-                                    <td style="padding: 12px; text-align: center;">${order.quantity}</td>
-                                    <td style="padding: 12px; text-align: right;">$${order.totalPrice.toFixed(2)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                    <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 15px 0;">
-                        <p style="margin: 0; color: #856404;">
-                            📎 <strong>Detailed specifications attached as PDF(s)</strong><br>
-                            Review the attached PDF files for complete assembly specifications.
-                        </p>
-                    </div>
-                    ` : ''}
-                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 30px;">
-                        <h3 style="color: #2c3e50; margin-top: 0;">Order Summary</h3>
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <tr>
-                                <td style="padding: 8px 0; color: #333333;">Subtotal:</td>
-                                <td style="padding: 8px 0; text-align: right; color: #333333;">$${totals.subtotal.toFixed(2)}</td>
-                            </tr>
-                            ${totals.discount > 0 ? `
-                            <tr>
-                                <td style="padding: 8px 0; color: #28a745;">Discount:</td>
-                                <td style="padding: 8px 0; text-align: right; color: #28a745;">-$${totals.discount.toFixed(2)}</td>
-                            </tr>
-                            ` : ''}
-                            ${totals.shipping > 0 ? `
-                            <tr>
-                                <td style="padding: 8px 0; color: #333333;">Shipping:</td>
-                                <td style="padding: 8px 0; text-align: right; color: #333333;">$${totals.shipping.toFixed(2)}</td>
-                            </tr>
-                            ` : ''}
-                            <tr>
-                                <td style="padding: 8px 0; color: #333333;">GST (10%):</td>
-                                <td style="padding: 8px 0; text-align: right; color: #333333;">$${totals.gst.toFixed(2)}</td>
-                            </tr>
-                            <tr style="border-top: 2px solid #dee2e6;">
-                                <td style="padding: 12px 0; font-size: 18px; font-weight: bold; color: #2c3e50;">Total:</td>
-                                <td style="padding: 12px 0; text-align: right; font-size: 18px; font-weight: bold; color: #2c3e50;">$${totals.total.toFixed(2)}</td>
-                            </tr>
-                        </table>
-                    </div>
-                    <div style="margin-top: 30px; padding: 20px; background-color: #d4edda; border-radius: 8px; border-left: 4px solid #28a745;">
-                        <h3 style="color: #155724; margin-top: 0;">📋 Action Items</h3>
-                        <ul style="margin: 10px 0; padding-left: 20px;">
-                            ${websiteProducts.length > 0 ? '<li>Check inventory levels (already updated automatically)</li>' : ''}
-                            ${pwaOrders.length > 0 ? '<li>Review custom hose assembly specifications in attached PDF(s)</li>' : ''}
-                            <li>Prepare items for shipping</li>
-                            <li>Send tracking information to customer</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </body>
-        </html>
-    `;
-
-    return {
-        customerEmailContent,
-        businessEmailContent
-    };
-}
-
 // ========================================
 // MAIN API HANDLER
 // ========================================
@@ -628,8 +209,6 @@ export default async function handler(req, res) {
     console.log('PAYPAL_CLIENT_ID (first 10 chars):', PAYPAL_CLIENT_ID?.substring(0, 10));
     console.log('Using SANDBOX?', PAYPAL_API_BASE.includes('sandbox'));
     console.log('================================');
-
-    const VALID_SERVER_KEY = process.env.VALID_SERVER_KEY;
 
     console.log("📥 Received capture-order request");
     if (TESTING_MODE) console.log("🧪 Running in TESTING MODE");
@@ -769,97 +348,74 @@ export default async function handler(req, res) {
         markPayPalOrderProcessed(orderID, orderNumber);
 
         // ============================================================================
-        // STEP 5: Process order SYNCHRONOUSLY (before sending response)
+        // STEP 5: Update inventory (SYNCHRONOUS - must complete before response)
         // ============================================================================
-        console.log('⚡ PROCESSING ORDER SYNCHRONOUSLY (before response)');
-
-        try {
-            // Step 5a: Update inventory (if applicable)
-            let inventoryResult = { success: true };
-            if (websiteProducts && websiteProducts.length > 0) {
-                console.log(`📦 Updating inventory for ${websiteProducts.length} products...`);
-                inventoryResult = await updateSwellInventory(
-                    websiteProducts, 
-                    captureId
-                );
-                console.log(`✅ Inventory update result:`, inventoryResult.success);
-                updateOrderStatus(orderNumber, { 
-                    inventoryUpdated: inventoryResult.success 
-                });
-            }
-
-            // Step 5b: Send emails SYNCHRONOUSLY (WAIT for them to complete)
-            console.log(`📧 STARTING EMAIL SEND (synchronous)...`);
-            console.log(`📧 Sending to customer: ${userDetails.email}`);
-            console.log(`📧 Sending to business: ${TESTING_MODE ? process.env.BUSINESS_EMAIL_TEST : process.env.BUSINESS_EMAIL}`);
-            
-            const emailResult = await sendOrderEmail(
-                {
-                    orderNumber,
-                    orderID,
-                    paypalCaptureID: captureId,
-                    userDetails,
-                    websiteProducts,
-                    pwaOrders,
-                    totals
-                },
-                VALID_SERVER_KEY,
-                TESTING_MODE
+        
+        let inventoryResult = { success: true };
+        if (websiteProducts && websiteProducts.length > 0) {
+            console.log(`📦 Updating inventory for ${websiteProducts.length} products...`);
+            inventoryResult = await updateSwellInventory(
+                websiteProducts, 
+                captureId
             );
-            
-            console.log(`📧 EMAIL SEND RESULT:`, emailResult.success ? '✅ SUCCESS' : '❌ FAILED');
-            if (!emailResult.success) {
-                console.error(`📧 EMAIL ERROR DETAILS:`, emailResult.error);
-            }
-            
+            console.log(`✅ Inventory update result:`, inventoryResult.success);
             updateOrderStatus(orderNumber, { 
-                emailsSent: emailResult.success 
+                inventoryUpdated: inventoryResult.success 
             });
-
-            // Step 5c: Mark as completed
-            const allSuccessful = inventoryResult.success && emailResult.success;
-            
-            if (allSuccessful) {
-                console.log(`✅ Order ${orderNumber} completed successfully (inventory + emails)`);
-                setOrderStatus(orderNumber, 'completed', {
-                    inventoryUpdated: true,
-                    emailsSent: true,
-                    completedAt: new Date().toISOString()
-                });
-            } else {
-                console.warn(`⚠️ Order ${orderNumber} completed with warnings`);
-                setOrderStatus(orderNumber, 'completed', {
-                    inventoryUpdated: inventoryResult.success,
-                    emailsSent: emailResult.success,
-                    warnings: [
-                        !inventoryResult.success && 'Inventory update failed',
-                        !emailResult.success && 'Email sending failed'
-                    ].filter(Boolean),
-                    completedAt: new Date().toISOString()
-                });
-            }
-
-        } catch (processingError) {
-            console.error(`❌ CRITICAL ERROR processing order ${orderNumber}:`, processingError);
-            console.error(`❌ Error stack:`, processingError.stack);
-            setOrderStatus(orderNumber, 'failed', {
-                error: processingError.message,
-                failedAt: new Date().toISOString()
-            });
-            // Don't throw - still return success to customer since payment was captured
         }
 
         // ============================================================================
-        // STEP 6: Return response (AFTER emails sent)
+        // STEP 6: Queue email processing (ASYNCHRONOUS - happens in background)
         // ============================================================================
+        
+        console.log(`📧 Adding order ${orderNumber} to email queue...`);
+        
+        const queueSuccess = await addToQueue({
+            orderNumber,
+            orderID,
+            paypalCaptureID: captureId,
+            userDetails,
+            websiteProducts,
+            pwaOrders,
+            totals,
+            testingMode: TESTING_MODE
+        });
+
+        if (queueSuccess) {
+            console.log(`✅ Order ${orderNumber} added to email queue successfully`);
+            updateOrderStatus(orderNumber, { 
+                emailsQueued: true,
+                queuedAt: new Date().toISOString()
+            });
+        } else {
+            console.error(`❌ Failed to add order ${orderNumber} to email queue`);
+            updateOrderStatus(orderNumber, { 
+                emailsQueued: false,
+                queueError: 'Failed to add to queue'
+            });
+        }
+
+        // ============================================================================
+        // STEP 7: Mark as completed and return response (FAST - under 5 seconds)
+        // ============================================================================
+        
+        console.log(`✅ Order ${orderNumber} processed successfully (payment + inventory)`);
+        setOrderStatus(orderNumber, 'processing', {
+            paymentCaptured: true,
+            inventoryUpdated: inventoryResult.success,
+            emailsQueued: queueSuccess,
+            completedAt: new Date().toISOString()
+        });
+
         console.log(`✅ Returning success response for ${orderNumber}`);
         return res.status(200).json({
             success: true,
-            message: 'Payment captured and order processed successfully.',
+            message: 'Payment captured and order queued for email processing.',
             paypalOrderStatus: captureData.status,
             paypalCaptureStatus: finalCaptureStatus,
             paypalCaptureID: captureId,
-            orderNumber: orderNumber
+            orderNumber: orderNumber,
+            emailsQueued: queueSuccess
         });
 
     } catch (error) {

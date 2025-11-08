@@ -5,5 +5,12 @@
       "src": "package.json",
       "use": "@vercel/next"
     }
+  ],
+
+  "crons": [
+    {
+      "path": "/api/cron/process-orders",
+      "schedule": "* * * * *"
+    }
   ]
 }
