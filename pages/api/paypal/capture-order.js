@@ -1,11 +1,12 @@
-// pages/api/paypal/capture-order.js - QUEUE VERSION
-// This version captures payment + updates inventory, then queues emails for background processing
+// pages/api/paypal/capture-order.js - QSTASH VERSION
+// This version captures payment + updates inventory, then pushes to QStash for background email processing
 // ✅ Works within Vercel Hobby plan 10-second timeout limit
+// ✅ No cron jobs needed - QStash handles background processing
 
 import fetch from 'node-fetch';
 import swell from 'swell-node';
 import { setOrderStatus, getOrderStatus, updateOrderStatus } from './order-status.js';
-import { addToQueue } from '../../../lib/order-queue.js';
+import { pushToQStash, prepareEmailData } from '../../../lib/qstash-helper.js';
 
 // ========================================
 // TESTING MODE CONFIGURATION
@@ -365,12 +366,13 @@ export default async function handler(req, res) {
         }
 
         // ============================================================================
-        // STEP 6: Queue email processing (ASYNCHRONOUS - happens in background)
+        // STEP 6: Push to QStash for background email processing
         // ============================================================================
         
-        console.log(`📧 Adding order ${orderNumber} to email queue...`);
+        console.log(`📧 Preparing order ${orderNumber} for QStash...`);
         
-        const queueSuccess = await addToQueue({
+        // Prepare email data
+        const emailData = prepareEmailData({
             orderNumber,
             orderID,
             paypalCaptureID: captureId,
@@ -381,24 +383,43 @@ export default async function handler(req, res) {
             testingMode: TESTING_MODE
         });
 
-        if (queueSuccess) {
-            console.log(`✅ Order ${orderNumber} added to email queue successfully`);
+        // Determine callback URL (your send-email endpoint)
+        let callbackUrl;
+        if (TESTING_MODE) {
+            callbackUrl = process.env.VERCEL_URL 
+                ? `https://${process.env.VERCEL_URL}/api/send-email`
+                : (process.env.API_BASE_URL_TEST || 'http://localhost:3001') + '/api/send-email';
+        } else {
+            const baseUrl = process.env.API_BASE_URL || 
+                          process.env.NEXT_PUBLIC_API_BASE_URL ||
+                          (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3001');
+            callbackUrl = `${baseUrl}/api/send-email`;
+        }
+
+        console.log(`🔍 QStash will call: ${callbackUrl}`);
+
+        // Push to QStash
+        const qstashResult = await pushToQStash(emailData, callbackUrl);
+
+        if (qstashResult.success) {
+            console.log(`✅ Order ${orderNumber} pushed to QStash successfully`);
             updateOrderStatus(orderNumber, { 
                 emailsQueued: true,
+                qstashMessageId: qstashResult.messageId,
                 queuedAt: new Date().toISOString()
             });
         } else {
-            console.error(`❌ Failed to add order ${orderNumber} to email queue`);
+            console.error(`❌ Failed to push order ${orderNumber} to QStash:`, qstashResult.error);
             updateOrderStatus(orderNumber, { 
                 emailsQueued: false,
-                queueError: 'Failed to add to queue'
+                qstashError: qstashResult.error
             });
         }
 
         // ============================================================================
         // STEP 7: Mark as completed and return response (FAST - under 5 seconds)
         // ============================================================================
-        //
+        
         console.log(`✅ Order ${orderNumber} processed successfully (payment + inventory)`);
         setOrderStatus(orderNumber, 'processing', {
             paymentCaptured: true,
@@ -410,12 +431,12 @@ export default async function handler(req, res) {
         console.log(`✅ Returning success response for ${orderNumber}`);
         return res.status(200).json({
             success: true,
-            message: 'Payment captured and order queued for email processing.',
+            message: 'Payment captured and order queued for email processing via QStash.',
             paypalOrderStatus: captureData.status,
             paypalCaptureStatus: finalCaptureStatus,
             paypalCaptureID: captureId,
             orderNumber: orderNumber,
-            emailsQueued: queueSuccess
+            emailsQueued: qstashResult.success
         });
 
     } catch (error) {
