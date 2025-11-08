@@ -398,7 +398,7 @@ export default async function handler(req, res) {
         // ============================================================================
         // STEP 7: Mark as completed and return response (FAST - under 5 seconds)
         // ============================================================================
-        
+        //
         console.log(`✅ Order ${orderNumber} processed successfully (payment + inventory)`);
         setOrderStatus(orderNumber, 'processing', {
             paymentCaptured: true,
