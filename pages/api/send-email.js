@@ -1,5 +1,6 @@
 // pages/api/send-email.js
 import fetch from 'node-fetch';
+import { del } from '@vercel/blob';
 
 // ========================================
 // TESTING MODE CONFIGURATION
@@ -212,11 +213,12 @@ export default async function handler(req, res) {
                 return res.status(500).json({ success: false, error: "Email service configuration error." });
             }
 
-            // Extract request data
+            // Extract request data - NOW WITH BLOB SUPPORT
             const {
                 orderNumber,
                 userDetails,
-                pdfAttachments, // Array of PDF objects
+                pdfAttachments, // Direct attachments (backward compatibility)
+                blobUrls, // NEW - Blob URLs from capture-order
                 emailTemplates,
                 userEmail,
                 testingMode // Can also be passed from capture-order.js
@@ -231,9 +233,46 @@ export default async function handler(req, res) {
             
             const currentOrderNumber = orderNumber || 'Unknown';
 
+            // ============================================
+            // NEW: Download PDFs from Blob if provided
+            // ============================================
+            let actualPdfAttachments = [];
+
+            if (blobUrls && blobUrls.length > 0) {
+                console.log(`📥 Downloading ${blobUrls.length} PDF(s) from Vercel Blob...`);
+                
+                for (const blobInfo of blobUrls) {
+                    try {
+                        const response = await fetch(blobInfo.url);
+                        if (!response.ok) {
+                            throw new Error(`Failed to download from Blob: ${response.status}`);
+                        }
+                        
+                        const buffer = await response.buffer();
+                        const base64Data = buffer.toString('base64');
+                        
+                        actualPdfAttachments.push({
+                            name: blobInfo.name,
+                            contentBytes: base64Data
+                        });
+                        
+                        console.log(`✅ Downloaded from Blob: ${blobInfo.name} (${(buffer.length / 1024).toFixed(2)}KB)`);
+                    } catch (error) {
+                        console.error(`❌ Failed to download ${blobInfo.name} from Blob:`, error.message);
+                        // Continue with other PDFs - don't fail entire email
+                    }
+                }
+                
+                console.log(`✅ Downloaded ${actualPdfAttachments.length}/${blobUrls.length} PDF(s) from Blob`);
+            } else if (pdfAttachments) {
+                // Fallback: Use direct attachments if provided (backward compatibility)
+                actualPdfAttachments = pdfAttachments;
+                console.log(`📎 Using direct PDF attachments (${pdfAttachments.length})`);
+            }
+
             // Log attachment info
-            if (pdfAttachments && Array.isArray(pdfAttachments)) {
-                console.log(`Processing ${pdfAttachments.length} PDF attachment(s) for order ${currentOrderNumber}`);
+            if (actualPdfAttachments && actualPdfAttachments.length > 0) {
+                console.log(`Processing ${actualPdfAttachments.length} PDF attachment(s) for order ${currentOrderNumber}`);
             }
 
             // --- Get Graph Access Token ---
@@ -241,12 +280,12 @@ export default async function handler(req, res) {
             const accessToken = await getGraphAccessToken();
             console.log('Graph access token obtained successfully');
 
-            // --- Prepare emails with multiple PDF attachments ---
+            // --- Prepare emails with PDF attachments ---
             const customerEmailData = formatEmailForGraph(
                 customerEmailAddress,
                 `Your Order Confirmation - Order #${currentOrderNumber}`,
                 emailTemplates.customerEmailContent,
-                pdfAttachments,
+                actualPdfAttachments, // Use actualPdfAttachments instead of pdfAttachments
                 currentOrderNumber
             );
 
@@ -254,7 +293,7 @@ export default async function handler(req, res) {
                 BUSINESS_EMAIL,
                 `New Order Received - Order #${currentOrderNumber}`,
                 emailTemplates.businessEmailContent,
-                pdfAttachments,
+                actualPdfAttachments, // Use actualPdfAttachments instead of pdfAttachments
                 currentOrderNumber
             );
 
@@ -295,13 +334,32 @@ export default async function handler(req, res) {
                 results.warnings.push('Business notification email failed to send');
             }
 
+            // ============================================
+            // NEW: Clean up Blob storage after successful send
+            // ============================================
+            if (blobUrls && blobUrls.length > 0) {
+                console.log(`🗑️ Cleaning up ${blobUrls.length} PDF(s) from Vercel Blob...`);
+                
+                for (const blobInfo of blobUrls) {
+                    try {
+                        await del(blobInfo.url);
+                        console.log(`✅ Deleted from Blob: ${blobInfo.url.split('/').pop()}`);
+                    } catch (error) {
+                        console.error(`⚠️ Failed to delete from Blob ${blobInfo.url}:`, error.message);
+                        // Don't fail the request - cleanup is best effort
+                    }
+                }
+                
+                console.log(`✅ Blob cleanup complete for order ${currentOrderNumber}`);
+            }
+
             // --- Determine response ---
             if (results.customerEmailSent && results.businessEmailSent) {
                 res.status(200).json({ 
                     success: true,
                     message: 'Order processed and all emails sent successfully via Microsoft Graph',
                     method: 'Microsoft Graph API',
-                    attachmentCount: pdfAttachments?.length || 0,
+                    attachmentCount: actualPdfAttachments?.length || 0,
                     testingMode: TESTING_MODE
                 });
             } else if (results.customerEmailSent && !results.businessEmailSent) {
@@ -310,7 +368,7 @@ export default async function handler(req, res) {
                     message: 'Order processed and customer notified successfully via Microsoft Graph',
                     warnings: results.warnings,
                     method: 'Microsoft Graph API',
-                    attachmentCount: pdfAttachments?.length || 0,
+                    attachmentCount: actualPdfAttachments?.length || 0,
                     testingMode: TESTING_MODE
                 });
             } else {

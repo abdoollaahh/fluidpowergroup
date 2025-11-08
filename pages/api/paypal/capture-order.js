@@ -1,10 +1,11 @@
-// pages/api/paypal/capture-order.js - QSTASH VERSION
-// This version captures payment + updates inventory, then pushes to QStash for background email processing
+// pages/api/paypal/capture-order.js - BLOB + QSTASH VERSION
+// This version captures payment + updates inventory, uploads PDFs to Vercel Blob, then uses QStash
 // ✅ Works within Vercel Hobby plan 10-second timeout limit
-// ✅ No cron jobs needed - QStash handles background processing
+// ✅ No message size limits - PDFs stored in Blob
 
 import fetch from 'node-fetch';
 import swell from 'swell-node';
+import { put } from '@vercel/blob';
 import { setOrderStatus, getOrderStatus, updateOrderStatus } from './order-status.js';
 import { pushToQStash, prepareEmailData } from '../../../lib/qstash-helper';
 
@@ -48,6 +49,49 @@ setInterval(() => {
 // ========================================
 // HELPER FUNCTIONS
 // ========================================
+
+// --- Helper: Upload PDFs to Vercel Blob ---
+async function uploadPDFsToBlob(pwaOrders, orderNumber) {
+    const blobUrls = [];
+    
+    for (let i = 0; i < pwaOrders.length; i++) {
+        const order = pwaOrders[i];
+        
+        if (!order.pdfDataUrl) continue;
+        
+        try {
+            // Extract base64 data and convert to Buffer
+            const base64Data = order.pdfDataUrl.split(',')[1];
+            const buffer = Buffer.from(base64Data, 'base64');
+            
+            // Generate unique filename
+            const filename = `orders/${orderNumber}/assembly-${order.cartId || i}.pdf`;
+            
+            console.log(`📤 Uploading PDF to Blob: ${filename} (${(buffer.length / 1024).toFixed(2)}KB)`);
+            
+            // Upload to Vercel Blob with 1 hour expiration
+            const blob = await put(filename, buffer, {
+                access: 'public',
+                addRandomSuffix: true,
+                contentType: 'application/pdf',
+            });
+            
+            console.log(`✅ PDF uploaded: ${blob.url}`);
+            
+            blobUrls.push({
+                url: blob.url,
+                name: `Custom-Hose-Assembly-${order.cartId || 'order'}.pdf`,
+                cartId: order.cartId
+            });
+            
+        } catch (error) {
+            console.error(`❌ Failed to upload PDF for order ${order.cartId}:`, error);
+            // Continue with other PDFs - don't fail entire order
+        }
+    }
+    
+    return blobUrls;
+}
 
 // --- Helper: Get PayPal Access Token ---
 async function getPayPalAccessToken(PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_API_BASE) {
@@ -366,24 +410,43 @@ export default async function handler(req, res) {
         }
 
         // ============================================================================
-        // STEP 6: Push to QStash for background email processing
+        // STEP 6: Upload PDFs to Vercel Blob (if any)
+        // ============================================================================
+        
+        let blobUrls = [];
+        if (pwaOrders && pwaOrders.length > 0 && pwaOrders.some(o => o.pdfDataUrl)) {
+            console.log(`📤 Uploading ${pwaOrders.filter(o => o.pdfDataUrl).length} PDF(s) to Vercel Blob...`);
+            blobUrls = await uploadPDFsToBlob(pwaOrders, orderNumber);
+            console.log(`✅ Uploaded ${blobUrls.length} PDF(s) to Blob`);
+        }
+
+        // ============================================================================
+        // STEP 7: Push to QStash for background email processing
         // ============================================================================
         
         console.log(`📧 Preparing order ${orderNumber} for QStash...`);
         
-        // Prepare email data
-        const emailData = prepareEmailData({
+        // Prepare email data WITHOUT PDF base64 data (use Blob URLs instead)
+        const emailData = {
             orderNumber,
-            orderID,
             paypalCaptureID: captureId,
             userDetails,
             websiteProducts,
-            pwaOrders,
+            pwaOrders: pwaOrders.map(order => ({
+                ...order,
+                pdfDataUrl: undefined // Remove large base64 data
+            })),
+            blobUrls, // Include Blob URLs instead
             totals,
             testingMode: TESTING_MODE
-        });
+        };
 
-        // Determine callback URL (your send-email endpoint)
+        // Check payload size
+        const payloadSize = JSON.stringify(emailData).length;
+        const sizeMB = (payloadSize / 1024 / 1024).toFixed(2);
+        console.log(`📊 Email payload size: ${sizeMB}MB (with Blob URLs)`);
+
+        // Determine callback URL
         let callbackUrl;
         if (TESTING_MODE) {
             const baseUrl = process.env.VERCEL_URL 
@@ -408,14 +471,15 @@ export default async function handler(req, res) {
         const qstashResult = await pushToQStash(emailData, callbackUrl);
 
         if (qstashResult.success) {
-            console.log(`✅ Order ${orderNumber} pushed to QStash successfully`);
+            console.log(`✅ Order ${orderNumber} email processing initiated`);
             updateOrderStatus(orderNumber, { 
                 emailsQueued: true,
                 qstashMessageId: qstashResult.messageId,
+                blobUrls: blobUrls.length > 0 ? blobUrls.map(b => b.url) : [],
                 queuedAt: new Date().toISOString()
             });
         } else {
-            console.error(`❌ Failed to push order ${orderNumber} to QStash:`, qstashResult.error);
+            console.error(`❌ Failed to process order ${orderNumber} emails:`, qstashResult.error);
             updateOrderStatus(orderNumber, { 
                 emailsQueued: false,
                 qstashError: qstashResult.error
