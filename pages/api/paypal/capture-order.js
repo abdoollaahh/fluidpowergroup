@@ -467,25 +467,31 @@ export default async function handler(req, res) {
         console.log(`📊 Email payload size: ${sizeMB}MB (with Blob URLs)`);
 
         // Determine callback URL
-        let callbackUrl;
-        if (TESTING_MODE) {
-            const baseUrl = process.env.VERCEL_URL 
-                ? `https://${process.env.VERCEL_URL}`
-                : (process.env.API_BASE_URL_TEST || 'http://localhost:3001');
-            callbackUrl = `${baseUrl}/api/send-email`;
-        } else {
-            const baseUrl = process.env.API_BASE_URL || 
-                          process.env.NEXT_PUBLIC_API_BASE_URL ||
-                          (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://fluidpowergroup.com.au');
-            callbackUrl = `${baseUrl}/api/send-email`;
-        }
-
-        // Ensure URL is properly formatted
-        if (!callbackUrl.startsWith('http://') && !callbackUrl.startsWith('https://')) {
-            callbackUrl = `https://${callbackUrl}`;
-        }
-
+        const callbackUrl = (() => {
+            // Priority 1: Use VERCEL_URL (works for both test and production deployments)
+            if (process.env.VERCEL_URL) {
+                return `https://${process.env.VERCEL_URL}/api/send-email`;
+            }
+            
+            // Priority 2: Use explicit API_BASE_URL if set (for manual overrides)
+            if (process.env.API_BASE_URL) {
+                return `${process.env.API_BASE_URL}/api/send-email`;
+            }
+            
+            // Priority 3: Fallback based on mode
+            if (TESTING_MODE) {
+                return process.env.API_BASE_URL_TEST 
+                    ? `${process.env.API_BASE_URL_TEST}/api/send-email`
+                    : 'http://localhost:3001/api/send-email';
+            }
+            
+            // Priority 4: Production domain fallback (when nothing else is set)
+            return 'https://fluidpowergroup.com.au/api/send-email';
+        })();
+        
         console.log(`🔍 QStash will call: ${callbackUrl}`);
+        console.log(`📍 Deployment: ${process.env.VERCEL_URL || 'local/custom'}`);
+        console.log(`🧪 Testing Mode: ${TESTING_MODE}`);
 
         // Push to QStash
         const qstashResult = await pushToQStash(emailData, callbackUrl);
