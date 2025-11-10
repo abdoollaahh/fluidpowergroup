@@ -491,6 +491,11 @@ export default async function handler(req, res) {
         
         console.log(`🔍 QStash will call: ${callbackUrl}`);
         console.log(`📍 Deployment: ${process.env.VERCEL_URL || 'local/custom'}`);
+        console.log('🔍 DEBUG Environment Variables:');
+        console.log('   VERCEL_URL:', process.env.VERCEL_URL || 'UNDEFINED');
+        console.log('   VERCEL_ENV:', process.env.VERCEL_ENV || 'UNDEFINED');
+        console.log('   API_BASE_URL:', process.env.API_BASE_URL ? 'SET' : 'UNDEFINED');
+        console.log('   API_BASE_URL_TEST:', process.env.API_BASE_URL_TEST ? 'SET' : 'UNDEFINED');
         console.log(`🧪 Testing Mode: ${TESTING_MODE}`);
 
         // Push to QStash
