@@ -108,10 +108,12 @@ export default function OrderConfirmation() {
           const parsedOrder = JSON.parse(storedOrder);
           setOrderData(parsedOrder);
           
-          // Check if this was a test order
-          if (parsedOrder.testingMode) {
-            setTestingMode(true);
-          }
+          // ✅ FIX: Use CURRENT environment setting, not saved one
+          // This ensures the display matches the current deployment mode
+          const currentTestingMode = process.env.NEXT_PUBLIC_TESTING_MODE === 'true';
+          setTestingMode(currentTestingMode);
+          
+          console.log('Order loaded. Current testing mode:', currentTestingMode);
         }
       } catch (error) {
         console.error('Error loading order data:', error);
@@ -473,10 +475,16 @@ export default function OrderConfirmation() {
                   <span className="text-yellow-500 font-bold mr-3 text-lg">3.</span>
                   <p>Questions? Contact us at{' '}
                     <a 
-                      href={`mailto:${testingMode ? process.env.NEXT_PUBLIC_BUSINESS_EMAIL_TEST || 'info@agcomponents.com.au' : 'info@agcomponents.com.au'}`}
+                      href={`mailto:${testingMode 
+                        ? (process.env.NEXT_PUBLIC_BUSINESS_EMAIL_TEST || 'info@agcomponents.com.au')
+                        : (process.env.NEXT_PUBLIC_BUSINESS_EMAIL || 'info@agcomponents.com.au')
+                      }`}
                       className="text-blue-600 hover:underline font-semibold"
                     >
-                      {testingMode ? process.env.NEXT_PUBLIC_BUSINESS_EMAIL_TEST || 'info@agcomponents.com.au' : 'info@agcomponents.com.au'}
+                      {testingMode 
+                        ? (process.env.NEXT_PUBLIC_BUSINESS_EMAIL_TEST || 'info@agcomponents.com.au')
+                        : (process.env.NEXT_PUBLIC_BUSINESS_EMAIL || 'info@agcomponents.com.au')
+                      }
                     </a>
                     {' '}or call{' '}
                     <a href="tel:+61409517333" className="text-blue-600 hover:underline font-semibold">
@@ -522,10 +530,16 @@ export default function OrderConfirmation() {
               <p className="font-semibold text-gray-900 mb-2">FluidPower Group</p>
               <p>
                 <a 
-                  href={`mailto:${testingMode ? process.env.NEXT_PUBLIC_BUSINESS_EMAIL_TEST || 'info@agcomponents.com.au' : 'info@agcomponents.com.au'}`}
+                  href={`mailto:${testingMode 
+                    ? (process.env.NEXT_PUBLIC_BUSINESS_EMAIL_TEST || 'info@agcomponents.com.au')
+                    : (process.env.NEXT_PUBLIC_BUSINESS_EMAIL || 'info@agcomponents.com.au')
+                  }`}
                   className="text-blue-600 hover:underline"
                 >
-                  {testingMode ? process.env.NEXT_PUBLIC_BUSINESS_EMAIL_TEST || 'info@agcomponents.com.au' : 'info@agcomponents.com.au'}
+                  {testingMode 
+                    ? (process.env.NEXT_PUBLIC_BUSINESS_EMAIL_TEST || 'info@agcomponents.com.au')
+                    : (process.env.NEXT_PUBLIC_BUSINESS_EMAIL || 'info@agcomponents.com.au')
+                  }
                 </a>
                 {' | '}
                 <a href="tel:+61409517333" className="text-blue-600 hover:underline">

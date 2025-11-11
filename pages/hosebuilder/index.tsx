@@ -15,7 +15,7 @@ const HoseBuilder = () => {
     
     const scripts = [
       '/hosebuilder/static/js/453.eebfc8b8.js',
-      '/hosebuilder/static/js/main.c17590af.js'
+      '/hosebuilder/static/js/main.f386906c.js'
     ];
 
     const loadScriptSequentially = async (scripts: string[]) => {
