@@ -2,7 +2,6 @@ import { CartContext } from "context/CartWrapper";
 import { AnimatePresence, motion } from "framer-motion";
 import { useContext, useMemo } from "react";
 import { IItemCart } from "types/cart";
-import axios from "axios";
 import { useRouter } from "next/router";
 
 type IOrderSummaryProductProps = {
@@ -51,38 +50,21 @@ const OrderSummaryProduct = ({
   };
 
   const checkout = async () => {
-    // Ensure handleAddToCart runs first
-    handleAddToCart();
+    // Add items to cart silently (without scrolling or opening cart)
+    itemsAdded.forEach((item) => {
+      const itemWithImage = {
+        ...item,
+        image: series?.images?.[0] || '/cartImage.jpeg'
+      };
+      addItem(itemWithImage);
+    });
   
-    // Only include items with quantity > 0
-    const body = items
-      .filter((item: any) => item.quantity > 0)
-      .map((item: any) => ({
-        product_id: item.id,
-        quantity: item.quantity,
-      }));
+    // Clear the form
+    handleClear();
   
-    // Don't proceed if no items selected
-    if (body.length === 0) {
-      alert("Please select at least one item");
-      return;
-    }
-  
-    try {
-      const cart = await axios.post(
-        `/api/createCart`,
-        {
-          items: body,
-        }
-      );
-
-      if (cart.status === 200) {
-        router.push(cart.data.checkout_url);
-      }
-    } catch (error) {
-      console.error("Error during checkout:", error);
-      // Optionally, you could show an alert or some error UI here
-    }
+    // Navigate directly to unified checkout page (reads from localStorage)
+    console.log('Routing to unified checkout - Total items:', itemsAdded.length);
+    router.push('/checkout');
   };
 
   return (

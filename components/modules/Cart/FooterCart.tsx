@@ -1,22 +1,22 @@
-import axios from "axios"
-import {useRouter} from "next/router"
+import { useRouter } from "next/router"
 
 const FooterCart = ({items, handleClose} : any) => {
-
   const router = useRouter();
 
   const checkout = async () => {
-    const body = items.map((item: any) => ({
-      product_id: item.id,
-      quantity: item.quantity
-    }))
-    const cart = await axios.post(`/api/createCart`, {
-      items: body
-    })
+    // All items now go through the unified checkout system
+    console.log('Routing to unified checkout - Total items:', items.length);
     
-    if (cart.status === 200) {
-      router.push(cart.data.checkout_url)
-    }
+    // Log breakdown for debugging
+    const pwaItems = items.filter((item: any) => item.type === 'pwa_order');
+    const websiteItems = items.filter((item: any) => item.type !== 'pwa_order');
+    console.log('Breakdown - PWA items:', pwaItems.length, 'Website items:', websiteItems.length);
+    
+    // Close the cart drawer before navigating
+    handleClose();
+    
+    // Route to unified checkout (reads from localStorage)
+    router.push('/checkout');
   }
 
   return (
@@ -40,9 +40,8 @@ const FooterCart = ({items, handleClose} : any) => {
           transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
           position: "relative",
           whiteSpace: "nowrap" as const,
-          minWidth: "180px", // Fixed minimum width for both buttons
-          width: "auto", // Auto width to wrap content
-          // Yellow 3D glass background
+          minWidth: "180px",
+          width: "auto",
           background: `radial-gradient(ellipse at center, rgba(250, 204, 21, 0.9) 20%, rgba(250, 204, 21, 0.7) 60%, rgba(255, 215, 0, 0.8) 100%), rgba(250, 204, 21, 0.6)`,
           backdropFilter: "blur(15px)",
           border: "1px solid rgba(255, 215, 0, 0.9)",
@@ -76,7 +75,6 @@ const FooterCart = ({items, handleClose} : any) => {
           `;
         }}
       >
-        {/* Glass shine effect */}
         <div
           style={{
             position: "absolute",
@@ -112,9 +110,8 @@ const FooterCart = ({items, handleClose} : any) => {
           transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
           position: "relative",
           whiteSpace: "nowrap" as const,
-          minWidth: "180px", // Same fixed minimum width
-          width: "auto", // Auto width to wrap content
-          // Black 3D glass background
+          minWidth: "180px",
+          width: "auto",
           background: `radial-gradient(ellipse at center, rgba(0, 0, 0, 0.9) 20%, rgba(0, 0, 0, 0.8) 70%, rgba(20, 20, 20, 0.85) 100%), rgba(0, 0, 0, 0.8)`,
           backdropFilter: "blur(15px)",
           border: "1px solid rgba(255, 255, 255, 0.2)",
@@ -127,10 +124,9 @@ const FooterCart = ({items, handleClose} : any) => {
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.transform = "translateY(-2px) scale(1.02)";
-          // Change to white background on hover
           e.currentTarget.style.background = `radial-gradient(ellipse at center, rgba(255, 255, 255, 0.95) 20%, rgba(255, 255, 255, 0.9) 70%, rgba(245, 245, 245, 0.95) 100%), rgba(255, 255, 255, 0.9)`;
           e.currentTarget.style.border = "1px solid rgba(200, 200, 200, 0.8)";
-          e.currentTarget.style.color = "#000"; // Text changes to black for visibility
+          e.currentTarget.style.color = "#000";
           e.currentTarget.style.boxShadow = `
             0 10px 30px rgba(0, 0, 0, 0.2),
             inset 0 2px 0 rgba(255, 255, 255, 1),
@@ -151,7 +147,6 @@ const FooterCart = ({items, handleClose} : any) => {
           `;
         }}
       >
-        {/* Glass shine effect */}
         <div
           style={{
             position: "absolute",

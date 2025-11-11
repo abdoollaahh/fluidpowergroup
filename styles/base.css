@@ -35,3 +35,33 @@
     -moz-appearance: textfield;
   }
 }
+
+/* PayPal Custom Styling */
+.paypal-buttons-custom {
+  position: relative;
+}
+
+.paypal-buttons-custom > div {
+  background: transparent !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+.paypal-buttons-custom iframe {
+  border-radius: 0 !important;
+}
+
+/* Target the actual PayPal button elements for glassmorphism */
+.paypal-buttons-custom button,
+.paypal-buttons-custom [data-funding-source],
+.paypal-buttons-custom .paypal-button {
+  border-radius: 40px !important;
+  overflow: hidden !important;
+  backdrop-filter: blur(15px) !important;
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 2px 8px rgba(255, 255, 255, 0.1) !important;
+}
