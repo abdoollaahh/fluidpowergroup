@@ -29,7 +29,7 @@ const OrderSummaryProduct = ({
   const { addItem } = useContext(CartContext);
 
   const totalPrice = useMemo(
-    () => items.reduce((prev, curr) => prev + curr.price * curr.quantity, 0),
+    () => items.reduce((prev, curr) => prev + (curr.price || 0) * curr.quantity, 0),
     [items]
   );
 
@@ -83,17 +83,17 @@ const OrderSummaryProduct = ({
               </h2>
 
               <div className="flex flex-col gap-4">
-                <div className="sm:text-xl font-normal flex flex-col gap-4">
-                  {itemsAdded.map((item) => (
-                    <div className="flex justify-between gap-8" key={item.name}>
-                      <div>
-                        {item.quantity} x {item.name}
-                      </div>
-                      <div>${(item.quantity * item.price).toFixed(2)}</div>
+              <div className="sm:text-xl font-normal flex flex-col gap-4">
+                {itemsAdded.map((item) => (
+                  <div className="flex justify-between gap-8" key={item.name}>
+                    <div>
+                      {item.quantity} x {item.name}
                     </div>
-                  ))}
+                    <div>${(item.quantity * (item.price || 0)).toFixed(2)}</div>
+                  </div>
+                ))}
 
-                  <div className="flex justify-between gap-8 italic">
+                <div className="flex justify-between gap-8 italic">
                     <div>GST (10%) </div>
                     <div>${salesTax.toFixed(2)}</div>
                   </div>
