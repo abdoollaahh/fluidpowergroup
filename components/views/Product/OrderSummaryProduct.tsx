@@ -2,7 +2,6 @@ import { CartContext } from "context/CartWrapper";
 import { AnimatePresence, motion } from "framer-motion";
 import { useContext, useMemo } from "react";
 import { IItemCart } from "types/cart";
-import axios from "axios";
 import { useRouter } from "next/router";
 
 type IOrderSummaryProductProps = {
@@ -30,7 +29,7 @@ const OrderSummaryProduct = ({
   const { addItem } = useContext(CartContext);
 
   const totalPrice = useMemo(
-    () => items.reduce((prev, curr) => prev + curr.price * curr.quantity, 0),
+    () => items.reduce((prev, curr) => prev + (curr.price || 0) * curr.quantity, 0),
     [items]
   );
 
@@ -51,38 +50,21 @@ const OrderSummaryProduct = ({
   };
 
   const checkout = async () => {
-    // Ensure handleAddToCart runs first
-    handleAddToCart();
+    // Add items to cart silently (without scrolling or opening cart)
+    itemsAdded.forEach((item) => {
+      const itemWithImage = {
+        ...item,
+        image: series?.images?.[0] || '/cartImage.jpeg'
+      };
+      addItem(itemWithImage);
+    });
   
-    // Only include items with quantity > 0
-    const body = items
-      .filter((item: any) => item.quantity > 0)
-      .map((item: any) => ({
-        product_id: item.id,
-        quantity: item.quantity,
-      }));
+    // Clear the form
+    handleClear();
   
-    // Don't proceed if no items selected
-    if (body.length === 0) {
-      alert("Please select at least one item");
-      return;
-    }
-  
-    try {
-      const cart = await axios.post(
-        `/api/createCart`,
-        {
-          items: body,
-        }
-      );
-
-      if (cart.status === 200) {
-        router.push(cart.data.checkout_url);
-      }
-    } catch (error) {
-      console.error("Error during checkout:", error);
-      // Optionally, you could show an alert or some error UI here
-    }
+    // Navigate directly to unified checkout page (reads from localStorage)
+    console.log('Routing to unified checkout - Total items:', itemsAdded.length);
+    router.push('/checkout');
   };
 
   return (
@@ -101,17 +83,17 @@ const OrderSummaryProduct = ({
               </h2>
 
               <div className="flex flex-col gap-4">
-                <div className="sm:text-xl font-normal flex flex-col gap-4">
-                  {itemsAdded.map((item) => (
-                    <div className="flex justify-between gap-8" key={item.name}>
-                      <div>
-                        {item.quantity} x {item.name}
-                      </div>
-                      <div>${(item.quantity * item.price).toFixed(2)}</div>
+              <div className="sm:text-xl font-normal flex flex-col gap-4">
+                {itemsAdded.map((item) => (
+                  <div className="flex justify-between gap-8" key={item.name}>
+                    <div>
+                      {item.quantity} x {item.name}
                     </div>
-                  ))}
+                    <div>${(item.quantity * (item.price || 0)).toFixed(2)}</div>
+                  </div>
+                ))}
 
-                  <div className="flex justify-between gap-8 italic">
+                <div className="flex justify-between gap-8 italic">
                     <div>GST (10%) </div>
                     <div>${salesTax.toFixed(2)}</div>
                   </div>

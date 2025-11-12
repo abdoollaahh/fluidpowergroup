@@ -22,4 +22,31 @@
       background-position: 0% 50%;
     }
   }
+
+  /* Fix Chromium GIF flickering - GPU acceleration */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+}
+
+/* Global GIF fix - outside @layer to ensure it applies everywhere */
+img[src$=".gif"],
+img[src*=".gif"] {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* Target header/nav GIFs specifically if needed */
+header img[src$=".gif"],
+nav img[src$=".gif"],
+.header img[src$=".gif"] {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }

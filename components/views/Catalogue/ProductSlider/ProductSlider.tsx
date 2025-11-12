@@ -233,12 +233,14 @@ const ProductSlider = ({
 
   // NEW: Process products once and memoize
   const processedProducts = useMemo(() => {
-    return products.map(product => ({
-      ...product,
-      cleanTitle: stripHtml(product.title || ''),
-      cleanDescription: stripHtml(product.description || ''),
-      cleanSubtitle: stripHtml(product.subtitle || '')
-    }));
+    return products
+      .filter(product => product.slug !== 'hydraulic-hoses-custom-hose-assembly')
+      .map(product => ({
+        ...product,
+        cleanTitle: stripHtml(product.title || ''),
+        cleanDescription: stripHtml(product.description || ''),
+        cleanSubtitle: stripHtml(product.subtitle || '')
+      }));
   }, [products, stripHtml]);
 
   // NEW: Virtual scrolling state

@@ -13,7 +13,9 @@
   "dependencies": {
     "@headlessui/react": "^1.6.1",
     "@heroicons/react": "^2.2.0",
-    "@upstash/redis": "^1.35.5",
+    "@paypal/react-paypal-js": "^8.9.2",
+    "@upstash/redis": "^1.35.6",
+    "@vercel/kv": "^3.0.0",
     "axios": "^1.1.2",
     "clsx": "^1.1.1",
     "framer-motion": "^6.2.8",
@@ -26,6 +28,7 @@
     "sharp": "^0.34.3",
     "swell-node": "^4.0.10",
     "swr": "^2.3.6",
+    "type-check": "^0.4.0",
     "uuid": "^8.3.2"
   },
   "devDependencies": {

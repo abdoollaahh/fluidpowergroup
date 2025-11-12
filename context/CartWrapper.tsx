@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useRef } from 'react';
 import { ICart, IItemCart } from 'types/cart';
 import { Children } from 'types/general';
 
@@ -30,10 +30,22 @@ const CartWrapper = ({ children }: ICartWrapperProps) => {
   // Start with empty cart for SSR consistency
   const [cart, setCart] = useState<ICart>({ open: false, items: [] });
   const [isHydrated, setIsHydrated] = useState(false);
+  
+  // 🔧 Track when user is actively modifying cart (delete/clear actions)
+  const isUserAction = useRef(false);
 
-  // Load cart from localStorage after component mounts (client-side only)
-  useEffect(() => {
+  // Helper function to load cart from localStorage
+  const loadCartFromStorage = () => {
     try {
+      // 🔧 FIX: Don't clear cart if user is viewing order confirmation
+      const isViewingOrderConfirmation = typeof window !== 'undefined' && 
+        sessionStorage.getItem('viewingOrderConfirmation') === 'true';
+      
+      if (isViewingOrderConfirmation) {
+        console.log('[Website Cart] User viewing order confirmation - keeping empty cart');
+        return { open: false, items: [] };
+      }
+
       const savedCart = localStorage.getItem('shopping-cart');
       const cartTimestamp = localStorage.getItem('cart-timestamp');
       
@@ -45,32 +57,187 @@ const CartWrapper = ({ children }: ICartWrapperProps) => {
         // Check if cart is less than 1 hour old
         if (now - saved < oneHourInMs) {
           const parsedCart = JSON.parse(savedCart);
-          setCart({
+          console.log('[Website Cart] Loaded from localStorage:', parsedCart.items?.length || 0, 'items');
+          return {
             open: false, // Always start with cart closed
             items: parsedCart.items || []
-          });
+          };
         } else {
           // Cart expired, clear it
+          console.log('[Website Cart] Cart expired, clearing localStorage');
           localStorage.removeItem('shopping-cart');
           localStorage.removeItem('cart-timestamp');
         }
       }
     } catch (error) {
-      console.error('Error loading cart from localStorage:', error);
+      console.error('[Website Cart] Error loading cart from localStorage:', error);
     }
     
+    return { open: false, items: [] };
+  };
+
+  // Load cart from localStorage after component mounts (client-side only)
+  useEffect(() => {
+    const initialCart = loadCartFromStorage();
+    setCart(initialCart);
     setIsHydrated(true);
   }, []); // Run only once after mount
+
+  // NEW: Listen for localStorage changes from PWA
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      // 🔧 FIX: Don't update cart if viewing order confirmation
+      const isViewingOrderConfirmation = sessionStorage.getItem('viewingOrderConfirmation') === 'true';
+      if (isViewingOrderConfirmation) {
+        console.log('[Website Cart] Ignoring storage change - viewing order confirmation');
+        return;
+      }
+
+      // Only react to changes to 'shopping-cart' key
+      if (e.key === 'shopping-cart' && e.newValue) {
+        try {
+          const updatedCart = JSON.parse(e.newValue);
+          console.log('[Website Cart] Detected cart update from PWA:', updatedCart.items?.length || 0, 'items');
+          
+          setCart(prevCart => ({
+            open: prevCart.open, // Preserve current open state
+            items: updatedCart.items || []
+          }));
+        } catch (error) {
+          console.error('[Website Cart] Error parsing storage change:', error);
+        }
+      }
+    };
+
+    // Listen for storage events (fired when localStorage changes in another tab/window)
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  // ✅ NEW: Listen for PWA cart item additions (custom event)
+  useEffect(() => {
+    const handlePWACartAdd = (event: CustomEvent) => {
+      console.log('[Website Cart] PWA item added via custom event, opening cart');
+      setCart(prevCart => ({
+        ...prevCart,
+        open: true  // ✅ Open cart when PWA adds item
+      }));
+    };
+
+    window.addEventListener('pwa-cart-item-added', handlePWACartAdd as EventListener);
+
+    return () => {
+      window.removeEventListener('pwa-cart-item-added', handlePWACartAdd as EventListener);
+    };
+  }, []);
+
+  /* NEW: Also poll localStorage periodically (backup for same-page updates)
+  useEffect(() => {
+    const pollInterval = setInterval(() => {
+      // 🔧 FIX: Don't poll if viewing order confirmation
+      const isViewingOrderConfirmation = sessionStorage.getItem('viewingOrderConfirmation') === 'true';
+      if (isViewingOrderConfirmation) {
+        return;
+      }
+
+      const currentStorageCart = localStorage.getItem('shopping-cart');
+      
+      // Handle both cases: localStorage has items OR is empty
+      try {
+        const parsedStorageCart = currentStorageCart ? JSON.parse(currentStorageCart) : { items: [] };
+        const storageItemCount = parsedStorageCart.items?.length || 0;
+        const stateItemCount = cart.items.length;
+        
+        // Only update if counts differ (cart was modified externally)
+        if (storageItemCount !== stateItemCount) {
+          console.log('[Website Cart] Detected cart change via polling: localStorage has', storageItemCount, 'items, state has', stateItemCount);
+          setCart(prevCart => ({
+            open: prevCart.open,
+            items: parsedStorageCart.items || []
+          }));
+        }
+      } catch (error) {
+        console.error('[Website Cart] Error during polling:', error);
+      }
+    }, 1000); // Poll every 1 second
+
+    return () => clearInterval(pollInterval);
+  }, [cart.items.length]);
+  */
 
   // Save cart to localStorage whenever it changes (but only after hydration)
   useEffect(() => {
     if (isHydrated) {
-      try {
-        localStorage.setItem('shopping-cart', JSON.stringify(cart));
-        localStorage.setItem('cart-timestamp', Date.now().toString());
-      } catch (error) {
-        console.error('Error saving cart to localStorage:', error);
+      // 🔧 CRITICAL FIX: Check localStorage, not React state
+      // React state might be stale when PWA adds items
+      const isViewingOrderConfirmation = sessionStorage.getItem('viewingOrderConfirmation') === 'true';
+      
+      if (isViewingOrderConfirmation) {
+        // Check actual localStorage content, not React state
+        const currentStorage = localStorage.getItem('shopping-cart');
+        const currentData = currentStorage ? JSON.parse(currentStorage) : { items: [] };
+        
+        if (currentData.items?.length === 0) {
+          console.log('[Website Cart] Not saving empty cart - viewing order confirmation');
+          return;
+        }
+        // If localStorage has items, continue with save (don't block)
       }
+
+      // 🔧 NEW FIX: Debounce save to avoid race conditions with PWA
+      const saveTimer = setTimeout(() => {
+        try {
+          // Double-check localStorage before saving
+          const currentStorage = localStorage.getItem('shopping-cart');
+          const currentStorageData = currentStorage ? JSON.parse(currentStorage) : { items: [] };
+          const storageItemCount = currentStorageData.items?.length || 0;
+          const stateItemCount = cart.items.length;
+          
+          // 🔧 CRITICAL FIX: If this is a user action (delete/clear), ALWAYS save to localStorage
+          // Don't sync back - user is deliberately removing items
+          if (isUserAction.current) {
+            console.log('[Website Cart] User action detected - saving state to localStorage');
+            localStorage.setItem('shopping-cart', JSON.stringify(cart));
+            localStorage.setItem('cart-timestamp', Date.now().toString());
+            isUserAction.current = false; // Reset flag
+            
+            // ✅ NEW: Notify PWA of cart change
+            window.dispatchEvent(new CustomEvent('website-cart-changed', {
+              detail: { items: cart.items }
+            }));
+            return;
+          }
+          
+          // 🔧 If localStorage has MORE items, sync FROM it (PWA added items)
+          if (stateItemCount < storageItemCount) {
+            console.log('[Website Cart] localStorage has more items:', storageItemCount, 'vs state:', stateItemCount, '- syncing from localStorage');
+            setCart({
+              open: cart.open,
+              items: currentStorageData.items || []
+            });
+            return; // Don't save, we just synced FROM localStorage
+          }
+          
+          // Only save if our state has MORE or EQUAL items
+          if (stateItemCount >= storageItemCount) {
+            localStorage.setItem('shopping-cart', JSON.stringify(cart));
+            localStorage.setItem('cart-timestamp', Date.now().toString());
+            console.log('[Website Cart] Saved to localStorage:', stateItemCount, 'items');
+            
+            // ✅ NEW: Notify PWA of cart change (only if we actually saved)
+            window.dispatchEvent(new CustomEvent('website-cart-changed', {
+              detail: { items: cart.items }
+            }));
+          }
+        } catch (error) {
+          console.error('[Website Cart] Error saving cart to localStorage:', error);
+        }
+      }, 100); // 100ms debounce
+
+      return () => clearTimeout(saveTimer);
     }
   }, [cart, isHydrated]);
 
@@ -85,10 +252,27 @@ const CartWrapper = ({ children }: ICartWrapperProps) => {
     }));
   };
 
+  // ✅ CRITICAL FIX: Use cartId instead of id for deletion
+  // This prevents deleting all custom hose assemblies that share the same product id
   const deleteItem = (item: IItemCart) => {
+    // 🔧 Mark as user action to prevent sync-back
+    isUserAction.current = true;
     setCart((prevCart) => ({
       ...prevCart,
-      items: prevCart.items.filter((itemCart) => itemCart.id !== item.id),
+      items: prevCart.items.filter((itemCart) => {
+        // ✅ Use cartId (unique per cart instance) instead of id (shared by product type)
+        // This is critical for custom hose assemblies which share the same product id
+        const deleteBy = item.cartId ? 'cartId' : 'id';
+        const shouldKeep = deleteBy === 'cartId' 
+          ? itemCart.cartId !== item.cartId 
+          : itemCart.id !== item.id;
+        
+        if (!shouldKeep) {
+          console.log('[Website Cart] Deleting item by', deleteBy, ':', deleteBy === 'cartId' ? item.cartId : item.id);
+        }
+        
+        return shouldKeep;
+      }),
     }));
   };
 
@@ -102,7 +286,12 @@ const CartWrapper = ({ children }: ICartWrapperProps) => {
   };
 
   const clearCart = () => {
+    // 🔧 Mark as user action to prevent sync-back
+    isUserAction.current = true;
     setCart({ open: false, items: [] });
+    // Also clear localStorage when clearing cart
+    localStorage.removeItem('shopping-cart');
+    localStorage.removeItem('cart-timestamp');
   };
 
   return (
