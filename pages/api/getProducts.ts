@@ -17,7 +17,7 @@ const transformTitle = (fullTitle: string) => {
 };
 
 // PRODUCTION FIX: Optimized fetch with better error handling
-const fetchProductsByCategory = async (categoryId: string, page = 1, limit = 20) => {
+const fetchProductsByCategory = async (categoryId: string, page = 1, limit = 100) => {
   try {
     // Add timeout protection
     const controller = new AbortController();
@@ -65,7 +65,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   try {
-    const { id: categoryId, page = 1, limit = 20, loadAll = false } = req.body?.data || {};
+    const { id: categoryId, page = 1, limit = 100, loadAll = false } = req.body?.data || {};
     
     if (!categoryId) {
       return res.status(400).json({ 
@@ -76,7 +76,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // PRODUCTION FIX: Validate input parameters
     const validatedPage = Math.max(1, Math.min(parseInt(page) || 1, 100)); // Max 100 pages
-    const validatedLimit = Math.max(1, Math.min(parseInt(limit) || 20, 100)); // Max 100 items per page
+    const validatedLimit = Math.max(1, Math.min(parseInt(limit) || 100, 100)); // Max 100 items per page
 
     if (loadAll) {
       // PRODUCTION FIX: Limited "load all" for better performance
