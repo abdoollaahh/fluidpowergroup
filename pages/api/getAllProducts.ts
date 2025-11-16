@@ -20,7 +20,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         });
         
         // Map level 2 subcategories and fetch their series
-        const subCategories = await Promise.all(
+        let subCategories = await Promise.all(
           subCategoriesResponse.results.map(async (sub: any) => {
             // Fetch level 3 categories (series) for this subcategory
             const seriesResponse = await swell.get('/categories', { 
@@ -49,6 +49,40 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             };
           })
         );
+
+        // Special sorting ONLY for Hydraulic Hoses category
+        if (category.slug === 'hydraulic-hoses') {
+          subCategories = subCategories.sort((a: any, b: any) => {
+            const titleA = a.title || '';
+            const titleB = b.title || '';
+            
+            // Define explicit order based on exact names from Swell
+            const getOrder = (title: string) => {
+              // 1SC - Single Wire (order 1)
+              if (title === 'EN857 1SC - Single Wire Steel Braided') return 1;
+              
+              // 2SC - Two Wire (order 2)
+              if (title === 'EN857 2SC - Two Wire Steel Braided') return 2;
+              
+              // 4SP - Four Wire (order 3)
+              if (title === 'EN856 4SP - Four Wire Steel Braided') return 3;
+              
+              // Any other items go to the end
+              return 999;
+            };
+            
+            const orderA = getOrder(titleA);
+            const orderB = getOrder(titleB);
+            
+            // Sort by order
+            if (orderA !== orderB) {
+              return orderA - orderB;
+            }
+            
+            // If same order, maintain alphabetical
+            return titleA.localeCompare(titleB);
+          });
+        }
         
         return {
           title: category.name,

@@ -49,7 +49,7 @@ const TableProduct = ({ items, setItems }: ITableProductProps) => {
 
   return (
     <div className="wrapper px-8 md:px-12">
-      <div className="overflow-scroll">
+      <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: '600px' }}>
         <div 
           className="relative rounded-2xl overflow-hidden min-w-fit"
           style={{

@@ -129,7 +129,12 @@ const ProductMenuHeader = ({ categories, onClose }: ProductMenuHeaderProps) => {
             setSelectedCategory={setSelectedCategory}
           />
 
-          <SubCategories subCategories={selectedCategory?.subCategories || []} />
+        <SubCategories 
+          subCategories={
+            (selectedCategory?.subCategories || [])
+              .filter(subCategory => subCategory.slug !== 'hydraulic-hoses-custom-hose-assembly')
+          } 
+        />
         </div>
       </motion.div>
     </motion.div>
