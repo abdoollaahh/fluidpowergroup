@@ -286,12 +286,15 @@ const CartWrapper = ({ children }: ICartWrapperProps) => {
   };
 
   const clearCart = () => {
-    // 🔧 Mark as user action to prevent sync-back
-    isUserAction.current = true;
-    setCart({ open: false, items: [] });
+    console.log('🗑️ Clearing cart UI state');
+    setCart({ open: false, items: [] });// Clear React state only
+    
+    
+    //isUserAction.current = true;
+    //setCart({ open: false, items: [] });
     // Also clear localStorage when clearing cart
-    localStorage.removeItem('shopping-cart');
-    localStorage.removeItem('cart-timestamp');
+    //localStorage.removeItem('shopping-cart');
+    //localStorage.removeItem('cart-timestamp');
   };
 
   return (

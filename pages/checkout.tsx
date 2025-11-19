@@ -344,6 +344,10 @@ export default function CheckoutPage() {
   // 🆕 NEW: Success Handler (extracted for reuse)
   // ============================================================================
   
+  // ============================================================================
+// 🆕 FIXED: Success Handler - Strips PDFs to avoid localStorage quota
+// ============================================================================
+
   const handleOrderSuccess = async (
     orderNum: string, 
     captureId: string, 
@@ -352,30 +356,52 @@ export default function CheckoutPage() {
     console.log('🎉 Processing successful order:', orderNum);
     setOrderStatus('completed');
     
-    // Save order data
+    // ✅ Create lightweight order metadata WITHOUT PDFs
+    // PDFs remain in shopping-cart localStorage for order-confirmation to read
     const orderData = {
       orderNumber: orderNum,
       orderDate: new Date().toISOString(),
       paypalCaptureID: captureId,
       userDetails: payload.userDetails,
       websiteProducts: payload.websiteProducts,
-      pwaOrders: payload.pwaOrders,
+      pwaOrders: payload.pwaOrders.map((order: any) => ({
+        id: order.id,
+        name: order.name,
+        totalPrice: order.totalPrice,
+        quantity: order.quantity,
+        image: order.image,
+        pwaOrderNumber: order.pwaOrderNumber,
+        cartId: order.cartId
+        // ❌ Stripped: pdfDataUrl (will be read from shopping-cart)
+        // ❌ Stripped: orderConfig (not needed for display)
+      })),
       totals: payload.totals,
       testingMode: TESTING_MODE
     };
     
-    localStorage.setItem('lastOrder', JSON.stringify(orderData));
-    console.log('💾 Order data saved to localStorage');
+    // ✅ Save lightweight metadata to localStorage
+    try {
+      localStorage.setItem('lastOrder', JSON.stringify(orderData));
+      console.log('💾 Order metadata saved successfully (~10KB)');
+    } catch (error) {
+      console.error('⚠️ Failed to save order metadata:', error);
+      // Continue anyway - order still succeeded on backend
+    }
     
-    // Set session flag
+    // ✅ Set session flag
     sessionStorage.setItem('orderCompleting', 'true');
     
-    // Clear cart
-    clearCart();
-    localStorage.removeItem('shopping-cart');
-    localStorage.removeItem('cart-timestamp');
+    // ✅ Clear cart UI (but DON'T remove shopping-cart from localStorage yet)
+    // The order-confirmation page needs to read PDFs from it
+    clearCart(); // This only clears React state, not localStorage
     
-    // Redirect to confirmation
+    // ❌ DO NOT clear localStorage here - order-confirmation needs it!
+    // localStorage.removeItem('shopping-cart'); // REMOVED
+    // localStorage.removeItem('cart-timestamp'); // REMOVED
+    
+    console.log('📦 Cart UI cleared, localStorage preserved for order-confirmation');
+    
+    // ✅ Redirect to confirmation page
     console.log('🚀 Redirecting to order confirmation...');
     setTimeout(() => {
       router.push('/order-confirmation');
