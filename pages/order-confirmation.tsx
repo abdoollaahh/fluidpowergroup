@@ -124,7 +124,12 @@ useEffect(() => {
       const storedCart = localStorage.getItem('shopping-cart');
       
       if (storedCart && parsedOrder.pwaOrders && parsedOrder.pwaOrders.length > 0) {
-        const cartItems: IItemCart[] = JSON.parse(storedCart);
+        // 🔧 CRITICAL FIX: Parse the cart object first
+        const cartObject = JSON.parse(storedCart);
+        
+        // 🔧 Extract items array from cart object
+        const cartItems: IItemCart[] = cartObject.items || [];
+        
         console.log('📦 Shopping cart loaded with', cartItems.length, 'items');
         
         // ✅ STEP 3: Merge PDFs from cart into order data
