@@ -6,6 +6,7 @@ import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { createPortal } from 'react-dom';
 import { FiX } from 'react-icons/fi';
+import { IItemCart } from '../types/cart';
 
 // ========================================
 // TYPE DEFINITIONS
@@ -39,6 +40,7 @@ interface PWAOrder {
   image?: string;
   pdfDataUrl?: string;
   pwaOrderNumber?: string;
+  cartId?: number;
 }
 
 interface OrderTotals {
@@ -97,32 +99,105 @@ export default function OrderConfirmation() {
   }, []);
 
   // Load order data from localStorage
-  useEffect(() => {
-    const loadOrderData = () => {
-      try {
-        // Clear the order completing flag
-        sessionStorage.removeItem('orderCompleting');
-        
-        const storedOrder = localStorage.getItem('lastOrder');
-        if (storedOrder) {
-          const parsedOrder = JSON.parse(storedOrder);
-          setOrderData(parsedOrder);
-          
-          // ✅ FIX: Use CURRENT environment setting, not saved one
-          // This ensures the display matches the current deployment mode
-          const currentTestingMode = process.env.NEXT_PUBLIC_TESTING_MODE === 'true';
-          setTestingMode(currentTestingMode);
-          
-          console.log('Order loaded. Current testing mode:', currentTestingMode);
-        }
-      } catch (error) {
-        console.error('Error loading order data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // ============================================================================
+// 🆕 FIXED: Load order data by merging metadata + PDFs from cart
+// ============================================================================
 
-    loadOrderData();
+useEffect(() => {
+  const loadOrderData = () => {
+    try {
+      // Clear the order completing flag
+      sessionStorage.removeItem('orderCompleting');
+      
+      // ✅ STEP 1: Read lightweight order metadata
+      const storedOrder = localStorage.getItem('lastOrder');
+      if (!storedOrder) {
+        console.warn('⚠️ No order metadata found');
+        setIsLoading(false);
+        return;
+      }
+      
+      const parsedOrder: OrderData = JSON.parse(storedOrder);
+      console.log('📋 Order metadata loaded:', parsedOrder.orderNumber);
+      
+      // ✅ STEP 2: Read shopping cart with PDFs
+      const storedCart = localStorage.getItem('shopping-cart');
+      
+      if (storedCart && parsedOrder.pwaOrders && parsedOrder.pwaOrders.length > 0) {
+        const cartItems: IItemCart[] = JSON.parse(storedCart);
+        console.log('📦 Shopping cart loaded with', cartItems.length, 'items');
+        
+        // ✅ STEP 3: Merge PDFs from cart into order data
+        parsedOrder.pwaOrders = parsedOrder.pwaOrders.map((order: PWAOrder) => {
+          // Find matching cart item by cartId or id
+          const cartItem = cartItems.find((item: IItemCart) => 
+            item.cartId === order.cartId || item.id === order.id
+          );
+          
+          if (cartItem && cartItem.pdfDataUrl) {
+            console.log('✅ PDF found for:', order.name);
+            return {
+              ...order,
+              pdfDataUrl: cartItem.pdfDataUrl // Get PDF from original cart
+            };
+          }
+          
+          console.warn('⚠️ No PDF found for:', order.name);
+          return order;
+        });
+      }
+      
+      // ✅ STEP 4: Set the merged data
+      setOrderData(parsedOrder);
+      
+      // ✅ Use CURRENT environment setting, not saved one
+      const currentTestingMode = process.env.NEXT_PUBLIC_TESTING_MODE === 'true';
+      setTestingMode(currentTestingMode);
+      
+      console.log('✅ Order data merged and ready for display');
+      
+    } catch (error) {
+      console.error('❌ Error loading order data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  loadOrderData();
+}, []);
+
+  // ============================================================================
+// 🆕 CLEANUP: Remove localStorage when leaving order-confirmation page
+// ============================================================================
+
+  useEffect(() => {
+    // Cleanup function runs when component unmounts (user navigates away)
+    return () => {
+      console.log('🧹 Cleaning up: User leaving order-confirmation page');
+      localStorage.removeItem('shopping-cart');
+      localStorage.removeItem('lastOrder');
+      localStorage.removeItem('cart-timestamp');
+      console.log('✅ localStorage cleaned');
+    };
+  }, []);
+
+  // ============================================================================
+  // 🆕 CLEANUP: Also handle browser/tab close
+  // ============================================================================
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      console.log('🧹 Cleaning up: Browser/tab closing');
+      localStorage.removeItem('shopping-cart');
+      localStorage.removeItem('lastOrder');
+      localStorage.removeItem('cart-timestamp');
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, []);
 
   // Format currency
@@ -376,20 +451,19 @@ export default function OrderConfirmation() {
                           <p className="font-bold text-gray-900 mb-2">
                             {formatCurrency(pwaOrder.totalPrice)}
                           </p>
-                          {pwaOrder.pdfDataUrl && (
+                          {pwaOrder.pdfDataUrl ? (
                             <button
                               onClick={() => handleViewPDF(pwaOrder.pdfDataUrl, pwaOrder.pwaOrderNumber)}
-                              className="text-xs cursor-pointer transition-all duration-300"
+                              className="text-xs cursor-pointer block mt-2 text-left transition-all duration-300"
                               style={{
-                                padding: "6px 16px",
+                                padding: "6px 14px",
                                 borderRadius: "20px",
                                 background: "rgba(255, 255, 255, 0.9)",
                                 backdropFilter: "blur(15px)",
                                 border: "1px solid rgba(200, 200, 200, 0.3)",
                                 color: "#2563eb",
                                 boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
-                                fontWeight: "600",
-                                fontSize: "13px"
+                                fontWeight: "600"
                               }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.transform = "translateY(-2px) scale(1.02)";
@@ -408,6 +482,10 @@ export default function OrderConfirmation() {
                             >
                               {isMobile ? 'View PDF' : 'Click to View PDF'}
                             </button>
+                          ) : (
+                            <p className="text-sm text-gray-600 italic mt-2">
+                              📧 PDF attached in your confirmation email
+                            </p>
                           )}
                         </div>
                       </div>
