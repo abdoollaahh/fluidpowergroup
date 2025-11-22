@@ -33,6 +33,9 @@ const CartWrapper = ({ children }: ICartWrapperProps) => {
   
   // 🔧 Track when user is actively modifying cart (delete/clear actions)
   const isUserAction = useRef(false);
+  
+  // 🆕 NEW: Track if viewing order confirmation (for UI display only)
+  const [isViewingOrderConfirmation, setIsViewingOrderConfirmation] = useState(false);
 
   // Helper function to load cart from localStorage
   const loadCartFromStorage = () => {
@@ -134,39 +137,24 @@ const CartWrapper = ({ children }: ICartWrapperProps) => {
     };
   }, []);
 
-  /* NEW: Also poll localStorage periodically (backup for same-page updates)
+  // 🆕 NEW: Monitor sessionStorage for order confirmation state (UI display only)
   useEffect(() => {
-    const pollInterval = setInterval(() => {
-      // 🔧 FIX: Don't poll if viewing order confirmation
-      const isViewingOrderConfirmation = sessionStorage.getItem('viewingOrderConfirmation') === 'true';
-      if (isViewingOrderConfirmation) {
-        return;
+    const checkOrderConfirmation = () => {
+      const viewing = sessionStorage.getItem('viewingOrderConfirmation') === 'true';
+      if (viewing !== isViewingOrderConfirmation) {
+        setIsViewingOrderConfirmation(viewing);
+        console.log('[Website Cart] Order confirmation viewing state:', viewing);
       }
-
-      const currentStorageCart = localStorage.getItem('shopping-cart');
-      
-      // Handle both cases: localStorage has items OR is empty
-      try {
-        const parsedStorageCart = currentStorageCart ? JSON.parse(currentStorageCart) : { items: [] };
-        const storageItemCount = parsedStorageCart.items?.length || 0;
-        const stateItemCount = cart.items.length;
-        
-        // Only update if counts differ (cart was modified externally)
-        if (storageItemCount !== stateItemCount) {
-          console.log('[Website Cart] Detected cart change via polling: localStorage has', storageItemCount, 'items, state has', stateItemCount);
-          setCart(prevCart => ({
-            open: prevCart.open,
-            items: parsedStorageCart.items || []
-          }));
-        }
-      } catch (error) {
-        console.error('[Website Cart] Error during polling:', error);
-      }
-    }, 1000); // Poll every 1 second
-
-    return () => clearInterval(pollInterval);
-  }, [cart.items.length]);
-  */
+    };
+    
+    // Check immediately
+    checkOrderConfirmation();
+    
+    // Check periodically (poll every 200ms)
+    const interval = setInterval(checkOrderConfirmation, 200);
+    
+    return () => clearInterval(interval);
+  }, [isViewingOrderConfirmation]);
 
   // Save cart to localStorage whenever it changes (but only after hydration)
   useEffect(() => {
@@ -287,21 +275,26 @@ const CartWrapper = ({ children }: ICartWrapperProps) => {
 
   const clearCart = () => {
     console.log('🗑️ Clearing cart UI state');
-    setCart({ open: false, items: [] });// Clear React state only
     
+    // 🔧 Mark as user action to prevent sync-back from localStorage
+    isUserAction.current = true;
     
-    //isUserAction.current = true;
-    //setCart({ open: false, items: [] });
-    // Also clear localStorage when clearing cart
-    //localStorage.removeItem('shopping-cart');
-    //localStorage.removeItem('cart-timestamp');
+    // Clear React state only
+    setCart({ open: false, items: [] });
+    
+    // Note: localStorage will be cleared by order-confirmation page cleanup
+    // We keep it temporarily so order-confirmation can read PDFs
   };
+
+  // 🆕 NEW: Compute display items (hide cart items when viewing order confirmation)
+  // This only affects the UI - actual cart data remains in state and localStorage
+  const displayItems = isViewingOrderConfirmation ? [] : cart.items;
 
   return (
     <CartContext.Provider
       value={{
         toggleCart,
-        items: cart.items,
+        items: displayItems, // 🆕 CHANGED: Use displayItems instead of cart.items
         addItem,
         deleteItem,
         updateItem,
