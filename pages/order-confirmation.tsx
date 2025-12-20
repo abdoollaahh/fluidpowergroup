@@ -50,6 +50,17 @@ interface OrderTotals {
   total: number;
 }
 
+interface Trac360Order {
+  id: string;
+  name: string;
+  totalPrice: number;
+  quantity: number;
+  image?: string;
+  pdfDataUrl?: string;
+  trac360OrderNumber?: string;
+  cartId?: number;
+}
+
 interface OrderData {
   orderNumber: string;
   orderDate: string;
@@ -57,6 +68,7 @@ interface OrderData {
   userDetails: UserDetails;
   websiteProducts: WebsiteProduct[];
   pwaOrders: PWAOrder[];
+  trac360Orders: Trac360Order[];
   totals: OrderTotals;
 }
 
@@ -122,8 +134,8 @@ useEffect(() => {
       
       // ✅ STEP 2: Read shopping cart with PDFs
       const storedCart = localStorage.getItem('shopping-cart');
-      
-      if (storedCart && parsedOrder.pwaOrders && parsedOrder.pwaOrders.length > 0) {
+
+      if (storedCart) {
         // 🔧 CRITICAL FIX: Parse the cart object first
         const cartObject = JSON.parse(storedCart);
         
@@ -132,24 +144,47 @@ useEffect(() => {
         
         console.log('📦 Shopping cart loaded with', cartItems.length, 'items');
         
-        // ✅ STEP 3: Merge PDFs from cart into order data
-        parsedOrder.pwaOrders = parsedOrder.pwaOrders.map((order: PWAOrder) => {
-          // Find matching cart item by cartId or id
-          const cartItem = cartItems.find((item: IItemCart) => 
-            item.cartId === order.cartId || item.id === order.id
-          );
-          
-          if (cartItem && cartItem.pdfDataUrl) {
-            console.log('✅ PDF found for:', order.name);
-            return {
-              ...order,
-              pdfDataUrl: cartItem.pdfDataUrl // Get PDF from original cart
-            };
-          }
-          
-          console.warn('⚠️ No PDF found for:', order.name);
-          return order;
-        });
+        // ✅ STEP 3a: Merge PDFs from cart into PWA orders
+        if (parsedOrder.pwaOrders && parsedOrder.pwaOrders.length > 0) {
+          parsedOrder.pwaOrders = parsedOrder.pwaOrders.map((order: PWAOrder) => {
+            // Find matching cart item by cartId or id
+            const cartItem = cartItems.find((item: IItemCart) => 
+              item.cartId === order.cartId || item.id === order.id
+            );
+            
+            if (cartItem && cartItem.pdfDataUrl) {
+              console.log('✅ PDF found for PWA:', order.name);
+              return {
+                ...order,
+                pdfDataUrl: cartItem.pdfDataUrl // Get PDF from original cart
+              };
+            }
+            
+            console.warn('⚠️ No PDF found for PWA:', order.name);
+            return order;
+          });
+        }
+        
+        // ✅ STEP 3b: Merge PDFs from cart into Trac360 orders
+        if (parsedOrder.trac360Orders && parsedOrder.trac360Orders.length > 0) {
+          parsedOrder.trac360Orders = parsedOrder.trac360Orders.map((order: Trac360Order) => {
+            // Find matching cart item by cartId or id
+            const cartItem = cartItems.find((item: IItemCart) => 
+              item.cartId === order.cartId || item.id === order.id
+            );
+            
+            if (cartItem && cartItem.pdfDataUrl) {
+              console.log('✅ PDF found for Trac360:', order.name);
+              return {
+                ...order,
+                pdfDataUrl: cartItem.pdfDataUrl // Get PDF from original cart
+              };
+            }
+            
+            console.warn('⚠️ No PDF found for Trac360:', order.name);
+            return order;
+          });
+        }
       }
       
       // ✅ STEP 4: Set the merged data
@@ -498,7 +533,78 @@ useEffect(() => {
                   ))}
                 </div>
               )}
-            </div>
+
+              {/* Trac 360 Orders */}
+              {orderData.trac360Orders && orderData.trac360Orders.length > 0 && (
+                <div className="space-y-4 mt-6">
+                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+                    Custom Tractor Configurations
+                  </h3>
+                  {orderData.trac360Orders.map((trac360Order, index) => (
+                    <div key={`trac360-${index}`} className="border-b border-gray-200 pb-4 last:border-0">
+                      <div className="flex items-center space-x-4">
+                        {trac360Order.image && (
+                          <div className="flex-shrink-0">
+                            <Image
+                              src={trac360Order.image}
+                              alt={trac360Order.name}
+                              width={80}
+                              height={80}
+                              className="rounded object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900">{trac360Order.name}</h3>
+                          <p className="text-sm text-gray-600">Quantity: {trac360Order.quantity}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-gray-900 mb-2">
+                            {formatCurrency(trac360Order.totalPrice)}
+                          </p>
+                          {trac360Order.pdfDataUrl ? (
+                            <button
+                              onClick={() => handleViewPDF(trac360Order.pdfDataUrl, trac360Order.trac360OrderNumber)}
+                              className="text-xs cursor-pointer block mt-2 text-left transition-all duration-300"
+                              style={{
+                                padding: "6px 14px",
+                                borderRadius: "20px",
+                                background: "rgba(255, 255, 255, 0.9)",
+                                backdropFilter: "blur(15px)",
+                                border: "1px solid rgba(200, 200, 200, 0.3)",
+                                color: "#2563eb",
+                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+                                fontWeight: "600"
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = "translateY(-2px) scale(1.02)";
+                                e.currentTarget.style.background = "radial-gradient(ellipse at center, rgba(250, 204, 21, 0.9) 20%, rgba(250, 204, 21, 0.7) 60%, rgba(255, 215, 0, 0.8) 100%), rgba(250, 204, 21, 0.6)";
+                                e.currentTarget.style.border = "1px solid rgba(255, 215, 0, 0.9)";
+                                e.currentTarget.style.color = "#000";
+                                e.currentTarget.style.boxShadow = "0 10px 30px rgba(250, 204, 21, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.8), inset 0 3px 10px rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(255, 215, 0, 0.4)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "translateY(0px) scale(1)";
+                                e.currentTarget.style.background = "rgba(255, 255, 255, 0.9)";
+                                e.currentTarget.style.border = "1px solid rgba(200, 200, 200, 0.3)";
+                                e.currentTarget.style.color = "#2563eb";
+                                e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.08)";
+                              }}
+                            >
+                              {isMobile ? 'View Configuration' : 'Click to View Configuration'}
+                            </button>
+                          ) : (
+                            <p className="text-sm text-gray-600 italic mt-2">
+                              📧 PDF attached in your confirmation email
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              </div>
 
             {/* Order Summary Section */}
             <div className="px-6 py-8 sm:px-10 bg-gray-50 border-b border-gray-200">

@@ -97,7 +97,7 @@ export default function CheckoutPage() {
     }
   }, [items.length, router, isCompletingOrder]);
   
-  const { pwaItems, websiteItems } = separateCartItems(items);
+  const { pwaItems, websiteItems, trac360Items } = separateCartItems(items);
   const totals = calculateCartTotals(items);
   
   const paypalOptions = {
@@ -214,6 +214,17 @@ export default function CheckoutPage() {
           orderConfig: item.orderConfig,
           cartId: item.cartId || Date.now(),
           pwaOrderNumber: `PWA-${item.cartId || Date.now()}`
+        })),
+        trac360Orders: trac360Items.map(item => ({
+          id: item.id,
+          name: item.name,
+          totalPrice: item.totalPrice || 0,
+          quantity: 1,
+          image: item.image || '',
+          pdfDataUrl: item.pdfDataUrl,
+          tractorConfig: item.tractorConfig,
+          cartId: item.cartId || Date.now(),
+          trac360OrderNumber: `TRAC-${item.cartId || Date.now()}`
         })),
         totals: {
           subtotal: totals.subtotal,
@@ -374,6 +385,17 @@ export default function CheckoutPage() {
         cartId: order.cartId
         // ❌ Stripped: pdfDataUrl (will be read from shopping-cart)
         // ❌ Stripped: orderConfig (not needed for display)
+      })),
+      trac360Orders: payload.trac360Orders.map((order: any) => ({
+        id: order.id,
+        name: order.name,
+        totalPrice: order.totalPrice,
+        quantity: order.quantity,
+        image: order.image,
+        trac360OrderNumber: order.trac360OrderNumber,
+        cartId: order.cartId
+        // ❌ Stripped: pdfDataUrl (will be read from shopping-cart)
+        // ❌ Stripped: tractorConfig (not needed for display)
       })),
       totals: payload.totals,
       testingMode: TESTING_MODE

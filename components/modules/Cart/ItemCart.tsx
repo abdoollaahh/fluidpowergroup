@@ -23,8 +23,10 @@ const ItemCart = ({ item }: IItemCartProps) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Check if this is a PWA order (quantity controls should be disabled)
+  // Check item type
   const isPWA = isPWAOrder(item);
+  const isTrac360 = item.type === 'trac360_order';
+  const isCustomOrder = isPWA || isTrac360;
   
   // Get item price safely (handles both price and totalPrice)
   const itemPrice = getItemPrice(item);
@@ -32,12 +34,12 @@ const ItemCart = ({ item }: IItemCartProps) => {
   // Calculate the total price for the item based on its quantity
   const totalPrice = itemPrice * item.quantity;
   
-  // Get stock with fallback (PWA items have unlimited stock)
+  // Get stock with fallback (custom orders have unlimited stock)
   const itemStock = item.stock || 999;
 
   const incrementQuantity = () => {
-    // Don't allow quantity changes for PWA items
-    if (isPWA) return;
+    // Don't allow quantity changes for custom orders
+    if (isCustomOrder) return;
     
     if (item.quantity < itemStock) {
       updateItem({ ...item, quantity: item.quantity + 1 });
@@ -45,8 +47,8 @@ const ItemCart = ({ item }: IItemCartProps) => {
   };
 
   const decrementQuantity = () => {
-    // Don't allow quantity changes for PWA items
-    if (isPWA) return;
+    // Don't allow quantity changes for custom orders
+    if (isCustomOrder) return;
     
     if (item.quantity > 0) {
       updateItem({ ...item, quantity: item.quantity - 1 });
@@ -54,13 +56,20 @@ const ItemCart = ({ item }: IItemCartProps) => {
   };
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Don't allow quantity changes for PWA items
-    if (isPWA) return;
+    // Don't allow quantity changes for custom orders
+    if (isCustomOrder) return;
     
     const value = parseInt(e.target.value) || 0;
     if (value >= 0 && value <= itemStock) {
       updateItem({ ...item, quantity: value });
     }
+  };
+
+  // Get PDF button label based on type
+  const getPDFButtonLabel = () => {
+    if (isTrac360) return 'View PDF';
+    if (isPWA) return 'View Specification';
+    return 'View PDF';
   };
 
   return (
@@ -94,8 +103,8 @@ const ItemCart = ({ item }: IItemCartProps) => {
         <div className="flex flex-col text-xl font-light gap-2">
           <h3 className="font-medium">{item.name}</h3>
           
-          {/* PWA items show Qty: 1 (fixed) with PDF button */}
-          {isPWA && (
+          {/* Custom orders show Qty: 1 (fixed) with PDF button */}
+          {isCustomOrder && (
             <div className="flex items-center gap-3">
               <div className="text-sm text-gray-600">
                 Qty: {item.quantity}
@@ -111,7 +120,7 @@ const ItemCart = ({ item }: IItemCartProps) => {
                           <!DOCTYPE html>
                           <html>
                             <head>
-                              <title>Custom Hose Assembly PDF</title>
+                              <title>${getPDFButtonLabel()}</title>
                               <style>
                                 body { margin: 0; padding: 0; }
                                 iframe { width: 100vw; height: 100vh; border: none; }
@@ -156,14 +165,14 @@ const ItemCart = ({ item }: IItemCartProps) => {
                     e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.08)";
                   }}
                 >
-                  View PDF
+                  {getPDFButtonLabel()}
                 </button>
               )}
             </div>
           )}
           
-          {/* Enhanced Quantity Counter - Hidden for PWA items */}
-          {!isPWA && (
+          {/* Quantity Counter - Hidden for custom orders */}
+          {!isCustomOrder && (
             <div className="flex items-center gap-2 mt-1">
               <button
                 onClick={decrementQuantity}
@@ -336,7 +345,7 @@ const ItemCart = ({ item }: IItemCartProps) => {
               </div>
             </button>
             
-            {/* PDF iframe for desktop, object tag for better mobile support */}
+            {/* PDF viewer */}
             <object
               data={item.pdfDataUrl}
               type="application/pdf"
@@ -348,7 +357,7 @@ const ItemCart = ({ item }: IItemCartProps) => {
                 <p className="mb-4 text-gray-700">Unable to display PDF in browser.</p>
                 <a
                   href={item.pdfDataUrl}
-                  download="custom-hose-assembly.pdf"
+                  download={`${isTrac360 ? 'tractor-configuration' : 'hose-assembly'}.pdf`}
                   className="px-6 py-3 rounded-lg font-semibold transition-all"
                   style={{
                     background: "radial-gradient(ellipse at center, rgba(250, 204, 21, 0.9) 20%, rgba(250, 204, 21, 0.7) 60%, rgba(255, 215, 0, 0.8) 100%), rgba(250, 204, 21, 0.6)",

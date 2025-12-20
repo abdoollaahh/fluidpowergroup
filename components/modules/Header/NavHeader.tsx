@@ -7,9 +7,10 @@ import { v4 as uuid } from "uuid";
 
 interface NavHeaderProps {
   isProductsActive?: boolean;
+  isBuyActive?: boolean;
 }
 
-const NavHeader = ({ isProductsActive }: NavHeaderProps) => {
+const NavHeader = ({ isProductsActive, isBuyActive }: NavHeaderProps) => {
   const { hover, setHover } = useContext(HoverContext);
   const router = useRouter();
 
@@ -23,6 +24,11 @@ const NavHeader = ({ isProductsActive }: NavHeaderProps) => {
     // Special handling for Products tab - use the passed prop
     if (title === "Products" && isProductsActive !== undefined) {
       return isProductsActive;
+    }
+    
+    // Special handling for Buy tab - use the passed prop
+    if (title === "Buy" && isBuyActive !== undefined) {
+      return isBuyActive;
     }
     
     // Handle home page specifically
@@ -43,7 +49,7 @@ const NavHeader = ({ isProductsActive }: NavHeaderProps) => {
         backdropFilter: "blur(20px)",
         border: "1px solid rgba(255, 255, 255, 0.2)",
         borderRadius: "50px",
-        padding: "8px 12px 12px 12px", // Added bottom padding
+        padding: "8px 12px 12px 12px",
         boxShadow: "0 8px 25px rgba(0, 0, 0, 0.1)"
       }}
     >
@@ -54,17 +60,28 @@ const NavHeader = ({ isProductsActive }: NavHeaderProps) => {
           return (
             <div
               onMouseEnter={() => {
-                if (page.title !== "About" && page.title !== "Contact Us") {
+                // Don't set hover for About, Contact Us (Buy will be handled separately)
+                if (page.title !== "About" && page.title !== "Contact Us" && page.title !== "Buy") {
                   setHover(page.title);
+                }
+                // Trigger Buy dropdown on hover
+                if (page.title === "Buy") {
+                  setHover("Buy");
                 }
               }}
               key={page.id}
             >
               <a
-                href={page.href}
+                href={page.title === "Buy" ? "#" : page.href}
+                onClick={(e) => {
+                  // Prevent navigation for Buy tab
+                  if (page.title === "Buy") {
+                    e.preventDefault();
+                    setHover("Buy");
+                  }
+                }}
                 className="relative text-sm capitalize font-semibold overflow-hidden"
                 style={{
-                  // Override global button/anchor styles
                   all: "unset",
                   cursor: "pointer",
                   display: "inline-block",
@@ -76,9 +93,8 @@ const NavHeader = ({ isProductsActive }: NavHeaderProps) => {
                   textDecoration: "none",
                   transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
                   position: "relative",
-                  whiteSpace: "nowrap", // Prevent line breaks
-                  minWidth: "max-content", // Ensure button expands to fit content
-                  // Base background with gradients
+                  whiteSpace: "nowrap",
+                  minWidth: "max-content",
                   background: isActive 
                     ? `radial-gradient(ellipse at center, rgba(250, 204, 21, 0.9) 20%, rgba(250, 204, 21, 0.7) 60%, rgba(255, 215, 0, 0.8) 100%), rgba(250, 204, 21, 0.6)`
                     : `radial-gradient(ellipse at center, rgba(255, 255, 255, 0.3) 20%, rgba(255, 255, 255, 0.15) 70%, rgba(240, 240, 240, 0.2) 100%), rgba(255, 255, 255, 0.15)`,
