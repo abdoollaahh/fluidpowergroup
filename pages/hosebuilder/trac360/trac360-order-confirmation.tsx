@@ -513,10 +513,10 @@ export default function OrderConfirmation() {
                     return (
                       <div key={addon.id} className="flex items-start gap-3 py-2 border-b border-gray-100 last:border-0">
                         {/* Addon Image - Only show if image property exists */}
-                        {'image' in addon && addon.image && (
+                        {(addon as any).image && (
                           <div className="flex-shrink-0">
                             <Image
-                              src={addon.image as string}
+                              src={(addon as any).image}
                               alt={addon.name}
                               width={60}
                               height={60}
