@@ -453,7 +453,7 @@ export default function OrderConfirmation() {
                   <Image
                     src={config.operationType.image}
                     alt={config.operationType.name}
-                    width={90}
+                    width={120}
                     height={90}
                     className="rounded"
                     unoptimized
