@@ -217,7 +217,13 @@ export default function OrderConfirmation() {
   // Handle "Place New Order"
   const handlePlaceNewOrder = () => {
     console.log('🔄 Resetting TRAC360 configuration...');
+    
+    // Clear setup reminder position
+    sessionStorage.removeItem('trac360-setup-reminder-position');
+    
+    // Reset context (clears localStorage)
     resetConfig();
+    
     router.push('/hosebuilder/trac360/tractor-info');
   };
 
@@ -283,16 +289,15 @@ export default function OrderConfirmation() {
       // Check if essential config exists using optional chaining
       const hasValveSetup = Boolean(config.valveSetup?.code);
       const hasOperationType = Boolean(config.operationType?.name);
-      const hasCircuits = Boolean(config.circuits?.circuits);
       const hasTractorInfo = Boolean(config.tractorInfo?.brand && config.tractorInfo?.model);
       
       // Only redirect if missing essential config
       // Don't check brand/model validity - allow custom entries
-      if (!hasValveSetup || !hasOperationType || !hasCircuits || !hasTractorInfo) {
+      // Don't check circuits - it's optional based on the flow
+      if (!hasValveSetup || !hasOperationType || !hasTractorInfo) {
         console.log('[TRAC360] Config incomplete, redirecting...', {
           hasValveSetup,
           hasOperationType,
-          hasCircuits,
           hasTractorInfo,
           tractorBrand: config.tractorInfo?.brand,
           tractorModel: config.tractorInfo?.model,
@@ -317,7 +322,6 @@ export default function OrderConfirmation() {
   const hasEssentialConfig = 
     config.valveSetup?.code && 
     config.operationType?.name && 
-    config.circuits?.circuits &&
     config.tractorInfo?.brand &&
     config.tractorInfo?.model;
     
@@ -326,7 +330,7 @@ export default function OrderConfirmation() {
   }
 
   // Type guards - we know these exist now because of hasEssentialConfig check
-  if (!config.valveSetup || !config.operationType || !config.circuits) {
+  if (!config.valveSetup || !config.operationType) {
     return null;
   }
 
@@ -336,6 +340,7 @@ export default function OrderConfirmation() {
 
   return (
     <div className="min-h-screen pb-12">
+    
       {/* Back Button */}
       <BackButton onClick={handleBack} />
 
@@ -421,8 +426,8 @@ export default function OrderConfirmation() {
                   <Image
                     src={`/trac360/${config.tractorInfo.protectionType?.toUpperCase()}_(${config.valveSetup.code}).gif`}
                     alt={`Setup ${config.valveSetup.code}`}
-                    width={100}
-                    height={100}
+                    width={120}
+                    height={90}
                     className="rounded"
                     unoptimized
                   />
@@ -444,13 +449,14 @@ export default function OrderConfirmation() {
                 Step 3: Operation Type
               </h3>
               <div className="flex items-start gap-3">
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0" style={{ width: '90px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Image
                     src={config.operationType.image}
                     alt={config.operationType.name}
-                    width={70}
-                    height={70}
+                    width={90}
+                    height={90}
                     className="rounded"
+                    unoptimized
                   />
                 </div>
                 <div className="flex-1">
@@ -470,26 +476,28 @@ export default function OrderConfirmation() {
             </div>
 
             {/* ========== STEP 4: CIRCUITS ========== */}
-            <div className="p-5 border-b border-gray-200">
-              <h3 className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: COLORS.yellow.primary }}>
-                Step 4: Circuits
-              </h3>
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="font-semibold text-sm" style={{ color: COLORS.grey.dark }}>
-                    {config.circuits.circuits}-Circuit
-                  </p>
-                  <p className="text-xs" style={{ color: COLORS.grey.medium }}>
-                    {config.circuits.description}
-                  </p>
-                </div>
-                <div className="text-right ml-3">
-                  <p className="font-bold text-sm" style={{ color: COLORS.yellow.primary }}>
-                    {formatPrice(circuitsPrice)}
-                  </p>
+            {config.circuits && (
+              <div className="p-5 border-b border-gray-200">
+                <h3 className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: COLORS.yellow.primary }}>
+                  Step 4: Circuits
+                </h3>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="font-semibold text-sm" style={{ color: COLORS.grey.dark }}>
+                      {config.circuits.circuits}-Circuit
+                    </p>
+                    <p className="text-xs" style={{ color: COLORS.grey.medium }}>
+                      {config.circuits.description}
+                    </p>
+                  </div>
+                  <div className="text-right ml-3">
+                    <p className="font-bold text-sm" style={{ color: COLORS.yellow.primary }}>
+                      {formatPrice(circuitsPrice)}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* ========== STEPS 5-9: ADD-ONS ========== */}
             {config.addons.length > 0 && (
@@ -603,14 +611,16 @@ export default function OrderConfirmation() {
                 Price Breakdown
               </h3>
               <div className="space-y-1.5 text-xs mb-3">
-                <div className="flex justify-between">
-                  <span style={{ color: COLORS.grey.medium }}>
-                    Circuits ({config.circuits.circuits}-Circuit):
-                  </span>
-                  <span className="font-semibold" style={{ color: COLORS.grey.dark }}>
-                    {formatPrice(circuitsPrice)}
-                  </span>
-                </div>
+                {config.circuits && (
+                  <div className="flex justify-between">
+                    <span style={{ color: COLORS.grey.medium }}>
+                      Circuits ({config.circuits.circuits}-Circuit):
+                    </span>
+                    <span className="font-semibold" style={{ color: COLORS.grey.dark }}>
+                      {formatPrice(circuitsPrice)}
+                    </span>
+                  </div>
+                )}
                 {config.addons.length > 0 && (
                   <div className="flex justify-between">
                     <span style={{ color: COLORS.grey.medium }}>

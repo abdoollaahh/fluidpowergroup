@@ -19,19 +19,19 @@ const buyOptions: BuyOption[] = [
   {
     id: "hose360",
     title: "Hose360",
-    description: "Custom Hose Assembly Builder",
+    description: "Hydraulic Hose Builder",
     href: "/hosebuilder/hose360",
   },
   {
     id: "trac360",
     title: "Trac360",
-    description: "Custom Tractor Configurator",
+    description: "Tractor Hydraluic's Configurator",
     href: "/hosebuilder/trac360/start",
   },
   {
     id: "function360",
     title: "Function360",
-    description: "Coming Soon",
+    description: "Hydraulic Functions Configurator",
     href: "/hosebuilder/function360",
   },
 ];

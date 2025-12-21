@@ -75,15 +75,33 @@ export function Trac360Provider({ children }: Trac360ProviderProps) {
    */
   useEffect(() => {
     if (typeof window === 'undefined') return;
-
+  
     try {
+      // ✅ NEW: Check if this is a fresh page load (app restart)
+      const isPageReload = performance.navigation.type === 1; // 1 = reload, 0 = navigate
+      const isNewSession = !sessionStorage.getItem('trac360-session-active');
+      
+      // If new session (app restart, not just page reload), clear everything
+      if (isNewSession && !isPageReload) {
+        console.log('[TRAC360] New session detected, clearing all data');
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(STORAGE_TIMESTAMP_KEY);
+        sessionStorage.removeItem('trac360-setup-reminder-position');
+        sessionStorage.setItem('trac360-session-active', 'true');
+        setIsHydrated(true);
+        return;
+      }
+      
+      // Mark session as active
+      sessionStorage.setItem('trac360-session-active', 'true');
+  
       const savedConfig = localStorage.getItem(STORAGE_KEY);
       const timestamp = localStorage.getItem(STORAGE_TIMESTAMP_KEY);
-
+  
       if (savedConfig && timestamp) {
         const now = Date.now();
         const saved = parseInt(timestamp);
-
+  
         // Check if session is still valid (within 24 hours)
         if (now - saved < SESSION_DURATION) {
           const parsedConfig = JSON.parse(savedConfig);
@@ -94,12 +112,13 @@ export function Trac360Provider({ children }: Trac360ProviderProps) {
           console.log('[TRAC360] Session expired, clearing localStorage');
           localStorage.removeItem(STORAGE_KEY);
           localStorage.removeItem(STORAGE_TIMESTAMP_KEY);
+          sessionStorage.removeItem('trac360-setup-reminder-position');
         }
       }
     } catch (error) {
       console.error('[TRAC360] Error loading from localStorage:', error);
     }
-
+  
     setIsHydrated(true);
   }, []);
 
@@ -304,10 +323,11 @@ export function Trac360Provider({ children }: Trac360ProviderProps) {
     setConfig(initialConfig);
     setCurrentStep('start');
     
-    // Clear localStorage
+    // Clear localStorage AND sessionStorage
     if (typeof window !== 'undefined') {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(STORAGE_TIMESTAMP_KEY);
+      sessionStorage.removeItem('trac360-setup-reminder-position'); // ← ADD THIS
       console.log('[TRAC360] Configuration reset');
     }
   }, []);

@@ -1,8 +1,8 @@
 {
     "id": "joystick-upgradation",
     "name": "Joystick Upgradation",
-    "description": "UpGrade Your Joystick",
-    "subtitle": "Joystick with Electric BUTTONS",
+    "description": "Upgrade Your Joystick",
+    "subtitle": "Joystick with Electric Buttons",
     "basePrice": 120,
     "currency": "AUD",
     "swellProductId": "joystick-upgradation-addon",
@@ -10,7 +10,7 @@
     "subOptions": [
       {
         "id": "one-button",
-        "name": "ONE BUTTON",
+        "name": "One Button",
         "additionalPrice": 0,
         "image": "/trac360/one-button.png",
         "components": [
@@ -20,7 +20,7 @@
       },
       {
         "id": "two-button",
-        "name": "TWO BUTTON",
+        "name": "Two Button",
         "additionalPrice": 0,
         "image": "/trac360/two-button.png",
         "components": [

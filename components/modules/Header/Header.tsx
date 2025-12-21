@@ -12,6 +12,7 @@ import { CartContext } from "context/CartWrapper";
 import { Category } from "types/products";
 import { BsSearch } from "react-icons/bs";
 import Link from "next/link";
+import BuyMenuHeader from "./MenuHeader/BuyMenuHeader";
 
 const Header = ({ categories }: { categories: Category[] }) => {
   const [hover, setHover] = useState<string | null>(null);
@@ -181,7 +182,7 @@ const Header = ({ categories }: { categories: Category[] }) => {
                       color: mobileCartPressed ? "rgb(250, 204, 21)" : "#333",
                       transition: "color 0.3s ease",
                       width: "40px",
-                      height: "40px"
+                      height: "40px",
                     }}
                   />
                   {/* Black background animation for cart */}
@@ -403,6 +404,13 @@ const Header = ({ categories }: { categories: Category[] }) => {
             <ProductMenuHeader categories={categories} />
           )}
         </AnimatePresence>
+
+        <AnimatePresence>
+          {hover === "Buy" && (
+            <BuyMenuHeader onClose={() => setHover(null)} />
+          )}
+        </AnimatePresence>
+
       </div>
     </HoverWrapper>
       <div style={{ height: "90px", width: "100%" }} />

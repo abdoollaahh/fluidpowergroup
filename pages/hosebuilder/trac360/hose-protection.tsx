@@ -18,6 +18,7 @@ import BackButton from '../../../components/Trac360/Shared/BackButton';
 import { useTrac360 } from '../../../context/Trac360Context';
 import { COLORS } from '../../../components/Trac360/styles';
 import addonData from '../../../data/trac360/hose-protection.json';
+import SetupReminder from '../../../components/Trac360/Shared/SetupReminder';
 
 export default function HoseProtection() {
   const router = useRouter();
@@ -98,7 +99,14 @@ export default function HoseProtection() {
 
   // Handle continue
   const handleContinue = () => {
-    router.push('/hosebuilder/trac360/joystick-upgradation');
+    // Check if operation type is "Cables & Levers" - skip joystick upgradation
+    const isLeversOperation = operationType?.id === 'cables-levers-2' || operationType?.id === 'cables-levers-11';
+    
+    if (isLeversOperation) {
+      router.push('/hosebuilder/trac360/mounting-brackets');
+    } else {
+      router.push('/hosebuilder/trac360/joystick-upgradation');
+    }
   };
 
   // Handle back
@@ -125,6 +133,7 @@ export default function HoseProtection() {
     <Trac360Layout currentStep={7} totalSteps={10}>
       {/* Back Button */}
       <BackButton onClick={handleBack} />
+      <SetupReminder />
 
       <div className="max-w-3xl mx-auto px-4">
         {/* Logo */}

@@ -5,10 +5,10 @@
     "description": "Standard joystick control with cable operation",
     "image": "/trac360/Setup-AB-1.png",
     "components": [
-      "1x Two Bank Hydraulic Valve",
-      "1x Standard Joystick",
-      "2x Cables",
-      "2x Cable Connectors",
+      "Hydraulic Valve",
+      "Standard Joystick",
+      "Cables",
+      "Cable Connectors",
       "High Pressure Carry-over Plug (If Required)"
     ],
     "compatibleWith": ["cab", "rops"]
@@ -19,11 +19,11 @@
     "description": "Lever control with cable operation",
     "image": "/trac360/Setup-AB-2.png",
     "components": [
-      "1x Two Bank Hydraulic Valve",
-      "2x Levers & Handles",
-      "2x Cables",
-      "2x Cable Connectors Valve End",
-      "2x Cable Connectors Lever End"
+      "Hydraulic Valve",
+      "Levers & Handles",
+      "Cables",
+      "Valve End",
+      "Lever End"
     ],
     "compatibleWith": ["cab", "rops"]
   },
@@ -33,10 +33,10 @@
     "description": "Standard joystick control with cable operation",
     "image": "/trac360/Setup-BC-3.png",
     "components": [
-      "1x Hydraulic Valve",
-      "1x Standard Joystick",
-      "2x Cables",
-      "2x Cable Connectors",
+      "Hydraulic Valve",
+      "Standard Joystick",
+      "Cables",
+      "Cable Connectors",
       "High Pressure Carry-over Plug (If Required)"
     ],
     "compatibleWith": ["cab", "rops"]
@@ -47,11 +47,11 @@
     "description": "Lever control with cable operation",
     "image": "/trac360/Setup-BC-4.png",
     "components": [
-      "1x Hydraulic Valve",
-      "2x Levers & Handles",
-      "2x Cables",
-      "2x Cable Connectors Valve End",
-      "2x Cable Connectors Lever End"
+      "Hydraulic Valve",
+      "Levers & Handles",
+      "Cables",
+      "Valve End",
+      "Lever End"
     ],
     "compatibleWith": ["cab", "rops"]
   },
@@ -61,8 +61,8 @@
     "description": "Direct joystick operation (no cables)",
     "image": "/trac360/direct-joystick-b.png",
     "components": [
-      "1x Hydraulic Valve",
-      "1x Direct Mount Joystick"
+      "Hydraulic Valve",
+      "Direct Mount Joystick"
     ],
     "compatibleWith": ["rops"]
   },
@@ -72,9 +72,9 @@
     "description": "Combined joystick and lever control",
     "image": "/trac360/joystick-levers.png",
     "components": [
-      "1x Hydraulic Valve",
-      "1x Joystick",
-      "2x Levers"
+      "Hydraulic Valve",
+      "Joystick",
+      "Levers"
     ],
     "compatibleWith": ["rops"]
   },
@@ -84,7 +84,7 @@
     "description": "Direct handle operation (no cables)",
     "image": "/trac360/Setup-D-1.png",
     "components": [
-      "1x Hydraulic Valve",
+      "Hydraulic Valve",
       "Hydraulic Valve Handles"
     ],
     "compatibleWith": ["rops"]
@@ -95,7 +95,7 @@
     "description": "Direct joystick operation (no cables)",
     "image": "/trac360/Setup-D-2.png",
     "components": [
-      "1x Hydraulic Valve",
+      "Hydraulic Valve",
       "Hydraulic Valve Joystick"
     ],
     "compatibleWith": ["rops"]

@@ -9,9 +9,9 @@
       "image": "/trac360/valve-adaptors.png",
       "title": "Include Couplings & Adaptors",
       "components": [
-        "4 x 1/2\" BSPP Male Couplings",
-        "4 x Adaptors to suit Valve",
-        "Adaptors for Supply, PB, Tank Ports"
+        "Male Quick Release Couplings",
+        "Adaptors to suit Valve",
+        "Adaptors for Supply, PB, LS, Tank Ports"
       ]
     },
     "setupBCD": {
@@ -20,7 +20,7 @@
       "components": [
         "1/2\" BSPP Male Couplings",
         "Adaptors to suit Selected Valve",
-        "Adaptors for Supply, PB, Tank Ports"
+        "Adaptors for Supply, PB, LS, Tank Ports"
       ]
     }
   }

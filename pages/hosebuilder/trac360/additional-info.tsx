@@ -13,6 +13,7 @@ import ContinueButton from '../../../components/Trac360/Shared/ContinueButton';
 import BackButton from '../../../components/Trac360/Shared/BackButton';
 import { useTrac360 } from '../../../context/Trac360Context';
 import { COLORS } from '../../../components/Trac360/styles';
+import SetupReminder from '../../../components/Trac360/Shared/SetupReminder';
 
 export default function AdditionalInfo() {
   const router = useRouter();
@@ -89,6 +90,7 @@ export default function AdditionalInfo() {
     <Trac360Layout currentStep={10} totalSteps={10}>
       {/* Back Button */}
       <BackButton onClick={handleBack} />
+      <SetupReminder />
 
       <div className="max-w-xl mx-auto px-4">
         {/* Logo */}
@@ -227,22 +229,27 @@ Add any details that will help us assist you."
                 onClick={handleNotRequired}
                 className="px-8 py-3 rounded-full font-semibold transition-all duration-300"
                 style={{
-                  background: 'rgba(74, 74, 74, 0.85)',
+                  background: wasNotRequired 
+                    ? 'rgba(107, 114, 128, 0.85)' 
+                    : 'rgba(74, 74, 74, 0.85)',
                   backdropFilter: 'blur(10px)',
                   WebkitBackdropFilter: 'blur(10px)',
                   color: '#ffffff',
-                  border: '2px solid rgba(255, 255, 255, 0.3)',
+                  border: wasNotRequired 
+                    ? '2px solid rgba(255, 255, 255, 0.5)' 
+                    : '2px solid rgba(255, 255, 255, 0.3)',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)',
+                  boxShadow: wasNotRequired 
+                    ? '0 6px 20px rgba(0, 0, 0, 0.25)' 
+                    : '0 4px 10px rgba(0, 0, 0, 0.15)',
                 }}
                 whileHover={{
                   scale: 1.05,
-                  background: 'rgba(107, 114, 128, 0.85)',
                   boxShadow: '0 6px 20px rgba(0, 0, 0, 0.25)',
                 }}
                 whileTap={{ scale: 0.98 }}
               >
-                NOT REQUIRED
+                {wasNotRequired ? 'SKIPPED ✓' : 'NOT REQUIRED'}
               </motion.button>
             </motion.div>
           </div>

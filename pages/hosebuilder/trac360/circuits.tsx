@@ -18,6 +18,7 @@ import BackButton from '../../../components/Trac360/Shared/BackButton';
 import { useTrac360 } from '../../../context/Trac360Context';
 import circuits from '../../../data/trac360/circuits.json';
 import { COLORS } from '../../../components/Trac360/styles';
+import SetupReminder from '../../../components/Trac360/Shared/SetupReminder';
 
 export default function Circuits() {
   const router = useRouter();
@@ -99,6 +100,7 @@ export default function Circuits() {
     <Trac360Layout currentStep={4} totalSteps={10}>
       {/* Back Button */}
       <BackButton onClick={handleBack} />
+      <SetupReminder /> {/* ← ADD THIS */}
 
       <div className="max-w-4xl mx-auto px-4">
         {/* Logo */}

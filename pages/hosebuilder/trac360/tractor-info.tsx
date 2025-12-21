@@ -393,7 +393,7 @@ export default function TractorInfo() {
                   className="w-full text-center text-base font-medium bg-transparent border-none outline-none cursor-pointer appearance-none"
                   style={{ color: COLORS.grey.dark }}
                 >
-                  <option value="">2WD or 4WD</option>
+                  <option value="" disabled>2WD or 4WD</option>
                   {tractorData.driveTypes.map((type) => (
                     <option key={type} value={type}>
                       {type}
@@ -424,7 +424,7 @@ export default function TractorInfo() {
                   className="w-full text-center text-base font-medium bg-transparent border-none outline-none cursor-pointer appearance-none"
                   style={{ color: COLORS.grey.dark }}
                 >
-                  <option value="">CABIN or ROPS</option>
+                  <option value="" disabled>CABIN or ROPS</option>
                   {tractorData.protectionTypes.map((type) => (
                     <option key={type.id} value={type.id}>
                       {type.name}

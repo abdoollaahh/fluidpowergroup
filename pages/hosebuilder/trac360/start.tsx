@@ -97,14 +97,14 @@ export default function Start() {
               <motion.span
                 key="rotating-zero"
                 initial={{ rotate: 0 }}
-                animate={{ rotate: 360 }}
+                animate={{ rotate: 720 }}
                 transition={{
                   duration: 1,
                   ease: 'easeInOut',
                   delay: 0.8,
                 }}
                 whileHover={{
-                  rotate: [0, 360],
+                  rotate: [0, 720],
                   transition: { duration: 0.6, ease: 'easeInOut' },
                 }}
                 style={{
@@ -124,19 +124,19 @@ export default function Start() {
                     display: 'inline-block',
                   }}
                 >
-                  {/* Circular arrow path - almost complete circle */}
+                  {/* Circular arrow path - nearly complete circle ending near the start */}
                   <path
-                    d="M 16 4 A 12 12 0 1 1 4.5 16.5"
+                    d="M 16 4 A 12 12 0 1 1 11 5.5"
                     stroke="#facc15"
                     strokeWidth="3.5"
                     strokeLinecap="round"
                     fill="none"
                   />
-                  {/* Arrow head - properly aligned with circle end */}
+                  {/* Arrow head - much larger and pointing clockwise toward the start */}
                   <path
-                    d="M 4.5 16.5 L 2 13.5 M 4.5 16.5 L 7.5 14.5"
+                    d="M 11 5.5 L 14 8.5 M 8 5.5 L 8 7"
                     stroke="#facc15"
-                    strokeWidth="3.5"
+                    strokeWidth="3.8"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
@@ -156,8 +156,8 @@ export default function Start() {
                 <Image
                   src="/trac360/tractor-info.gif"
                   alt="Tractor"
-                  width={360}
-                  height={360}
+                  width={340}
+                  height={340}
                 />
               </div>
             </div>
@@ -168,60 +168,10 @@ export default function Start() {
               style={{ color: '#6b7280' }}
             >
               Provide your tractor details to unlock a full 360° suite of hydraulic
-              solutions — valves, hoses, fittings, adaptors, joysticks, cables, and
-              tooling — precisely matched to your equipment specifications
+              solutions — valves, hoses, fittings, adaptors, joysticks and cables
+              — precisely matched to your tractor specifications
             </p>
           </motion.div>
-
-          {/* Tractor Icon 
-          <motion.div
-            variants={fadeInUp}
-            transition={{ delay: 0.2 }}
-            className="flex justify-center py-6"
-          >
-            <div className="flex gap-8">
-              <div className="text-center">
-                <div
-                  className="w-20 h-20 mx-auto mb-2 rounded-full flex items-center justify-center"
-                  style={{
-                    background: 'rgba(250, 204, 21, 0.1)',
-                    border: '2px solid rgba(250, 204, 21, 0.3)',
-                  }}
-                >
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                    <circle
-                      cx="8"
-                      cy="17"
-                      r="3"
-                      stroke="#facc15"
-                      strokeWidth="2"
-                    />
-                    <circle
-                      cx="18"
-                      cy="17"
-                      r="3"
-                      stroke="#facc15"
-                      strokeWidth="2"
-                    />
-                    <path
-                      d="M11 17h4M5 17H3v-4l2-4h8v8"
-                      stroke="#facc15"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M15 9h5l2 3v5h-1M13 5h3v4"
-                      stroke="#facc15"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </motion.div> */}
 
           {/* Start Button */}
           <motion.div

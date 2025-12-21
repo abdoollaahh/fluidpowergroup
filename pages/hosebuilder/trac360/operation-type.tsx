@@ -14,6 +14,7 @@ import BackButton from '../../../components/Trac360/Shared/BackButton';
 import { useTrac360 } from '../../../context/Trac360Context';
 import operationTypes from '../../../data/trac360/operation-types.json';
 import { COLORS } from '../../../components/Trac360/styles';
+import SetupReminder from '../../../components/Trac360/Shared/SetupReminder';
 
 export default function OperationType() {
   const router = useRouter();
@@ -123,6 +124,7 @@ export default function OperationType() {
     <Trac360Layout currentStep={3} totalSteps={10}>
       {/* Back Button */}
       <BackButton onClick={handleBack} />
+      <SetupReminder /> 
 
       <div className="max-w-2xl mx-auto px-4">
         {/* Logo */}

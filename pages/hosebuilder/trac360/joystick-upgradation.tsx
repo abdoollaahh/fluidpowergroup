@@ -18,6 +18,7 @@ import BackButton from '../../../components/Trac360/Shared/BackButton';
 import { useTrac360 } from '../../../context/Trac360Context';
 import { COLORS } from '../../../components/Trac360/styles';
 import addonData from '../../../data/trac360/joystick-upgradation.json';
+import SetupReminder from '../../../components/Trac360/Shared/SetupReminder';
 
 export default function JoystickUpgradation() {
   const router = useRouter();
@@ -125,6 +126,7 @@ export default function JoystickUpgradation() {
     <Trac360Layout currentStep={8} totalSteps={10}>
       {/* Back Button */}
       <BackButton onClick={handleBack} />
+      <SetupReminder />
 
       <div className="max-w-3xl mx-auto px-4">
         {/* Logo */}
