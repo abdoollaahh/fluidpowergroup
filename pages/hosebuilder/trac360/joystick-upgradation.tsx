@@ -332,12 +332,12 @@ export default function JoystickUpgradation() {
               </motion.button>
             </motion.div>
 
-            {/* Additional Note */}
+            {/* Additional Note 
             {addonData.additionalNote && (
               <div className="px-6 pb-4 text-center text-xs italic" style={{ color: COLORS.grey.medium }}>
                 {addonData.additionalNote}
               </div>
-            )}
+            )}*/}
           </div>
         </motion.div>
 
