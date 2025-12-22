@@ -25,7 +25,7 @@ const buyOptions: BuyOption[] = [
   {
     id: "trac360",
     title: "Trac360",
-    description: "Tractor Hydraluic's Configurator",
+    description: "Tractor Hydraulic's Configurator",
     href: "/hosebuilder/trac360/start",
   },
   {

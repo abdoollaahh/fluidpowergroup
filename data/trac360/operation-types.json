@@ -22,8 +22,8 @@
       "Hydraulic Valve",
       "Levers & Handles",
       "Cables",
-      "Valve End",
-      "Lever End"
+      "Cable Connectors-Valve End",
+      "Cable Connectors-Lever End"
     ],
     "compatibleWith": ["cab", "rops"]
   },
@@ -50,8 +50,8 @@
       "Hydraulic Valve",
       "Levers & Handles",
       "Cables",
-      "Valve End",
-      "Lever End"
+      "Cable Connectors-Valve End",
+      "Cable Connectors-Lever End"
     ],
     "compatibleWith": ["cab", "rops"]
   },

@@ -68,7 +68,7 @@ const ItemCart = ({ item }: IItemCartProps) => {
   // Get PDF button label based on type
   const getPDFButtonLabel = () => {
     if (isTrac360) return 'View PDF';
-    if (isPWA) return 'View Specification';
+    if (isPWA) return 'View PDF';
     return 'View PDF';
   };
 
@@ -94,14 +94,16 @@ const ItemCart = ({ item }: IItemCartProps) => {
           <div className="relative w-full h-full">
             <Image
               layout="fill"
-              src={item.image || '/cartImage.jpeg'} 
+              src={isTrac360 ? '/Trac360_Cart.png' : (item.image || '/cartImage.jpeg')}
               alt={item.name || "product"}
               objectFit="contain"
             />
           </div>
         </div>
         <div className="flex flex-col text-xl font-light gap-2">
-          <h3 className="font-medium">{item.name}</h3>
+        <h3 className="font-medium">
+          {isPWA ? 'HOSE360 Custom Order' : item.name}
+        </h3>
           
           {/* Custom orders show Qty: 1 (fixed) with PDF button */}
           {isCustomOrder && (

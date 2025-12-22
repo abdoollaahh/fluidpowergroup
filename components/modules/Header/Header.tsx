@@ -35,6 +35,13 @@ const Header = ({ categories }: { categories: Category[] }) => {
     router.pathname.startsWith('/product') ||   // Catch other product-related routes
     (router.asPath.includes('products') && !router.asPath.includes('search')) || // Any URL containing 'products' but not search
     (router.pathname === '/products' && !!router.query.subcategory); // Subcategory pages
+    
+    // Check if user is on buy page OR using any 360 configurator
+    const isBuyActive: boolean = 
+    router.pathname === '/buy' ||
+    router.pathname.startsWith('/hosebuilder/hose360') ||
+    router.pathname.startsWith('/hosebuilder/trac360') ||
+    router.pathname.startsWith('/hosebuilder/function360');
 
   // Handle mobile search press with animation
   const handleMobileSearchPress = () => {
@@ -212,7 +219,7 @@ const Header = ({ categories }: { categories: Category[] }) => {
 
             {/* Desktop Navigation - Pass isProductsActive to NavHeader */}
             <div className="w-full justify-center hidden lg:flex z-30">
-              <NavHeader isProductsActive={isProductsActive} />
+            <NavHeader isProductsActive={isProductsActive} isBuyActive={isBuyActive} />
             </div>
 
             {/* Mobile Right Section - ONLY applies on mobile */}

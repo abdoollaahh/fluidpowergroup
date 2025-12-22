@@ -13,6 +13,7 @@ interface BuyOption {
   description: string;
   href: string;
   image: string;
+  isActive: boolean;
 }
 
 const buyOptions: BuyOption[] = [
@@ -21,14 +22,16 @@ const buyOptions: BuyOption[] = [
     title: "Hose360",
     description: "Custom Hose Assembly Builder",
     href: "/hosebuilder/hose360",
-    image: "/logo.png",
+    image: "/Hose360.avif",
+    isActive: true,
   },
   {
     id: "trac360",
     title: "Trac360",
     description: "Custom Tractor Configurator",
     href: "/hosebuilder/trac360/start",
-    image: "/logo.png",
+    image: "/Trac360_Cart.png",
+    isActive: true,
   },
   {
     id: "function360",
@@ -36,16 +39,19 @@ const buyOptions: BuyOption[] = [
     description: "Coming Soon",
     href: "/hosebuilder/function360",
     image: "/logo.png",
+    isActive: false,
   },
 ];
 
 const BuyMenuHeader = ({ onClose }: BuyMenuHeaderProps) => {
   const router = useRouter();
 
-  const handleNavigation = (href: string) => {
-    router.push(href);
-    if (onClose) {
-      onClose();
+  const handleNavigation = (option: BuyOption) => {
+    if (option.isActive) {
+      router.push(option.href);
+      if (onClose) {
+        onClose();
+      }
     }
   };
 
@@ -114,10 +120,14 @@ const BuyMenuHeader = ({ onClose }: BuyMenuHeaderProps) => {
               <AnimatePresence exitBeforeEnter>
                 {buyOptions.map((option, index) => (
                   <div
-                    key={option.id}
-                    onClick={() => handleNavigation(option.href)}
-                    className="hover:no-underline cursor-pointer"
-                  >
+                  key={option.id}
+                  onClick={() => handleNavigation(option)}
+                  className={option.isActive ? "hover:no-underline cursor-pointer" : "cursor-not-allowed"}
+                  style={{
+                    opacity: option.isActive ? 1 : 0.5,
+                    filter: option.isActive ? "none" : "grayscale(60%)",
+                  }}
+                >
                     <motion.div
                       key={option.id}
                       initial={{ x: -50, opacity: 0 }}
@@ -130,6 +140,20 @@ const BuyMenuHeader = ({ onClose }: BuyMenuHeaderProps) => {
                       transition={{ duration: 0.3 }}
                       className="w-full h-full flex items-center rounded-lg buy-item-group cursor-pointer"
                     >
+                    {/* ADD THIS: Coming Soon Badge */}
+                    {!option.isActive && (
+                      <div
+                        className="absolute top-2 right-2 z-10 px-3 py-1 rounded-full text-xs font-semibold"
+                        style={{
+                          background: "rgba(128, 128, 128, 0.9)",
+                          backdropFilter: "blur(10px)",
+                          border: "1px solid rgba(100, 100, 100, 0.5)",
+                          color: "#fff",
+                        }}
+                      >
+                        COMING SOON
+                      </div>
+                    )}
                       {/* Thumbnail - exactly like SubCategories */}
                       <div 
                         className="rounded-xl w-24 h-24 p-1 border buy-hover-scale flex items-center justify-center overflow-hidden"

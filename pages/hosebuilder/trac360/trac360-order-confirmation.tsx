@@ -168,7 +168,7 @@ export default function OrderConfirmation() {
         totalPrice: config.totalPrice,
         quantity: 1,
         stock: 999,
-        image: '/fluidpower_logo_transparent.gif',
+        image: '/Trac360_Cart.png',
         pdfDataUrl: pdfDataUrl,
         tractorConfig: convertConfigForCart(config),
         cartId: Date.now(),
@@ -422,9 +422,9 @@ export default function OrderConfirmation() {
                 Step 2: Valve Setup
               </h3>
               <div className="flex items-center gap-3">
-                <div className="flex-shrink-0">
+              <div className="flex-shrink-0">
                   <Image
-                    src={`/trac360/${config.tractorInfo.protectionType?.toUpperCase()}_(${config.valveSetup.code}).gif`}
+                    src={`/trac360/${config.tractorInfo.protectionType?.toUpperCase()}_(${config.valveSetup.code}).jpg`}
                     alt={`Setup ${config.valveSetup.code}`}
                     width={120}
                     height={90}

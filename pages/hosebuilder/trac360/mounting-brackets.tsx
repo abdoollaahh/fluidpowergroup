@@ -196,7 +196,6 @@ export default function MountingBrackets() {
                 {addonData.description}
               </h3>
               <p className="text-sm" style={{ color: COLORS.grey.medium }}>
-                {addonData.subtitle}
               </p>
             </div>
 
@@ -301,7 +300,7 @@ export default function MountingBrackets() {
 
               <div className="mt-3">
                 <p className="text-sm" style={{ color: COLORS.grey.medium }}>
-                  Standard Valve & Joystick with Hardware
+                  Standard Valve & Joystick Brackets with Hardware
                 </p>
               </div>
             </div>
