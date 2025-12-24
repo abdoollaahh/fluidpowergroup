@@ -120,9 +120,6 @@ export default function Start() {
                   height="44"
                   viewBox="0 0 32 32"
                   fill="none"
-                  style={{
-                    display: 'inline-block',
-                  }}
                 >
                   {/* Circular arrow path - nearly complete circle ending near the start */}
                   <path
@@ -134,13 +131,10 @@ export default function Start() {
                   />
                   {/* Arrow head - much larger and pointing clockwise toward the start */}
                   <path
-                    d="M 11 5.5 L 14 8.5 M 8 5.5 L 8 7"
-                    stroke="#facc15"
-                    strokeWidth="3.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                  d="M9.5 4.5 L17.5 6.8 L13 12 Z"
+                  fill="#facc15"
+                />
+              </svg>
               </motion.span>
             </h1>
 

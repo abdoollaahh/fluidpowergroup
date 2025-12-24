@@ -22,7 +22,7 @@ const buyOptions: BuyOption[] = [
     title: "Hose360",
     description: "Custom Hose Assembly Builder",
     href: "/hosebuilder/hose360",
-    image: "/Hose360.avif",
+    image: "/Hose360.png",
     isActive: true,
   },
   {

@@ -1,9 +1,8 @@
 import clsx from "clsx";
 import siteLinks from "constants/site-links";
 import { HoverContext } from "context/HoverWrapper";
-import React, { useContext, useMemo } from "react";
+import React, { useContext } from "react";
 import { useRouter } from "next/router";
-import { v4 as uuid } from "uuid";
 
 interface NavHeaderProps {
   isProductsActive?: boolean;
@@ -14,20 +13,15 @@ const NavHeader = ({ isProductsActive, isBuyActive }: NavHeaderProps) => {
   const { hover, setHover } = useContext(HoverContext);
   const router = useRouter();
 
-  const pages = useMemo(
-    () => siteLinks.map((page) => ({ ...page, id: uuid() })),
-    []
-  );
-
-  // Function to check if a tab is active
-  const isActiveTab = (href: string, title: string) => {
+  // ✅ FIXED: Function to check if a tab is active (now uses ID)
+  const isActiveTab = (href: string, id: string) => {
     // Special handling for Products tab - use the passed prop
-    if (title === "Products" && isProductsActive !== undefined) {
+    if (id === "products" && isProductsActive !== undefined) {
       return isProductsActive;
     }
     
     // Special handling for Buy tab - use the passed prop
-    if (title === "Buy" && isBuyActive !== undefined) {
+    if (id === "buy" && isBuyActive !== undefined) {
       return isBuyActive;
     }
     
@@ -53,39 +47,32 @@ const NavHeader = ({ isProductsActive, isBuyActive }: NavHeaderProps) => {
         boxShadow: "0 8px 25px rgba(0, 0, 0, 0.1)"
       }}
     >
-      <div className="flex items-center gap-1">
-        {pages.map((page) => {
-          const isActive = isActiveTab(page.href, page.title);
+    <div className="flex items-center gap-1">
+      {siteLinks.map((page) => {
+        const isActive = isActiveTab(page.href, page.id);
           
           return (
             <div
               onMouseEnter={() => {
-                // Don't set hover for About, Contact Us (Buy will be handled separately)
-                if (page.title !== "About" && page.title !== "Contact Us" && page.title !== "Buy") {
-                  setHover(page.title);
+                
+                if (page.id !== "about" && page.id !== "contact" && page.id !== "buy") {
+                  setHover(page.id);  // ← Now sets "products" ✅
                 }
                 // Trigger Buy dropdown on hover
-                if (page.title === "Buy") {
-                  setHover("Buy");
+                if (page.id === "buy") {
+                  setHover(page.id);  // ← Now sets "buy" ✅
                 }
               }}
               key={page.id}
             >
               <a
-                href={page.title === "Buy" ? "#" : page.href}
-                onClick={(e) => {
-                  // Prevent navigation for Buy tab
-                  if (page.title === "Buy") {
-                    e.preventDefault();
-                    setHover("Buy");
-                  }
-                }}
+                href={page.href}
                 className="relative text-sm capitalize font-semibold overflow-hidden"
                 style={{
                   all: "unset",
                   cursor: "pointer",
                   display: "inline-block",
-                  padding: page.title === "Contact Us" ? "8px 10px" : "8px 16px",
+                  padding: page.id === "contact" ? "8px 10px" : "8px 16px",
                   borderRadius: "40px",
                   fontSize: "0.85rem",
                   fontWeight: "600",

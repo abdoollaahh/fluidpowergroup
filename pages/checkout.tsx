@@ -1,46 +1,47 @@
-// pages/checkout.tsx - FIXED VERSION
-// Key changes:
-// 1. Removed optimistic 500/502 handling
-// 2. Added proper error states
-// 3. Added order status tracking
-// 4. Improved timeout handling
+// pages/checkout.tsx - PHASE 3 REFACTOR
+// Changes from Phase 1:
+// 1. ✅ Extracted CheckoutProgress component
+// 2. ✅ Extracted PDFModal to shared component
+// Changes from Phase 2:
+// 3. ✅ Extracted all configuration to checkout-config.ts
+// 4. ✅ Replaced hardcoded constants with imports
+// Changes in Phase 3:
+// 5. Extracted form validation logic to form-validation.ts
+// 6. Extracted ShippingForm component
+// 7. Removed all form rendering and validation from this file
 
 import { useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import { createPortal } from 'react-dom';
-import { FiX } from 'react-icons/fi';
 import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
 import { CartContext } from '../context/CartWrapper';
 import { separateCartItems, calculateCartTotals } from '../utils/cart-helpers';
 import { IItemCart } from '../types/cart';
 
-const TESTING_MODE = process.env.NEXT_PUBLIC_TESTING_MODE === 'true';
+// PHASE 1 - Component imports
+import CheckoutProgress from '../components/checkout/CheckoutProgress';
+import PDFModal from '../components/shared/PDFModal';
 
-const API_BASE_URL = (() => {
-  // Priority 1: If on Vercel preview deployment, use preview API
-  if (process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview' && process.env.NEXT_PUBLIC_API_BASE_URL_PREVIEW) {
-    console.log('🔍 Using Preview API:', process.env.NEXT_PUBLIC_API_BASE_URL_PREVIEW);
-    return process.env.NEXT_PUBLIC_API_BASE_URL_PREVIEW;
-  }
-  
-  // Priority 2: Use testing mode logic (for localhost development)
-  if (TESTING_MODE) {
-    console.log('🧪 Testing Mode - Using:', process.env.NEXT_PUBLIC_API_BASE_URL_TEST || 'fallback');
-    return process.env.NEXT_PUBLIC_API_BASE_URL_TEST || 'http://localhost:3001';
-  }
-  
-  // Priority 3: Production mode (live site)
-  console.log('🚀 Production Mode - Using:', process.env.NEXT_PUBLIC_API_BASE_URL || 'fallback');
-  return process.env.NEXT_PUBLIC_API_BASE_URL || 'https://fluidpowergroup.com.au';
-})();
+// PHASE 3 - ShippingForm component
+import ShippingForm from '../components/checkout/ShippingForm';
 
-console.log('📍 Final API_BASE_URL:', API_BASE_URL);;
+// PHASE 2 - Configuration imports
+import {
+  TESTING_MODE,
+  API_BASE_URL,
+  STATES,
+  OrderStatus,
+  getPayPalOptions,
+  ORDER_POLLING_CONFIG,
+  API_TIMEOUT_MS,
+  CART_HYDRATION_DELAY_MS,
+  DEVELOPER_MODE_CODE,
+  DEVELOPER_MODE_DEMO_DATA,
+  DEVELOPER_MODE_PAYMENT_AMOUNT
+} from '../lib/checkout/checkout-config';
 
-const STATES = ['Select State', 'ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'];
-
-// 🆕 NEW: Order status types
-type OrderStatus = 'idle' | 'processing' | 'completed' | 'failed' | 'timeout';
+// PHASE 3 - Validation types
+import { ShippingDetails } from '../lib/checkout/form-validation';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -54,63 +55,99 @@ export default function CheckoutPage() {
   const [paymentError, setPaymentError] = useState<string>('');
   const [paymentSuccessful, setPaymentSuccessful] = useState(false);
   
-  // 🆕 NEW: Order processing state
+  // Order processing state
   const [orderStatus, setOrderStatus] = useState<OrderStatus>('idle');
   const [orderNumber, setOrderNumber] = useState<string>('');
   const [retryCount, setRetryCount] = useState(0);
-  const MAX_RETRIES = 3;
+
+  // Hydration state
+  const [isHydrated, setIsHydrated] = useState(false);
   
-  // Shipping form state
-  const [shippingDetails, setShippingDetails] = useState({
-    name: '',
-    companyName: '',
-    address: '',
-    suburb: '',
-    state: 'Select State',
-    postcode: '',
-    email: '',
-    contactNumber: ''
-  });
-  
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [formSubmitAttempted, setFormSubmitAttempted] = useState(false);
+  // PHASE 3: Shipping details now managed by ShippingForm component
+  // Parent only needs to store the validated details for payment step
+  const [shippingDetails, setShippingDetails] = useState<ShippingDetails | null>(null);
   
   // PDF Modal state
   const [showPDFModal, setShowPDFModal] = useState(false);
   const [currentPDFUrl, setCurrentPDFUrl] = useState<string>('');
-  const [isMobile, setIsMobile] = useState(false);
 
-  // Detect mobile
+  // PHASE 1 - REMOVED: isMobile state and useEffect (now in PDFModal component)
+
+  // Wait for hydration before checking cart
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const timer = setTimeout(() => {
+      setIsHydrated(true);
+    }, CART_HYDRATION_DELAY_MS);
+    return () => clearTimeout(timer);
   }, []);
   
-  // Redirect if cart is empty
+  // Redirect if cart is empty - but only after hydration
   useEffect(() => {
-    const isCompletingOrderSession = sessionStorage.getItem('orderCompleting') === 'true';
-    if (items.length === 0 && !isCompletingOrder && !isCompletingOrderSession) {
-      console.log('Checkout: Cart is empty, redirecting to home');
-      router.push('/');
+    if (!isHydrated) {
+      console.log('🔍 [CHECKOUT] Skipping redirect check - not hydrated yet');
+      return;
     }
-  }, [items.length, router, isCompletingOrder]);
+    
+    // Calculate separated items inside the effect to avoid stale closure
+    const { pwaItems: currentPwaItems, websiteItems: currentWebsiteItems, trac360Items: currentTrac360Items } = separateCartItems(items);
+    
+    console.log('🔍 [CHECKOUT] Redirect check triggered');
+    console.log('📦 Items length:', items.length);
+    console.log('📦 Items:', items);
+    console.log('🏗️ PWA items:', currentPwaItems.length);
+    console.log('🚜 TRAC360 items:', currentTrac360Items.length);
+    console.log('🛒 Website items:', currentWebsiteItems.length);
+    console.log('⏰ isCompletingOrder:', isCompletingOrder);
+    
+    const isCompletingOrderSession = sessionStorage.getItem('orderCompleting') === 'true';
+    console.log('⏰ Session completing:', isCompletingOrderSession);
+    
+    if (items.length === 0 && !isCompletingOrder && !isCompletingOrderSession) {
+      console.log('❌ [CHECKOUT] Redirecting to home - cart appears empty');
+      router.push('/');
+    } else {
+      console.log('✅ [CHECKOUT] Cart has items, staying on page');
+    }
+  }, [items, router, isCompletingOrder, isHydrated]);
   
   const { pwaItems, websiteItems, trac360Items } = separateCartItems(items);
+  console.log('📊 [CHECKOUT] Cart separation:', {
+    total: items.length,
+    pwa: pwaItems.length,
+    website: websiteItems.length,
+    trac360: trac360Items.length
+  });
   const totals = calculateCartTotals(items);
   
-  const paypalOptions = {
-    clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '',
-    currency: 'AUD',
-    intent: 'capture' as const
+  // PHASE 3: Using config function for PayPal options
+  const paypalOptions = getPayPalOptions();
+
+  // ============================================================================
+  // PHASE 3: SHIPPING FORM HANDLERS
+  // ============================================================================
+
+  /**
+   * Called when ShippingForm is completed and validated
+   * Stores shipping details and advances to payment step
+   */
+  const handleShippingComplete = (details: ShippingDetails) => {
+    console.log('Shipping form valid, proceeding to payment');
+    setShippingDetails(details);
+    setStep('payment');
+  };
+
+  /**
+   * Called when developer mode is activated in ShippingForm
+   */
+  const handleDeveloperModeActivated = () => {
+    setIsDeveloperMode(true);
   };
 
   // ============================================================================
-  // 🆕 NEW: Order Status Polling Function
+  // Order Status Polling Function
   // ============================================================================
   
-  const pollOrderStatus = async (orderId: string, maxAttempts: number = 20): Promise<boolean> => {
+  const pollOrderStatus = async (orderId: string, maxAttempts: number = ORDER_POLLING_CONFIG.MAX_ATTEMPTS): Promise<boolean> => {
     console.log(`📊 Starting order status polling for ${orderId}`);
     
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -137,8 +174,8 @@ export default function CheckoutPage() {
           // Status is still 'processing', continue polling
         }
         
-        // Wait 2 seconds before next attempt
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Wait before next attempt (using config value)
+        await new Promise(resolve => setTimeout(resolve, ORDER_POLLING_CONFIG.POLL_INTERVAL_MS));
         
       } catch (error) {
         console.error(`❌ Poll attempt ${attempt} failed:`, error);
@@ -150,7 +187,7 @@ export default function CheckoutPage() {
   };
 
   // ============================================================================
-  // 🔧 FIXED: PayPal Approval Handler
+  // PayPal Approval Handler
   // ============================================================================
 
   const handlePayPalApprove = async (data: any, actions: any) => {
@@ -159,6 +196,13 @@ export default function CheckoutPage() {
     if (!data || !data.orderID) {
       console.error('❌ PayPal approval missing orderID');
       setPaymentError('Payment error: Missing order ID');
+      return;
+    }
+
+    // PHASE 3: Ensure shipping details exist before proceeding
+    if (!shippingDetails) {
+      console.error('❌ No shipping details available');
+      setPaymentError('Shipping details missing. Please go back and complete the form.');
       return;
     }
     
@@ -206,7 +250,7 @@ export default function CheckoutPage() {
         })),
         pwaOrders: pwaItems.map(item => ({
           id: item.id,
-          name: item.name,
+          name: 'HOSE360 Custom Order',
           totalPrice: item.totalPrice || 0,
           quantity: 1,
           image: item.image || '',
@@ -237,11 +281,11 @@ export default function CheckoutPage() {
       console.log('📤 Calling capture-order API...');
       
       // ============================================================================
-      // 🆕 FIXED: Proper timeout handling with AbortController
+      // Proper timeout handling with AbortController
       // ============================================================================
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
       
       let response;
       try {
@@ -257,9 +301,9 @@ export default function CheckoutPage() {
         
         if (fetchError.name === 'AbortError') {
           // ============================================================================
-          // 🆕 PROPER TIMEOUT HANDLING - No optimistic success!
+          // PROPER TIMEOUT HANDLING - No optimistic success!
           // ============================================================================
-          console.warn('⏰ Request timed out after 45 seconds');
+          console.warn(`⏰ Request timed out after ${API_TIMEOUT_MS / 1000} seconds`);
           setOrderStatus('timeout');
           
           // Start polling to check if order actually completed
@@ -286,7 +330,7 @@ export default function CheckoutPage() {
       }
       
       // ============================================================================
-      // 🆕 FIXED: Proper error handling - NO optimistic success on 500/502
+      // Proper error handling - NO optimistic success on 500/502
       // ============================================================================
       
       if (!response.ok) {
@@ -299,7 +343,7 @@ export default function CheckoutPage() {
           errorData = { error: 'Server error' };
         }
         
-        // 🔧 CRITICAL FIX: NO optimistic handling for server errors
+        // CRITICAL FIX: NO optimistic handling for server errors
         if (response.status >= 500) {
           console.error('❌ Server error occurred - order status unknown');
           setOrderStatus('timeout');
@@ -352,12 +396,8 @@ export default function CheckoutPage() {
   };
 
   // ============================================================================
-  // 🆕 NEW: Success Handler (extracted for reuse)
+  // Success Handler - Strips PDFs to avoid localStorage quota
   // ============================================================================
-  
-  // ============================================================================
-// 🆕 FIXED: Success Handler - Strips PDFs to avoid localStorage quota
-// ============================================================================
 
   const handleOrderSuccess = async (
     orderNum: string, 
@@ -367,7 +407,7 @@ export default function CheckoutPage() {
     console.log('🎉 Processing successful order:', orderNum);
     setOrderStatus('completed');
     
-    // ✅ Create lightweight order metadata WITHOUT PDFs
+    // Create lightweight order metadata WITHOUT PDFs
     // PDFs remain in shopping-cart localStorage for order-confirmation to read
     const orderData = {
       orderNumber: orderNum,
@@ -383,8 +423,8 @@ export default function CheckoutPage() {
         image: order.image,
         pwaOrderNumber: order.pwaOrderNumber,
         cartId: order.cartId
-        // ❌ Stripped: pdfDataUrl (will be read from shopping-cart)
-        // ❌ Stripped: orderConfig (not needed for display)
+        // Stripped: pdfDataUrl (will be read from shopping-cart)
+        // Stripped: orderConfig (not needed for display)
       })),
       trac360Orders: payload.trac360Orders.map((order: any) => ({
         id: order.id,
@@ -394,14 +434,14 @@ export default function CheckoutPage() {
         image: order.image,
         trac360OrderNumber: order.trac360OrderNumber,
         cartId: order.cartId
-        // ❌ Stripped: pdfDataUrl (will be read from shopping-cart)
-        // ❌ Stripped: tractorConfig (not needed for display)
+        // Stripped: pdfDataUrl (will be read from shopping-cart)
+        // Stripped: tractorConfig (not needed for display)
       })),
       totals: payload.totals,
       testingMode: TESTING_MODE
     };
     
-    // ✅ Save lightweight metadata to localStorage
+    // Save lightweight metadata to localStorage
     try {
       localStorage.setItem('lastOrder', JSON.stringify(orderData));
       console.log('💾 Order metadata saved successfully (~10KB)');
@@ -410,20 +450,16 @@ export default function CheckoutPage() {
       // Continue anyway - order still succeeded on backend
     }
     
-    // ✅ Set session flag
+    // Set session flag
     sessionStorage.setItem('orderCompleting', 'true');
     
-    // ✅ Clear cart UI (but DON'T remove shopping-cart from localStorage yet)
+    // Clear cart UI (but DON'T remove shopping-cart from localStorage yet)
     // The order-confirmation page needs to read PDFs from it
     clearCart(); // This only clears React state, not localStorage
     
-    // ❌ DO NOT clear localStorage here - order-confirmation needs it!
-    // localStorage.removeItem('shopping-cart'); // REMOVED
-    // localStorage.removeItem('cart-timestamp'); // REMOVED
-    
     console.log('📦 Cart UI cleared, localStorage preserved for order-confirmation');
     
-    // ✅ Redirect to confirmation page
+    // Redirect to confirmation page
     console.log('🚀 Redirecting to order confirmation...');
     setTimeout(() => {
       router.push('/order-confirmation');
@@ -450,7 +486,7 @@ export default function CheckoutPage() {
     setPaymentError('');
     setIsProcessing(false);
     setOrderStatus('idle');
-    setRetryCount(0);
+    setRetryCount(0); // Reset retry count
   };
 
   // ============================================================================
@@ -497,7 +533,7 @@ export default function CheckoutPage() {
   };
 
   // ============================================================================
-  // PDF VIEWER HANDLER
+  // PDF VIEWER HANDLER - PHASE 1: Simplified (modal handles mobile detection)
   // ============================================================================
   
   const handleViewPDF = (pdfDataUrl: string | undefined) => {
@@ -506,295 +542,94 @@ export default function CheckoutPage() {
       return;
     }
     
-    if (isMobile) {
-      // Open in new window for mobile
-      try {
-        const newWindow = window.open('', '_blank');
-        if (newWindow) {
-          newWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <title>Custom Hose Assembly PDF</title>
-                <style>
-                  body { margin: 0; padding: 0; }
-                  iframe { width: 100vw; height: 100vh; border: none; }
-                </style>
-              </head>
-              <body>
-                <iframe src="${pdfDataUrl}"></iframe>
-              </body>
-            </html>
-          `);
-          newWindow.document.close();
-        }
-      } catch (error) {
-        console.error('Error opening PDF:', error);
-        alert('Unable to open PDF. Please try again.');
-      }
-    } else {
-      // Open modal for desktop
-      setCurrentPDFUrl(pdfDataUrl);
-      setShowPDFModal(true);
-    }
+    // PHASE 1: Simplified - just set state, PDFModal component handles mobile logic
+    setCurrentPDFUrl(pdfDataUrl);
+    setShowPDFModal(true);
   };
 
   // ============================================================================
-  // FORM VALIDATION
+  // PHASE 3: Form validation moved to form-validation.ts
+  // Form rendering moved to ShippingForm.tsx component
   // ============================================================================
-  
-  const validateField = (name: string, value: string): string => {
-    let error = '';
-    
-    switch (name) {
-      case 'name':
-      case 'address':
-        if (value.trim() === '') {
-          error = 'This field is required';
-        }
-        break;
-
-      case 'suburb':
-        if (value.trim() === '') {
-          error = 'This field is required';
-        } else if (!/^[a-zA-Z\s]+$/.test(value)) {
-          error = 'Please enter letters only';
-        }
-        break;
-
-      case 'state':
-        if (value === 'Select State') {
-          error = 'Please select a state';
-        }
-        break;
-
-      case 'postcode':
-        if (value.trim() === '') {
-          error = 'This field is required';
-        } else if (!/^\d{4}$/.test(value)) {
-          error = 'Please enter 4 digits';
-        }
-        break;
-
-      case 'email':
-        if (value.trim() === '') {
-          error = 'This field is required';
-        } else {
-          const emailRegex = /^[a-zA-Z0-9._]+@[a-zA-Z]{2,}\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})*$/;
-          if (!emailRegex.test(value)) {
-            error = 'Please enter a valid email address';
-          }
-        }
-        break;
-
-      case 'contactNumber':
-        if (value.trim() === '') {
-          error = 'This field is required';
-        } else if (!/^\d{10}$/.test(value)) {
-          error = 'Contact number must be 10 digits';
-        }
-        break;
-    }
-    
-    return error;
-  };
-
-  const validateAllFields = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    let hasErrors = false;
-    
-    // Validate all fields except optional companyName
-    Object.entries(shippingDetails).forEach(([fieldName, value]) => {
-      if (fieldName !== 'companyName') {
-        const error = validateField(fieldName, value);
-        if (error) {
-          newErrors[fieldName] = error;
-          hasErrors = true;
-        }
-      }
-    });
-    
-    setErrors(newErrors);
-    return !hasErrors;
-  };
-
-  const handleFieldChange = (name: string, value: string) => {
-    // Check for developer code in name field
-    if (name === 'name' && value === '20162025') {
-      setIsDeveloperMode(true);
-      
-      // Auto-fill demo data
-      setShippingDetails({
-        name: 'Developer Test',
-        companyName: 'Test Company',
-        address: '123 Test Street',
-        suburb: 'Melbourne',
-        state: 'VIC',
-        postcode: '3000',
-        email: 'absardexter@gmail.com',
-        contactNumber: '0400000000'
-      });
-      
-      // Show popup
-      alert('🔧 Developer Mode Activated!\n\nPayment amount overridden to A$0.20\nDemo shipping details auto-filled');
-      
-      return;
-    }
-    
-    setShippingDetails(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-    // Show validation errors only after first submit attempt
-    if (formSubmitAttempted) {
-      const error = validateField(name, value);
-      setErrors(prev => ({
-        ...prev,
-        [name]: error
-      }));
-    }
-  };
-
-  const handleFieldBlur = (name: string) => {
-    if (formSubmitAttempted) {
-      const error = validateField(name, shippingDetails[name as keyof typeof shippingDetails]);
-      setErrors(prev => ({
-        ...prev,
-        [name]: error
-      }));
-    }
-  };
-
-  const handleContinueToPayment = () => {
-    setFormSubmitAttempted(true);
-    
-    if (validateAllFields()) {
-      console.log('Shipping form valid, proceeding to payment');
-      setStep('payment');
-      //window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      console.log('Shipping form has errors:', errors);
-      alert('Please fill in all required fields correctly.');
-    }
-  };
-
-  // ============================================================================
-  // RENDER: Progress Indicator
-  // ============================================================================
-  
-  const renderProgressIndicator = () => (
-    <div className="mb-8">
-      <div className="flex items-center justify-center gap-4">
-        <div 
-          className="px-6 py-3 rounded-full font-semibold transition-all flex flex-col items-center justify-center text-center"
-          style={{
-            minWidth: "140px",
-            minHeight: "85px",
-            ...(step === 'shipping' ? {
-              background: "radial-gradient(ellipse at center, rgba(250, 204, 21, 0.9) 20%, rgba(250, 204, 21, 0.7) 60%, rgba(255, 215, 0, 0.8) 100%), rgba(250, 204, 21, 0.6)",
-              border: "1px solid rgba(255, 215, 0, 0.9)",
-              color: "#000",
-              boxShadow: "0 10px 30px rgba(250, 204, 21, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.8), inset 0 3px 10px rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(255, 215, 0, 0.4)"
-            } : {
-              background: "radial-gradient(ellipse at center, rgba(255, 255, 255, 0.3) 20%, rgba(255, 255, 255, 0.15) 70%, rgba(240, 240, 240, 0.2) 100%), rgba(255, 255, 255, 0.15)",
-              backdropFilter: "blur(15px)",
-              border: "1px solid rgba(255, 255, 255, 0.4)",
-              color: "#666",
-              boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 2px 8px rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.05)"
-            })
-          }}
-        >
-          <div>1.</div>
-          <div>Shipping Details</div>
-        </div>
-        <div className="h-1 w-16 bg-gray-300 rounded" />
-        <div 
-          className="px-6 py-3 rounded-full font-semibold transition-all flex flex-col items-center justify-center text-center"
-          style={{
-            minWidth: "140px",
-            minHeight: "85px",
-            ...(step === 'payment' ? {
-              background: "radial-gradient(ellipse at center, rgba(250, 204, 21, 0.9) 20%, rgba(250, 204, 21, 0.7) 60%, rgba(255, 215, 0, 0.8) 100%), rgba(250, 204, 21, 0.6)",
-              border: "1px solid rgba(255, 215, 0, 0.9)",
-              color: "#000",
-              boxShadow: "0 10px 30px rgba(250, 204, 21, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.8), inset 0 3px 10px rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(255, 215, 0, 0.4)"
-            } : {
-              background: "radial-gradient(ellipse at center, rgba(255, 255, 255, 0.3) 20%, rgba(255, 255, 255, 0.15) 70%, rgba(240, 240, 240, 0.2) 100%), rgba(255, 255, 255, 0.15)",
-              backdropFilter: "blur(15px)",
-              border: "1px solid rgba(255, 255, 255, 0.4)",
-              color: "#666",
-              boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 2px 8px rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.05)"
-            })
-          }}
-        >
-          <div>2.</div>
-          <div>Payment</div>
-        </div>
-      </div>
-    </div>
-  );
-
-  {/* Add this right after the progress indicator */}
-  {isDeveloperMode && (
-    <div className="mb-4 p-4 bg-orange-100 border-2 border-orange-500 rounded-lg">
-      <div className="flex items-center justify-center gap-2">
-        <span className="text-2xl">🔧</span>
-        <div className="text-center">
-          <p className="font-bold text-orange-700">Developer Mode Active</p>
-          <p className="text-sm text-orange-600">Payment amount: A$0.20 | Demo data loaded</p>
-        </div>
-      </div>
-    </div>
-  )}  
 
   // ============================================================================
   // RENDER: Order Summary
   // ============================================================================
   
-  const renderOrderSummary = () => (
-    <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">Order Summary</h2>
-      
-      {/* Website Products */}
-      {websiteItems.length > 0 && (
-        <div className="mb-4">
-          <h3 className="font-semibold text-gray-700 mb-2">Products</h3>
-          {websiteItems.map((item, index) => (
-            <div key={index} className="flex justify-between items-center py-2 border-b border-gray-200">
-              <div className="flex items-center gap-3 flex-1">
-                {item.image && (
-                  <Image 
-                    src={item.image} 
-                    alt={item.name} 
-                    width={50} 
-                    height={50}
-                    className="rounded object-cover"
-                  />
-                )}
-                <div>
-                  <p className="font-medium text-gray-800">{item.name}</p>
-                  <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+  const renderOrderSummary = () => {
+    console.log('🎨 [RENDER] Order Summary rendering');
+    console.log('🚜 TRAC360 items in render:', trac360Items);
+    console.log('📦 All items:', items);
+  
+    return (
+      <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">
+          Order Summary
+        </h2>
+  
+        {/* Website Products */}
+        {websiteItems.length > 0 && (
+          <div className="mb-4">
+            <h3 className="font-semibold text-gray-700 mb-2">Products</h3>
+            {websiteItems.map((item, index) => (
+              <div
+                key={index}
+                className="flex justify-between items-center py-2 border-b border-gray-200"
+              >
+                <div className="flex items-center gap-3 flex-1">
+                  {item.image && (
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      width={50}
+                      height={50}
+                      className="rounded object-cover"
+                    />
+                  )}
+                  <div>
+                    <p className="font-medium text-gray-800">{item.name}</p>
+                    <p className="text-sm text-gray-600">
+                      Qty: {item.quantity}
+                    </p>
+                  </div>
+                </div>
+  
+                <div className="flex items-center gap-3">
+                  <p
+                    className="font-semibold text-gray-800"
+                    style={{
+                      minWidth: "80px",
+                      textAlign: "right",
+                      paddingRight: "8px"
+                    }}
+                  >
+                    A${((item.price || 0) * item.quantity).toFixed(2)}
+                  </p>
+  
+                  <button
+                    onClick={() => deleteItem(item)}
+                    className="p-1.5 rounded-lg border border-red-600/30 bg-red-50/80 text-red-600 hover:bg-red-400/20 hover:border-red-600/50 transition-colors"
+                    aria-label="Remove item"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <p className="font-semibold text-gray-800" style={{ minWidth: "80px", textAlign: "right", paddingRight: "8px" }}>
-                  A${((item.price || 0) * item.quantity).toFixed(2)}
-                </p>
-                <button
-                  onClick={() => deleteItem(item)}
-                  className="p-1.5 rounded-lg border border-red-600/30 bg-red-50/80 text-red-600 hover:bg-red-400/20 hover:border-red-600/50 transition-colors"
-                  aria-label="Remove item"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
       
       {/* PWA Orders */}
       {pwaItems.length > 0 && (
@@ -867,6 +702,81 @@ export default function CheckoutPage() {
           ))}
         </div>
       )}
+
+        {/* Trac360 Orders */}
+        {trac360Items.length > 0 && (
+          <div className="mb-4">
+            <h3 className="font-semibold text-gray-700 mb-2">Custom Tractor Configurations</h3>
+            {trac360Items.map((item, index) => (
+              <div key={index} className="flex justify-between items-center py-2 border-b border-gray-200 bg-green-50 px-2 rounded">
+                <div className="flex items-center gap-3 flex-1">
+                  {item.image && (
+                    <Image 
+                      src={item.image} 
+                      alt={item.name} 
+                      width={50} 
+                      height={50}
+                      className="rounded object-cover"
+                    />
+                  )}
+                  <div>
+                    <p className="font-medium text-gray-800">{item.name}</p>
+                    <p className="text-sm text-gray-600">
+                      {item.tractorConfig?.modelNumber || 'Model N/A'} • {item.tractorConfig?.driveType || ''} • {item.tractorConfig?.cabinType || ''}
+                    </p>
+                    <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+                    {item.pdfDataUrl && (
+                      <button
+                        onClick={() => handleViewPDF(item.pdfDataUrl)}
+                        className="text-xs cursor-pointer block mt-2 text-left transition-all duration-300"
+                        style={{
+                          padding: "6px 14px",
+                          borderRadius: "20px",
+                          background: "rgba(255, 255, 255, 0.9)",
+                          backdropFilter: "blur(15px)",
+                          border: "1px solid rgba(200, 200, 200, 0.3)",
+                          color: "#2563eb",
+                          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+                          fontWeight: "600"
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = "translateY(-2px) scale(1.02)";
+                          e.currentTarget.style.background = "radial-gradient(ellipse at center, rgba(250, 204, 21, 0.9) 20%, rgba(250, 204, 21, 0.7) 60%, rgba(255, 215, 0, 0.8) 100%), rgba(250, 204, 21, 0.6)";
+                          e.currentTarget.style.border = "1px solid rgba(255, 215, 0, 0.9)";
+                          e.currentTarget.style.color = "#000";
+                          e.currentTarget.style.boxShadow = "0 10px 30px rgba(250, 204, 21, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.8), inset 0 3px 10px rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(255, 215, 0, 0.4)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "translateY(0px) scale(1)";
+                          e.currentTarget.style.background = "rgba(255, 255, 255, 0.9)";
+                          e.currentTarget.style.border = "1px solid rgba(200, 200, 200, 0.3)";
+                          e.currentTarget.style.color = "#2563eb";
+                          e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.08)";
+                        }}
+                      >
+                        Click to View PDF
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <p className="font-semibold text-gray-800" style={{ minWidth: "80px", textAlign: "right", paddingRight: "8px" }}>
+                    A${(item.totalPrice || 0).toFixed(2)}
+                  </p>
+                  <button
+                    onClick={() => deleteItem(item)}
+                    className="p-1.5 rounded-lg border border-red-600/30 bg-red-50/80 text-red-600 hover:bg-red-400/20 hover:border-red-600/50 transition-colors"
+                    aria-label="Remove item"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       
       {/* Totals */}
       <div className="mt-6 space-y-2 text-sm">
@@ -889,230 +799,50 @@ export default function CheckoutPage() {
       </div>
     </div>
   );
+};
 
   // ============================================================================
   // RENDER: Shipping Form
   // ============================================================================
   
-  const renderShippingForm = () => (
-    <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">Shipping Details</h2>
-      <p className="text-sm text-red-600 mb-4">Fields marked with * are required</p>
-      
-      <div className="space-y-4">
-        {/* Name */}
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
-            Name <span className="text-red-600">*</span>
-          </label>
-          <input
-            type="text"
-            value={shippingDetails.name}
-            onChange={(e) => handleFieldChange('name', e.target.value)}
-            onBlur={() => handleFieldBlur('name')}
-            className={`w-full px-3 py-2 border-2 rounded-lg ${
-              formSubmitAttempted && errors.name 
-                ? 'border-red-500' 
-                : 'border-gray-300'
-            }`}
-          />
-          {formSubmitAttempted && errors.name && (
-            <p className="text-red-600 text-sm mt-1">{errors.name}</p>
-          )}
-        </div>
-
-        {/* Company Name (Optional) */}
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
-            Company Name <span className="text-gray-500">(Optional)</span>
-          </label>
-          <input
-            type="text"
-            value={shippingDetails.companyName}
-            onChange={(e) => handleFieldChange('companyName', e.target.value)}
-            className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg"
-          />
-        </div>
-
-        {/* Address */}
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
-            Address <span className="text-red-600">*</span>
-          </label>
-          <input
-            type="text"
-            value={shippingDetails.address}
-            onChange={(e) => handleFieldChange('address', e.target.value)}
-            onBlur={() => handleFieldBlur('address')}
-            className={`w-full px-3 py-2 border-2 rounded-lg ${
-              formSubmitAttempted && errors.address 
-                ? 'border-red-500' 
-                : 'border-gray-300'
-            }`}
-          />
-          {formSubmitAttempted && errors.address && (
-            <p className="text-red-600 text-sm mt-1">{errors.address}</p>
-          )}
-        </div>
-
-        {/* Suburb */}
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
-            Suburb <span className="text-red-600">*</span>
-          </label>
-          <input
-            type="text"
-            value={shippingDetails.suburb}
-            onChange={(e) => handleFieldChange('suburb', e.target.value)}
-            onBlur={() => handleFieldBlur('suburb')}
-            className={`w-full px-3 py-2 border-2 rounded-lg ${
-              formSubmitAttempted && errors.suburb 
-                ? 'border-red-500' 
-                : 'border-gray-300'
-            }`}
-          />
-          {formSubmitAttempted && errors.suburb && (
-            <p className="text-red-600 text-sm mt-1">{errors.suburb}</p>
-          )}
-        </div>
-
-        {/* State */}
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
-            State <span className="text-red-600">*</span>
-          </label>
-          <select
-            value={shippingDetails.state}
-            onChange={(e) => handleFieldChange('state', e.target.value)}
-            onBlur={() => handleFieldBlur('state')}
-            className={`w-full px-3 py-2 border-2 rounded-lg ${
-              formSubmitAttempted && errors.state 
-                ? 'border-red-500' 
-                : 'border-gray-300'
-            }`}
-          >
-            {STATES.map(state => (
-              <option key={state} value={state}>{state}</option>
-            ))}
-          </select>
-          {formSubmitAttempted && errors.state && (
-            <p className="text-red-600 text-sm mt-1">{errors.state}</p>
-          )}
-        </div>
-
-        {/* Postcode */}
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
-            Postcode <span className="text-red-600">*</span>
-          </label>
-          <input
-            type="text"
-            inputMode="numeric"
-            maxLength={4}
-            value={shippingDetails.postcode}
-            onChange={(e) => handleFieldChange('postcode', e.target.value)}
-            onBlur={() => handleFieldBlur('postcode')}
-            className={`w-full px-3 py-2 border-2 rounded-lg ${
-              formSubmitAttempted && errors.postcode 
-                ? 'border-red-500' 
-                : 'border-gray-300'
-            }`}
-          />
-          {formSubmitAttempted && errors.postcode && (
-            <p className="text-red-600 text-sm mt-1">{errors.postcode}</p>
-          )}
-        </div>
-
-        {/* Email */}
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
-            Email <span className="text-red-600">*</span>
-          </label>
-          <input
-            type="email"
-            inputMode="email"
-            value={shippingDetails.email}
-            onChange={(e) => handleFieldChange('email', e.target.value)}
-            onBlur={() => handleFieldBlur('email')}
-            className={`w-full px-3 py-2 border-2 rounded-lg ${
-              formSubmitAttempted && errors.email 
-                ? 'border-red-500' 
-                : 'border-gray-300'
-            }`}
-          />
-          {formSubmitAttempted && errors.email && (
-            <p className="text-red-600 text-sm mt-1">{errors.email}</p>
-          )}
-        </div>
-
-        {/* Contact Number */}
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">
-            Contact Number <span className="text-red-600">*</span>
-          </label>
-          <input
-            type="text"
-            inputMode="numeric"
-            maxLength={10}
-            value={shippingDetails.contactNumber}
-            onChange={(e) => handleFieldChange('contactNumber', e.target.value)}
-            onBlur={() => handleFieldBlur('contactNumber')}
-            className={`w-full px-3 py-2 border-2 rounded-lg ${
-              formSubmitAttempted && errors.contactNumber 
-                ? 'border-red-500' 
-                : 'border-gray-300'
-            }`}
-          />
-          {formSubmitAttempted && errors.contactNumber && (
-            <p className="text-red-600 text-sm mt-1">{errors.contactNumber}</p>
-          )}
-        </div>
-
-        {/* Continue Button */}
-        <div className="flex justify-center">
-          <button
-            onClick={handleContinueToPayment}
-            className="mt-6 py-3 px-8 font-bold rounded-full transition-all duration-300"
-            style={{
-              background: "radial-gradient(ellipse at center, rgba(250, 204, 21, 0.9) 20%, rgba(250, 204, 21, 0.7) 60%, rgba(255, 215, 0, 0.8) 100%), rgba(250, 204, 21, 0.6)",
-              border: "1px solid rgba(255, 215, 0, 0.9)",
-              color: "#000",
-              boxShadow: "0 10px 30px rgba(250, 204, 21, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.8), inset 0 3px 10px rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(255, 215, 0, 0.4)",
-              cursor: "pointer"
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-2px) scale(1.02)";
-              e.currentTarget.style.boxShadow = "0 15px 40px rgba(250, 204, 21, 0.7), inset 0 2px 0 rgba(255, 255, 255, 0.9), inset 0 3px 10px rgba(255, 255, 255, 0.5), inset 0 -1px 0 rgba(255, 215, 0, 0.5)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0px) scale(1)";
-              e.currentTarget.style.boxShadow = "0 10px 30px rgba(250, 204, 21, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.8), inset 0 3px 10px rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(255, 215, 0, 0.4)";
-            }}
-          >
-            Continue to Payment
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  // ============================================================================
+  // PHASE 3: Shipping form rendering moved to ShippingForm.tsx component
+  // ============================================================================
 
   // ============================================================================
   // RENDER: Payment Section
   // ============================================================================
   
-  const renderPaymentSection = () => (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">Payment</h2>
-      
-      {/* Shipping Details Review */}
-      <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-        <h3 className="font-semibold mb-2">Shipping To:</h3>
-        <p>{shippingDetails.name}</p>
-        {shippingDetails.companyName && <p>{shippingDetails.companyName}</p>}
-        <p>{shippingDetails.address}</p>
-        <p>{shippingDetails.suburb}, {shippingDetails.state} {shippingDetails.postcode}</p>
-        <p className="text-sm text-gray-600 mt-2">{shippingDetails.email}</p>
-        <p className="text-sm text-gray-600">{shippingDetails.contactNumber}</p>
+  const renderPaymentSection = () => {
+    // PHASE 3: Safety check - shouldn't reach payment without shipping details
+    if (!shippingDetails) {
+      return (
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h2 className="text-2xl font-bold mb-4 text-gray-800">Error</h2>
+          <p className="text-red-600">Shipping details are missing. Please go back and complete the shipping form.</p>
+          <button
+            onClick={() => setStep('shipping')}
+            className="mt-4 py-2 px-6 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-600"
+          >
+            Back to Shipping
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">Payment</h2>
+        
+        {/* Shipping Details Review */}
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+          <h3 className="font-semibold mb-2">Shipping To:</h3>
+          <p>{shippingDetails.name}</p>
+          {shippingDetails.companyName && <p>{shippingDetails.companyName}</p>}
+          <p>{shippingDetails.address}</p>
+          <p>{shippingDetails.suburb}, {shippingDetails.state} {shippingDetails.postcode}</p>
+          <p className="text-sm text-gray-600 mt-2">{shippingDetails.email}</p>
+          <p className="text-sm text-gray-600">{shippingDetails.contactNumber}</p>
         <button
           onClick={() => setStep('shipping')}
           className="text-xs cursor-pointer block mt-2 text-left transition-all duration-300"
@@ -1183,8 +913,8 @@ export default function CheckoutPage() {
                 }}
                 className="paypal-buttons-custom"
                 createOrder={(data, actions) => {
-                  // Use developer override price if in developer mode
-                  const orderAmount = isDeveloperMode ? '0.20' : totals.total.toFixed(2);
+                  // PHASE 2: Use config value for developer override price
+                  const orderAmount = isDeveloperMode ? DEVELOPER_MODE_PAYMENT_AMOUNT : totals.total.toFixed(2);
                   
                   console.log(isDeveloperMode ? '🔧 Developer Mode: Using test amount $0.20' : `Creating order for $${orderAmount}`);
                   
@@ -1319,112 +1049,79 @@ export default function CheckoutPage() {
       </div>
 </div>
   );
+  }
 
   // ============================================================================
   // MAIN RENDER
   // ============================================================================
   
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">FluidPower Group</h1>
-          <p className="text-2xl font-semibold text-gray-700 mt-1">Checkout</p>
-        </div>
-        
-        {/* Progress Indicator */}
-        {renderProgressIndicator()}
-        
-        {/* Order Summary (Always Visible) */}
-        {renderOrderSummary()}
-        
-        {/* Conditional Content Based on Step */}
-        {step === 'shipping' ? renderShippingForm() : renderPaymentSection()}
-      </div>
-      
-      {/* Global Processing Overlay */}
-      {renderProcessingOverlay()}
-      {isProcessing && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-8 max-w-md text-center shadow-2xl">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-yellow-500 mx-auto mb-4" />
-            <h3 className="text-xl font-bold mb-2">Processing Payment...</h3>
-            <p className="text-gray-600">Please wait while we confirm your payment.</p>
-            <p className="text-sm text-gray-500 mt-2">Do not close this window.</p>
+    <>
+      {/* Loading state during hydration */}
+      {!isHydrated && (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading checkout...</p>
           </div>
         </div>
       )}
+  
+      {/* Only show checkout content after hydration */}
+      {isHydrated && (
+        <>
+          <div className="min-h-screen bg-gray-50 py-12 px-4">
+            <div className="max-w-4xl mx-auto">
+              {/* Logo */}
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold text-gray-800">FluidPower Group</h1>
+                <p className="text-2xl font-semibold text-gray-700 mt-1">Checkout</p>
+              </div>
+              
+              {/* PHASE 1: Using CheckoutProgress component */}
+              <CheckoutProgress currentStep={step} />
 
-      {/* PDF Modal - Only for desktop */}
-      {!isMobile && showPDFModal && currentPDFUrl && typeof document !== 'undefined' && createPortal(
-        <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center"
-          style={{
-            background: "rgba(0, 0, 0, 0.7)",
-            backdropFilter: "blur(4px)"
-          }}
-          onClick={() => setShowPDFModal(false)}
-        >
-          <div 
-            className="relative w-11/12 h-5/6 bg-white rounded-lg shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close button */}
-            <button
-              onClick={() => setShowPDFModal(false)}
-              className="absolute top-4 right-4 z-10 transition-all duration-200 flex items-center justify-center"
-              style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "8px",
-                border: "1px solid rgba(220, 38, 38, 0.3)",
-                background: "rgba(254, 226, 226, 0.8)",
-                color: "#dc2626",
-                cursor: "pointer"
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(239, 68, 68, 0.2)";
-                e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.5)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(254, 226, 226, 0.8)";
-                e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.3)";
-              }}
-            >
-              <div style={{ width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <FiX style={{ width: "100%", height: "100%", minWidth: "20px", minHeight: "20px" }} />
-              </div>
-            </button>
+              {/* Developer Mode Banner */}
+              {isDeveloperMode && (
+                <div className="mb-4 p-4 bg-orange-100 border-2 border-orange-500 rounded-lg">
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-2xl">🔧</span>
+                    <div className="text-center">
+                      <p className="font-bold text-orange-700">Developer Mode Active</p>
+                      <p className="text-sm text-orange-600">Payment amount: A$0.20 | Demo data loaded</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Order Summary (Always Visible) */}
+              {renderOrderSummary()}
+              
+              {/* PHASE 3: Conditional Content Based on Step */}
+              {step === 'shipping' ? (
+                <ShippingForm
+                  onContinue={handleShippingComplete}
+                  onDeveloperModeActivated={handleDeveloperModeActivated}
+                  initialDetails={shippingDetails || undefined}
+                />
+              ) : (
+                renderPaymentSection()
+              )}
+            </div>
             
-            {/* PDF object for better mobile support */}
-            <object
-              data={currentPDFUrl}
-              type="application/pdf"
-              className="w-full h-full"
-              style={{ border: "none" }}
-            >
-              {/* Fallback for mobile - download link */}
-              <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                <p className="mb-4 text-gray-700">Unable to display PDF in browser.</p>
-                <a
-                  href={currentPDFUrl}
-                  download="custom-hose-assembly.pdf"
-                  className="px-6 py-3 rounded-lg font-semibold transition-all"
-                  style={{
-                    background: "radial-gradient(ellipse at center, rgba(250, 204, 21, 0.9) 20%, rgba(250, 204, 21, 0.7) 60%, rgba(255, 215, 0, 0.8) 100%), rgba(250, 204, 21, 0.6)",
-                    border: "1px solid rgba(255, 215, 0, 0.9)",
-                    color: "#000"
-                  }}
-                >
-                  Download PDF
-                </a>
-              </div>
-            </object>
+            {/* Global Processing Overlay */}
+            {renderProcessingOverlay()}
           </div>
-        </div>,
-        document.body
+
+          {/* PHASE 1: Using PDFModal component */}
+          <PDFModal
+            isOpen={showPDFModal}
+            pdfUrl={currentPDFUrl}
+            onClose={() => setShowPDFModal(false)}
+            title="Custom Hose Assembly PDF"
+          />
+        </>
       )}
-    </div>
+    </>
   );
 }
