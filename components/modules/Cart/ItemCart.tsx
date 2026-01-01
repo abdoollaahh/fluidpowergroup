@@ -26,7 +26,8 @@ const ItemCart = ({ item }: IItemCartProps) => {
   // Check item type
   const isPWA = isPWAOrder(item);
   const isTrac360 = item.type === 'trac360_order';
-  const isCustomOrder = isPWA || isTrac360;
+  const isFunction360 = item.type === 'function360_order';
+  const isCustomOrder = isPWA || isTrac360 || isFunction360;
   
   // Get item price safely (handles both price and totalPrice)
   const itemPrice = getItemPrice(item);
@@ -67,6 +68,7 @@ const ItemCart = ({ item }: IItemCartProps) => {
 
   // Get PDF button label based on type
   const getPDFButtonLabel = () => {
+    if (isFunction360) return 'View PDF'; 
     if (isTrac360) return 'View PDF';
     if (isPWA) return 'View PDF';
     return 'View PDF';
@@ -102,7 +104,8 @@ const ItemCart = ({ item }: IItemCartProps) => {
         </div>
         <div className="flex flex-col text-xl font-light gap-2">
         <h3 className="font-medium">
-          {isPWA ? 'HOSE360 Custom Order' : item.name}
+          {isPWA ? 'HOSE360 Custom Order' :
+          isFunction360 ? 'FUNCTION360 Custom Order' : item.name}
         </h3>
           
           {/* Custom orders show Qty: 1 (fixed) with PDF button */}

@@ -1,0 +1,20 @@
+{
+    "id": "adaptors",
+    "name": "Adaptors",
+    "description": "Complete Adaptor Kit with Seals",
+    "specifications": {
+      "components": [
+        "2 x Adaptors",
+        "4 x Dowty Seals",
+        "2 x Tee Adaptors",
+        "6 x Adaptors",
+        "2 x Elbow"
+      ]
+    },
+    "note": "NOTE: Adaptors can be changed to match your machine hydraulics threads, mention in the notes at the end. Relevant hydraulic instructions are supplied for all installations using these adaptors.",
+    "price": 500,
+    "currency": "AUD",
+    "image": "/function360/adaptors.png",
+    "fallbackImage": "/fluidpower_logo_transparent.gif",
+    "swellProductId": "function360-adaptors"
+  }

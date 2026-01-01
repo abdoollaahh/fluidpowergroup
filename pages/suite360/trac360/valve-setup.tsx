@@ -64,18 +64,18 @@ export default function ValveSetup() {
     if (!isValid) return;
 
     // Navigate to next step (context already updated)
-    router.push('/hosebuilder/trac360/operation-type');
+    router.push('/suite360/trac360/operation-type');
   };
 
   // Handle back
   const handleBack = () => {
-    router.push('/hosebuilder/trac360/tractor-info');
+    router.push('/suite360/trac360/tractor-info');
   };
 
   // Redirect if no protection type selected (client-side only)
   useEffect(() => {
     if (!protectionType) {
-      router.push('/hosebuilder/trac360/tractor-info');
+      router.push('/suite360/trac360/tractor-info');
     }
   }, [protectionType, router]);
 

@@ -1,0 +1,17 @@
+{
+    "id": "mounting_brackets",
+    "name": "Mounting Brackets",
+    "description": "Mounting Hardware for Installation",
+    "specifications": {
+      "components": [
+        "1 x Mounting Bracket with Hardware - Diverter Valve",
+        "1 x Mounting Bracket with Hardware - Couplings"
+      ]
+    },
+    "note": "NOTE: Picture only for reference",
+    "price": 500,
+    "currency": "AUD",
+    "image": "/function360/mounting-bracket.png",
+    "fallbackImage": "/fluidpower_logo_transparent.gif",
+    "swellProductId": "function360-mounting-brackets"
+  }

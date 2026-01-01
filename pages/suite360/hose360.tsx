@@ -11,11 +11,12 @@ declare global {
 
 const HoseBuilder = () => {
   useEffect(() => {
-    window.__PUBLIC_PATH__ = publicRuntimeConfig.staticFolder || '/hosebuilder/static/';
+    // PHASE 2: Updated paths
+    window.__PUBLIC_PATH__ = publicRuntimeConfig.staticFolder || '/suite360/static/';
     
     const scripts = [
-      '/hosebuilder/static/js/453.eebfc8b8.js',
-      '/hosebuilder/static/js/main.e49a1751.js'
+      '/suite360/static/js/453.eebfc8b8.js',
+      '/suite360/static/js/main.e49a1751.js'
     ];
 
     const loadScriptSequentially = async (scripts: string[]) => {
@@ -40,7 +41,7 @@ const HoseBuilder = () => {
     loadScriptSequentially(scripts).catch(console.error);
 
     return () => {
-      document.querySelectorAll('script[src^="/hosebuilder/"]').forEach(script => {
+      document.querySelectorAll('script[src^="/suite360/"]').forEach(script => {
         script.remove();
       });
     };
@@ -53,14 +54,13 @@ const HoseBuilder = () => {
         <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1.00001,viewport-fit=cover" />
         
         <style>{`
-          /* Remove conflicting styles */
           .hosebuilder-container {
-            height: calc(100vh - 120px); /* Header height + fade clearance */
+            height: calc(100vh - 120px);
             width: 100%;
             position: relative;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            margin-top: 30px; /* Push content below header fade */
+            margin-top: 30px;
           }
 
           #root {
@@ -69,7 +69,6 @@ const HoseBuilder = () => {
             position: relative;
           }
 
-          /* Scrollbar styles */
           ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -86,7 +85,6 @@ const HoseBuilder = () => {
             background: #555;
           }
 
-          /* Support for touch devices */
           @supports (-webkit-overflow-scrolling: touch) {
             .scrollable-content {
               -webkit-overflow-scrolling: touch;
@@ -109,7 +107,6 @@ const HoseBuilder = () => {
             height: auto;
           }
 
-          /* Add styles for the Next button container */
           .next-button-container {
             position: fixed;
             bottom: 20px;
@@ -117,7 +114,6 @@ const HoseBuilder = () => {
             z-index: 1000;
           }
 
-          /* Ensure chat button stays visible and clickable on PWA page */
           #fpg-chat-button {
             position: fixed !important;
             bottom: 20px !important;
@@ -132,16 +128,14 @@ const HoseBuilder = () => {
             pointer-events: auto !important;
           }
 
-          /* Prevent PWA container from affecting chat */
           .hosebuilder-container {
             position: relative;
             z-index: 1;
           }
-
         `}</style>
-        <link rel="icon" type="image/png" sizes="16x16" href="/hosebuilder/favicon-16.png" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/hosebuilder/favicon-32.png" />
-        <link rel="manifest" href="/hosebuilder/manifest.json" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/suite360/favicon-16.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/suite360/favicon-32.png" />
+        <link rel="manifest" href="/suite360/manifest.json" />
       </Head>
       <div className="hosebuilder-container">
         <div id="root"></div>

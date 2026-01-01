@@ -100,7 +100,7 @@ export default function MountingBrackets() {
 
   // Handle continue - go to summary
   const handleContinue = () => {
-    router.push('/hosebuilder/trac360/additional-info');
+    router.push('/suite360/trac360/additional-info');
   };
 
   // Handle back
@@ -109,16 +109,16 @@ export default function MountingBrackets() {
     const isLeversOperation = operationType?.id === 'cables-levers-2' || operationType?.id === 'cables-levers-11';
     
     if (isLeversOperation) {
-      router.push('/hosebuilder/trac360/hose-protection');
+      router.push('/suite360/trac360/hose-protection');
     } else {
-      router.push('/hosebuilder/trac360/joystick-upgradation');
+      router.push('/suite360/trac360/joystick-upgradation');
     }
   };
 
   // Redirect if no valve setup or operation type selected
   React.useEffect(() => {
     if (!valveSetup || !operationType) {
-      router.push('/hosebuilder/trac360/tractor-info');
+      router.push('/suite360/trac360/tractor-info');
     }
   }, [valveSetup, operationType, router]);
 

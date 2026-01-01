@@ -35,13 +35,16 @@ const Header = ({ categories }: { categories: Category[] }) => {
     router.pathname.startsWith('/product') ||   // Catch other product-related routes
     (router.asPath.includes('products') && !router.asPath.includes('search')) || // Any URL containing 'products' but not search
     (router.pathname === '/products' && !!router.query.subcategory); // Subcategory pages
-    
-    // Check if user is on buy page OR using any 360 configurator
+
+    // ========================================
+    // PHASE 1: URL MIGRATION - Active State Detection
+    // ========================================
     const isBuyActive: boolean = 
-    router.pathname === '/buy' ||
-    router.pathname.startsWith('/hosebuilder/hose360') ||
-    router.pathname.startsWith('/hosebuilder/trac360') ||
-    router.pathname.startsWith('/hosebuilder/function360');
+    router.pathname === '/suite360' ||
+    router.pathname === '/buy' ||  // ← ADD THIS
+    router.pathname.startsWith('/suite360/hose360') ||
+    router.pathname.startsWith('/suite360/trac360') ||
+    router.pathname.startsWith('/suite360/function360');
 
   // Handle mobile search press with animation
   const handleMobileSearchPress = () => {

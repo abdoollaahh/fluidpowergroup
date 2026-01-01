@@ -107,7 +107,7 @@ export default function TractorInfo() {
       });
   
       // Navigate to next step
-      router.push('/hosebuilder/trac360/valve-setup');
+      router.push('/suite360/trac360/valve-setup');
     };
   
     // Handle back

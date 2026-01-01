@@ -1,24 +1,21 @@
 /**
- * TRAC360 Valve Adaptors Page - Step 4A (Intermediate)
- * Optional add-on: Valve with Adaptors
- * Shows between operation-type and circuits for certain configurations
- * UPDATED: Price layout stacked on mobile, inline on desktop
+ * TRAC360 Tractor Hose Kit Page - Step 6 of 10
+ * Optional add-on: Tractor Hose Kit
  */
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import { FiX } from 'react-icons/fi';
 import Trac360Layout from '../../../components/Trac360/Layout/Trac360Layout';
 import ContinueButton from '../../../components/Trac360/Shared/ContinueButton';
 import BackButton from '../../../components/Trac360/Shared/BackButton';
 import { useTrac360 } from '../../../context/Trac360Context';
 import { COLORS } from '../../../components/Trac360/styles';
-import addonData from '../../../data/trac360/valve-adaptors.json';
+import addonData from '../../../data/trac360/tractor-hose-kit.json';
 import SetupReminder from '../../../components/Trac360/Shared/SetupReminder';
 
-export default function ValveAdaptors() {
+export default function TractorHoseKit() {
   const router = useRouter();
   const { config, addAddon, removeAddon } = useTrac360();
 
@@ -26,46 +23,35 @@ export default function ValveAdaptors() {
   const valveSetup = config.valveSetup;
   const operationType = config.operationType;
 
-  // Local state for addon selection and "not required" status
+  // Local state for addon selection
   const [isAddonSelected, setIsAddonSelected] = useState(false);
   const [isNotRequired, setIsNotRequired] = useState(false);
 
   // Check if this addon is already in context
   React.useEffect(() => {
-    const existingAddon = config.addons?.find(a => a.id === 'valve-adaptors');
+    const existingAddon = config.addons?.find(a => a.id === addonData.id);
     if (existingAddon) {
       setIsAddonSelected(true);
-      setIsNotRequired(false); // If addon exists, not required is false
+      setIsNotRequired(false);
     }
   }, [config.addons]);
 
-  // Determine which variant to show based on operation type
-  const variantKey = 
-  operationType?.id === 'cables-joystick-10' ||
-  operationType?.id === 'cables-levers-11' ||
-  operationType?.id === 'setup-d-handles' ||
-  operationType?.id === 'setup-d-joystick'
-    ? 'setupBCD'
-    : 'default';
-
-  const currentVariant = addonData.variants[variantKey];
-
-  // Handle addon toggle (ADD+ button)
+  // Handle addon selection (ADD+ button)
   const handleAddonToggle = () => {
-    const addonDataToAdd = {
-      id: 'valve-adaptors',
-      name: 'Valve with Adaptors',
-      description: currentVariant.title,
-      basePrice: 120,
-      price: 120,
-      swellProductId: 'valve-adaptors-addon',
+    const addon = {
+      id: addonData.id,
+      name: addonData.name,
+      description: addonData.description,
+      basePrice: addonData.basePrice,
+      price: addonData.basePrice,
+      swellProductId: addonData.swellProductId,
       selectedSubOption: null,
       subOptions: [],
-      components: currentVariant.components
+      components: addonData.components
     };
-  
+
     if (!isAddonSelected) {
-      addAddon(addonDataToAdd as any);
+      addAddon(addon as any);
       setIsAddonSelected(true);
       setIsNotRequired(false);
     }
@@ -73,48 +59,35 @@ export default function ValveAdaptors() {
 
   // Handle addon removal (X button)
   const handleAddonRemove = () => {
-    removeAddon('valve-adaptors');
+    removeAddon(addonData.id);
     setIsAddonSelected(false);
-    // Don't change isNotRequired state - let user decide again
   };
 
   // Handle "NOT REQUIRED" button click
   const handleNotRequired = () => {
-    // Remove addon if it exists
     if (isAddonSelected) {
-      removeAddon('valve-adaptors');
+      removeAddon(addonData.id);
       setIsAddonSelected(false);
     }
-    // Mark as "not required" to enable Continue
     setIsNotRequired(true);
   };
 
-  // Handle continue - only works if addon selected OR not required
+  // Handle continue
   const handleContinue = () => {
-    // Navigate to addons page (Step 5)
-    router.push('/hosebuilder/trac360/tractor-hose-kit');
+    router.push('/suite360/trac360/hose-protection');
   };
 
-  // Handle back - check if we came from circuits or operation-type
+  // Handle back
   const handleBack = () => {
-    // If circuits are selected, we came from circuits page
-    if (config.circuits) {
-      router.push('/hosebuilder/trac360/circuits');
-    } else {
-      // Otherwise, we came directly from operation-type
-      router.push('/hosebuilder/trac360/operation-type');
-    }
+    router.push('/suite360/trac360/valve-adaptors');
   };
 
-  // Redirect if no valve setup or operation type selected (client-side only)
+  // Redirect if no valve setup or operation type selected
   React.useEffect(() => {
     if (!valveSetup || !operationType) {
-      router.push('/hosebuilder/trac360/tractor-info');
+      router.push('/suite360/trac360/tractor-info');
     }
   }, [valveSetup, operationType, router]);
-
-  // Determine current step based on whether circuits are selected
-  const currentStepNumber = config.circuits ? 5 : 4;
 
   // Continue button is enabled if addon is selected OR "not required" is clicked
   const canContinue = isAddonSelected || isNotRequired;
@@ -125,7 +98,7 @@ export default function ValveAdaptors() {
   }
 
   return (
-    <Trac360Layout currentStep={currentStepNumber} totalSteps={10}>
+    <Trac360Layout currentStep={6} totalSteps={11}>
       {/* Back Button */}
       <BackButton onClick={handleBack} />
       <SetupReminder />
@@ -163,11 +136,11 @@ export default function ValveAdaptors() {
               background: COLORS.grey.dark,
             }}
           >
-            VALVE WITH ADAPTORS
+            {addonData.name.toUpperCase()}
           </div>
         </motion.div>
 
-        {/* Valve Adaptors Card */}
+        {/* Addon Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -187,19 +160,20 @@ export default function ValveAdaptors() {
             {/* Title */}
             <div className="p-6 text-center border-b border-gray-200">
               <h3 className="text-lg font-semibold" style={{ color: COLORS.grey.dark }}>
-                {currentVariant.title}
+                {addonData.description}
               </h3>
             </div>
 
             {/* Image */}
             <div className="flex justify-center p-8 bg-gray-50">
-              <Image
-                src={currentVariant.image}
-                alt="Valve with Adaptors"
-                width={200}
-                height={200}
-                className="object-contain"
-              />
+              <div style={{ opacity: 1 }}>
+                <Image
+                  src={addonData.image}
+                  alt={addonData.name}
+                  width={300}
+                  height={300}
+                />
+              </div>
             </div>
 
             {/* Price and Toggle - RESPONSIVE LAYOUT */}
@@ -232,7 +206,6 @@ export default function ValveAdaptors() {
                     boxShadow: isAddonSelected 
                       ? '0 4px 15px rgba(250, 204, 21, 0.4)' 
                       : '0 4px 10px rgba(0, 0, 0, 0.2)',
-                    opacity: isAddonSelected ? 1 : 1,
                   }}
                   whileHover={!isAddonSelected ? { 
                     scale: 1.05,
@@ -279,7 +252,10 @@ export default function ValveAdaptors() {
                     }}
                   >
                     <div style={{ width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <FiX style={{ width: "100%", height: "100%", minWidth: "20px", minHeight: "20px" }} />
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
                     </div>
                   </motion.button>
                 )}
@@ -289,8 +265,8 @@ export default function ValveAdaptors() {
             {/* Components List */}
             <div className="p-6 bg-gray-50">
               <ul className="space-y-2">
-                {currentVariant.components.map((component, index) => (
-                  <li key={index} className="flex items-start gap-2 text-sm" style={{ color: COLORS.grey.medium }}>
+                {addonData.components.map((component, idx) => (
+                  <li key={idx} className="flex items-start gap-2 text-sm" style={{ color: COLORS.grey.medium }}>
                     <span style={{ color: COLORS.yellow.primary }}>•</span>
                     <span>{component}</span>
                   </li>
@@ -298,7 +274,7 @@ export default function ValveAdaptors() {
               </ul>
             </div>
 
-            {/* Not Required Button - Only show when addon is NOT selected */}
+            {/* Not Required Button */}
             {!isAddonSelected && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -311,7 +287,7 @@ export default function ValveAdaptors() {
                   className="px-8 py-3 rounded-full font-semibold transition-all duration-300"
                   style={{
                     background: isNotRequired 
-                      ? 'rgba(107, 114, 128, 0.85)' // Darker when selected
+                      ? 'rgba(107, 114, 128, 0.85)' 
                       : 'rgba(74, 74, 74, 0.85)',
                     backdropFilter: 'blur(10px)',
                     WebkitBackdropFilter: 'blur(10px)',
@@ -334,10 +310,17 @@ export default function ValveAdaptors() {
                 </motion.button>
               </motion.div>
             )}
+
+            {/* Note */}
+            {addonData.note && (
+              <div className="px-6 pb-4 text-center text-xs italic" style={{ color: COLORS.grey.medium }}>
+                {addonData.note}
+              </div>
+            )}
           </div>
         </motion.div>
 
-        {/* Continue Button - Centered */}
+        {/* Continue Button */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -11,35 +11,68 @@ const nextConfig = {
     formats: ['image/webp', 'image/avif'],
   },
   
-  // For redirects (changing URL in browser)
+  // ========================================
+  // PHASE 1: URL MIGRATION - PERMANENT REDIRECTS
+  // ========================================
+  // Old URLs permanently redirect to new URLs
+  // This ensures backward compatibility during migration
   async redirects() {
     return [
+      // Main buy page redirect
       {
-        source: '/hosebuilder',
-        destination: '/buy',
+        source: '/buy',
+        destination: '/suite360',
+        permanent: true
+      },
+      // Hose360 configurator redirect
+      {
+        source: '/hosebuilder/hose360',
+        destination: '/suite360/hose360',
+        permanent: true
+      },
+      // Trac360 configurator redirects
+      {
+        source: '/hosebuilder/trac360/start',
+        destination: '/suite360/trac360/start',
+        permanent: true
+      },
+      {
+        source: '/hosebuilder/trac360/:step',
+        destination: '/suite360/trac360/:step',
+        permanent: true
+      },
+      // Function360 (coming soon) redirect
+      {
+        source: '/hosebuilder/function360',
+        destination: '/suite360/function360',
+        permanent: true
+      },
+      // Catch-all for any other hosebuilder paths
+      {
+        source: '/hosebuilder/:path*',
+        destination: '/suite360/:path*',
+        permanent: true
+      },
+      // PWA media assets redirect
+      {
+        source: '/static/media/:path*',
+        destination: '/suite360/static/media/:path*',
+        permanent: true
+      },
+      // Static assets redirect (for PWA scripts/manifest)
+      {
+        source: '/hosebuilder/static/:path*',
+        destination: '/suite360/static/:path*',
         permanent: true
       }
     ]
   },
   
-  // For rewrites (keeping URL in browser but serving different content)
-  async rewrites() {
-    return [
-      {
-        source: '/buy',
-        destination: '/hosebuilder'
-      },
-      {
-        source: '/buy/:path*',
-        destination: '/hosebuilder/:path*'
-      },
-      {
-        source: '/static/media/:path*',
-        destination: '/hosebuilder/static/media/:path*'
-      }
-    ]
-  },
-  // This ensures static files are served from the correct location
+  // Remove old rewrites - no longer needed after folder rename
+  // async rewrites() {
+  //   return []
+  // },
+  
   basePath: '',
   assetPrefix: '',
 };

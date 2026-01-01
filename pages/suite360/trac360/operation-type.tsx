@@ -56,36 +56,36 @@ export default function OperationType() {
   const getNextStep = (valveSetupId: string, operationId: string): string => {
     // Setup A (Loader)
     if (valveSetupId === 'loader-style') {
-      return '/hosebuilder/trac360/valve-adaptors';
+      return '/suite360/trac360/valve-adaptors';
     }
 
     // Setup B (Mid SCV)
     if (valveSetupId === 'mid-scv-style') {
       if (operationId === 'cables-joystick-1' || operationId === 'cables-levers-2' || operationId === 'cables-joystick-10' || operationId === 'setup-b-direct-joystick') {
-        return '/hosebuilder/trac360/valve-adaptors';
+        return '/suite360/trac360/valve-adaptors';
       }
       if (operationId === 'cables-levers-11' || operationId === 'joystick-levers') {
-        return '/hosebuilder/trac360/circuits';
+        return '/suite360/trac360/circuits';
       }
     }
 
     // Setup C (Rear Remotes)
     if (valveSetupId === 'rear-remotes-style') {
       if (operationId === 'cables-joystick-10') {
-        return '/hosebuilder/trac360/valve-adaptors';
+        return '/suite360/trac360/valve-adaptors';
       }
       if (operationId === 'cables-levers-11') {
-        return '/hosebuilder/trac360/circuits';
+        return '/suite360/trac360/circuits';
       }
     }
 
     // Setup D (Next-to-Operator)
     if (valveSetupId === 'next-to-operator-style') {
-      return '/hosebuilder/trac360/circuits';
+      return '/suite360/trac360/circuits';
     }
 
     // Default fallback
-    return '/hosebuilder/trac360/circuits';
+    return '/suite360/trac360/circuits';
   };
 
   // Handle continue
@@ -105,13 +105,13 @@ export default function OperationType() {
 
   // Handle back
   const handleBack = () => {
-    router.push('/hosebuilder/trac360/valve-setup');
+    router.push('/suite360/trac360/valve-setup');
   };
 
   // Redirect if no protection type or valve setup selected (client-side only)
   useEffect(() => {
     if (!protectionType || !valveSetup) {
-      router.push('/hosebuilder/trac360/tractor-info');
+      router.push('/suite360/trac360/tractor-info');
     }
   }, [protectionType, valveSetup, router]);
 

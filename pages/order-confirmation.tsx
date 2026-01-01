@@ -61,6 +61,18 @@ interface Trac360Order {
   cartId?: number;
 }
 
+interface Function360Order {
+  id: string;
+  name: string;
+  totalPrice: number;
+  quantity: number;
+  image?: string;
+  pdfDataUrl?: string;
+  function360OrderNumber?: string;
+  cartId?: number;
+  configuration?: any; // Function360Config type
+}
+
 interface OrderData {
   orderNumber: string;
   orderDate: string;
@@ -69,6 +81,7 @@ interface OrderData {
   websiteProducts: WebsiteProduct[];
   pwaOrders: PWAOrder[];
   trac360Orders: Trac360Order[];
+  function360Orders: Function360Order[];
   totals: OrderTotals;
 }
 
@@ -182,6 +195,27 @@ useEffect(() => {
             }
             
             console.warn('⚠️ No PDF found for Trac360:', order.name);
+            return order;
+          });
+        }
+
+        // ✅ STEP 3c: Merge PDFs from cart into Function360 orders
+        if (parsedOrder.function360Orders && parsedOrder.function360Orders.length > 0) {
+          parsedOrder.function360Orders = parsedOrder.function360Orders.map((order: Function360Order) => {
+            // Find matching cart item by cartId or id
+            const cartItem = cartItems.find((item: IItemCart) => 
+              item.cartId === order.cartId || item.id === order.id
+            );
+            
+            if (cartItem && cartItem.pdfDataUrl) {
+              console.log('✅ PDF found for Function360:', order.name);
+              return {
+                ...order,
+                pdfDataUrl: cartItem.pdfDataUrl // Get PDF from original cart
+              };
+            }
+            
+            console.warn('⚠️ No PDF found for Function360:', order.name);
             return order;
           });
         }
@@ -565,6 +599,86 @@ useEffect(() => {
                           {trac360Order.pdfDataUrl ? (
                             <button
                               onClick={() => handleViewPDF(trac360Order.pdfDataUrl, trac360Order.trac360OrderNumber)}
+                              className="text-xs cursor-pointer block mt-2 text-left transition-all duration-300"
+                              style={{
+                                padding: "6px 14px",
+                                borderRadius: "20px",
+                                background: "rgba(255, 255, 255, 0.9)",
+                                backdropFilter: "blur(15px)",
+                                border: "1px solid rgba(200, 200, 200, 0.3)",
+                                color: "#2563eb",
+                                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+                                fontWeight: "600"
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = "translateY(-2px) scale(1.02)";
+                                e.currentTarget.style.background = "radial-gradient(ellipse at center, rgba(250, 204, 21, 0.9) 20%, rgba(250, 204, 21, 0.7) 60%, rgba(255, 215, 0, 0.8) 100%), rgba(250, 204, 21, 0.6)";
+                                e.currentTarget.style.border = "1px solid rgba(255, 215, 0, 0.9)";
+                                e.currentTarget.style.color = "#000";
+                                e.currentTarget.style.boxShadow = "0 10px 30px rgba(250, 204, 21, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.8), inset 0 3px 10px rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(255, 215, 0, 0.4)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "translateY(0px) scale(1)";
+                                e.currentTarget.style.background = "rgba(255, 255, 255, 0.9)";
+                                e.currentTarget.style.border = "1px solid rgba(200, 200, 200, 0.3)";
+                                e.currentTarget.style.color = "#2563eb";
+                                e.currentTarget.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.08)";
+                              }}
+                            >
+                              {isMobile ? 'View Configuration' : 'Click to View Configuration'}
+                            </button>
+                          ) : (
+                            <p className="text-sm text-gray-600 italic mt-2">
+                              📧 PDF attached in your confirmation email
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {/* Function 360 Orders */}
+              {orderData.function360Orders && orderData.function360Orders.length > 0 && (
+                <div className="space-y-4 mt-6">
+                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+                    Custom Hydraulic Function Kits
+                  </h3>
+                  {orderData.function360Orders.map((function360Order, index) => (
+                    <div key={`function360-${index}`} className="border-b border-gray-200 pb-4 last:border-0">
+                      <div className="flex items-center space-x-4">
+                        {function360Order.image && (
+                          <div className="flex-shrink-0">
+                            <Image
+                              src={function360Order.image}
+                              alt={function360Order.name}
+                              width={80}
+                              height={80}
+                              className="rounded object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900">{function360Order.name}</h3>
+                          <p className="text-sm text-gray-600">
+                            {function360Order.configuration?.equipment?.horsepower === 'above_50hp' ? 'Above 50HP' : 'Below 50HP'} • {' '}
+                            {function360Order.configuration?.equipment?.functionType === 'electric_3rd' ? 'Electric 3rd Function' :
+                             function360Order.configuration?.equipment?.functionType === 'live_3rd' ? 'Live 3rd Function' :
+                             'Electric 3rd & 4th Function'}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Components: {function360Order.configuration?.selectedComponents 
+                              ? Object.values(function360Order.configuration.selectedComponents).filter(Boolean).length 
+                              : 0}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-gray-900 mb-2">
+                            {formatCurrency(function360Order.totalPrice)}
+                          </p>
+                          {function360Order.pdfDataUrl ? (
+                            <button
+                              onClick={() => handleViewPDF(function360Order.pdfDataUrl, function360Order.function360OrderNumber)}
                               className="text-xs cursor-pointer block mt-2 text-left transition-all duration-300"
                               style={{
                                 padding: "6px 14px",

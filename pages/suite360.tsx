@@ -18,17 +18,17 @@ const products: Product[] = [
   {
     id: "hose360",
     title: "Hose360",
-    description: "Custom Hose Assembly Builder",
-    href: "/hosebuilder/hose360",
-    image: "/Hose360.avif",
+    description: "Hydraulic Hose Builder",
+    href: "/suite360/hose360",  // ← CHANGED from /hosebuilder/hose360
+    image: "/Hose360.png",
     isActive: true,
     learnMore: "Build custom hydraulic hose assemblies with our interactive configurator. Select fittings, hoses, and specifications to create your perfect assembly.",
   },
   {
     id: "trac360",
     title: "Trac360",
-    description: "Custom Tractor Configurator",
-    href: "/hosebuilder/trac360/start",
+    description: "Tractor Hydraulics Configurator",
+    href: "/suite360/trac360/start",  // ← CHANGED from /hosebuilder/trac360/start
     image: "/Trac360_Cart.png",
     isActive: true,
     learnMore: "Configure your tractor's hydraulic valve setup with our step-by-step guide. Choose your tractor model, valve location, and operation type to get a complete solution.",
@@ -36,10 +36,10 @@ const products: Product[] = [
   {
     id: "function360",
     title: "Function360",
-    description: "Coming Soon",
-    href: "#",
-    image: "/logo.png",
-    isActive: false,
+    description: "Tractor Function Configurator",
+    href: "/suite360/function360/start",  // ← CHANGED from /hosebuilder/function360 (even though not active yet)
+    image: "/Function360.png",
+    isActive: true,
     learnMore: "Our next-generation product configurator is currently in development. Stay tuned for updates!",
   },
 ];
@@ -60,6 +60,7 @@ const BuyPage = () => {
   };
 
   const selectedProduct = products.find(p => p.id === learnMoreModal);
+  const [rotation, setRotation] = useState(720);
 
   return (
     <div 
@@ -97,12 +98,47 @@ const BuyPage = () => {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="text-center mb-16"
         >
+          {/* SUITE 360 Title with Animated Arrow */}
+          <div className="flex items-center justify-center gap-0.5 mb-4">
+            <h1 
+              className="text-4xl sm:text-5xl lg:text-6xl font-bold"
+              style={{ color: "#FACC15" }}
+            >
+              SUITE 36
+            </h1>
+            <motion.div
+              className="circular-arrow-wrapper"
+              initial={{ rotate: 0 }}
+              animate={{ rotate: rotation }}
+              onMouseEnter={() => setRotation(prev => prev + 720)}
+              transition={{ duration: 0.8, ease: "easeInOut" }}
+              style={{
+                width: "55px",
+                height: "55px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                color: "#FACC15"
+              }}
+            >
+              <Image
+                src="/circular-arrow.svg"
+                alt="360"
+                width={55}
+                height={55}
+              />
+            </motion.div>
+          </div>
+  
+          {/* Subtitle */}
           <h1 
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4"
+            className="text-4xl sm:text-5xl lg:text-6xl font-bold"
             style={{ color: "#4A4A4A" }}
           >
             Build Your Custom Solution
           </h1>
+          
           <p 
             className="text-lg sm:text-xl lg:text-2xl font-light"
             style={{ color: "#808080" }}

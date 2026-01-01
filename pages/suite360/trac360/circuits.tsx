@@ -76,18 +76,18 @@ export default function Circuits() {
     if (!selectedCircuit) return;
     
     // Context is already updated from handleCircuitSelect
-    router.push('/hosebuilder/trac360/valve-adaptors');
+    router.push('/suite360/trac360/valve-adaptors');
   };
 
   // Handle back
   const handleBack = () => {
-    router.push('/hosebuilder/trac360/operation-type');
+    router.push('/suite360/trac360/operation-type');
   };
 
   // Redirect if no valve setup or operation type selected (client-side only)
   React.useEffect(() => {
     if (!valveSetup || !operationType) {
-      router.push('/hosebuilder/trac360/tractor-info');
+      router.push('/suite360/trac360/tractor-info');
     }
   }, [valveSetup, operationType, router]);
 

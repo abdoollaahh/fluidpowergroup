@@ -1,0 +1,15 @@
+{
+    "id": "hydraulic_hoses",
+    "name": "Hydraulic Hoses",
+    "description": "6 x Hydraulic Hoses with JIC Female Threads",
+    "specifications": {
+      "quantity": 6,
+      "threads": "3/4\" JIC Female Threads"
+    },
+    "note": "NOTE: Customized Hoses can be supplied as per your requirements (With No Extra Cost).",
+    "price": 500,
+    "currency": "AUD",
+    "image": "/function360/hydraulic-hoses.png",
+    "fallbackImage": "/fluidpower_logo_transparent.gif",
+    "swellProductId": "function360-hydraulic-hoses"
+  }

@@ -1,6 +1,6 @@
 /**
- * TRAC360 Joystick Upgradation Page - Step 8 of 10 (FIXED)
- * Optional add-on with sub-options: One Button or Two Button
+ * TRAC360 Hose Protection Page - Step 7 of 10 (FIXED)
+ * Optional add-on with sub-options: Nylon Sleeve or Spiral Wrap
  * 
  * FIXES:
  * - Can now unselect tiles by clicking them again
@@ -17,10 +17,10 @@ import ContinueButton from '../../../components/Trac360/Shared/ContinueButton';
 import BackButton from '../../../components/Trac360/Shared/BackButton';
 import { useTrac360 } from '../../../context/Trac360Context';
 import { COLORS } from '../../../components/Trac360/styles';
-import addonData from '../../../data/trac360/joystick-upgradation.json';
+import addonData from '../../../data/trac360/hose-protection.json';
 import SetupReminder from '../../../components/Trac360/Shared/SetupReminder';
 
-export default function JoystickUpgradation() {
+export default function HoseProtection() {
   const router = useRouter();
   const { config, addAddon, removeAddon, updateAddonSubOption } = useTrac360();
 
@@ -99,18 +99,25 @@ export default function JoystickUpgradation() {
 
   // Handle continue
   const handleContinue = () => {
-    router.push('/hosebuilder/trac360/mounting-brackets');
+    // Check if operation type is "Cables & Levers" - skip joystick upgradation
+    const isLeversOperation = operationType?.id === 'cables-levers-2' || operationType?.id === 'cables-levers-11';
+    
+    if (isLeversOperation) {
+      router.push('/suite360/trac360/mounting-brackets');
+    } else {
+      router.push('/suite360/trac360/joystick-upgradation');
+    }
   };
 
   // Handle back
   const handleBack = () => {
-    router.push('/hosebuilder/trac360/hose-protection');
+    router.push('/suite360suite360/trac360/tractor-hose-kit');
   };
 
   // Redirect if no valve setup or operation type selected
   React.useEffect(() => {
     if (!valveSetup || !operationType) {
-      router.push('/hosebuilder/trac360/tractor-info');
+      router.push('/suite360/trac360/tractor-info');
     }
   }, [valveSetup, operationType, router]);
 
@@ -123,7 +130,7 @@ export default function JoystickUpgradation() {
   }
 
   return (
-    <Trac360Layout currentStep={8} totalSteps={10}>
+    <Trac360Layout currentStep={7} totalSteps={10}>
       {/* Back Button */}
       <BackButton onClick={handleBack} />
       <SetupReminder />
@@ -224,8 +231,8 @@ export default function JoystickUpgradation() {
                       <Image
                         src={subOption.image}
                         alt={subOption.name}
-                        width={100}
-                        height={250}
+                        width={150}
+                        height={150}
                       />
                     </div>
                   </div>
@@ -285,17 +292,12 @@ export default function JoystickUpgradation() {
               </span>
             </div>
 
-            {/* Components Info */}
-            <div className="px-6 pb-4 bg-gray-50">
-              <ul className="space-y-2 text-sm" style={{ color: COLORS.grey.medium }}>
-                {addonData.subOptions[0].components.map((component, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
-                    <span style={{ color: COLORS.yellow.primary }}>•</span>
-                    <span>{component}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {/* Note */}
+            {addonData.note && (
+              <div className="px-6 pb-4 text-center text-sm" style={{ color: COLORS.grey.medium }}>
+                {addonData.note}
+              </div>
+            )}
 
             {/* NOT REQUIRED Button - ALWAYS VISIBLE */}
             <motion.div
@@ -331,13 +333,6 @@ export default function JoystickUpgradation() {
                 {isNotRequired ? 'SKIPPED ✓' : 'NOT REQUIRED'}
               </motion.button>
             </motion.div>
-
-            {/* Additional Note 
-            {addonData.additionalNote && (
-              <div className="px-6 pb-4 text-center text-xs italic" style={{ color: COLORS.grey.medium }}>
-                {addonData.additionalNote}
-              </div>
-            )}*/}
           </div>
         </motion.div>
 

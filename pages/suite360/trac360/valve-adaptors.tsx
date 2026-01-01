@@ -1,21 +1,24 @@
 /**
- * TRAC360 Tractor Hose Kit Page - Step 6 of 10
- * Optional add-on: Tractor Hose Kit
+ * TRAC360 Valve Adaptors Page - Step 4A (Intermediate)
+ * Optional add-on: Valve with Adaptors
+ * Shows between operation-type and circuits for certain configurations
+ * UPDATED: Price layout stacked on mobile, inline on desktop
  */
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
+import { FiX } from 'react-icons/fi';
 import Trac360Layout from '../../../components/Trac360/Layout/Trac360Layout';
 import ContinueButton from '../../../components/Trac360/Shared/ContinueButton';
 import BackButton from '../../../components/Trac360/Shared/BackButton';
 import { useTrac360 } from '../../../context/Trac360Context';
 import { COLORS } from '../../../components/Trac360/styles';
-import addonData from '../../../data/trac360/tractor-hose-kit.json';
+import addonData from '../../../data/trac360/valve-adaptors.json';
 import SetupReminder from '../../../components/Trac360/Shared/SetupReminder';
 
-export default function TractorHoseKit() {
+export default function ValveAdaptors() {
   const router = useRouter();
   const { config, addAddon, removeAddon } = useTrac360();
 
@@ -23,35 +26,46 @@ export default function TractorHoseKit() {
   const valveSetup = config.valveSetup;
   const operationType = config.operationType;
 
-  // Local state for addon selection
+  // Local state for addon selection and "not required" status
   const [isAddonSelected, setIsAddonSelected] = useState(false);
   const [isNotRequired, setIsNotRequired] = useState(false);
 
   // Check if this addon is already in context
   React.useEffect(() => {
-    const existingAddon = config.addons?.find(a => a.id === addonData.id);
+    const existingAddon = config.addons?.find(a => a.id === 'valve-adaptors');
     if (existingAddon) {
       setIsAddonSelected(true);
-      setIsNotRequired(false);
+      setIsNotRequired(false); // If addon exists, not required is false
     }
   }, [config.addons]);
 
-  // Handle addon selection (ADD+ button)
+  // Determine which variant to show based on operation type
+  const variantKey = 
+  operationType?.id === 'cables-joystick-10' ||
+  operationType?.id === 'cables-levers-11' ||
+  operationType?.id === 'setup-d-handles' ||
+  operationType?.id === 'setup-d-joystick'
+    ? 'setupBCD'
+    : 'default';
+
+  const currentVariant = addonData.variants[variantKey];
+
+  // Handle addon toggle (ADD+ button)
   const handleAddonToggle = () => {
-    const addon = {
-      id: addonData.id,
-      name: addonData.name,
-      description: addonData.description,
-      basePrice: addonData.basePrice,
-      price: addonData.basePrice,
-      swellProductId: addonData.swellProductId,
+    const addonDataToAdd = {
+      id: 'valve-adaptors',
+      name: 'Valve with Adaptors',
+      description: currentVariant.title,
+      basePrice: 120,
+      price: 120,
+      swellProductId: 'valve-adaptors-addon',
       selectedSubOption: null,
       subOptions: [],
-      components: addonData.components
+      components: currentVariant.components
     };
-
+  
     if (!isAddonSelected) {
-      addAddon(addon as any);
+      addAddon(addonDataToAdd as any);
       setIsAddonSelected(true);
       setIsNotRequired(false);
     }
@@ -59,35 +73,48 @@ export default function TractorHoseKit() {
 
   // Handle addon removal (X button)
   const handleAddonRemove = () => {
-    removeAddon(addonData.id);
+    removeAddon('valve-adaptors');
     setIsAddonSelected(false);
+    // Don't change isNotRequired state - let user decide again
   };
 
   // Handle "NOT REQUIRED" button click
   const handleNotRequired = () => {
+    // Remove addon if it exists
     if (isAddonSelected) {
-      removeAddon(addonData.id);
+      removeAddon('valve-adaptors');
       setIsAddonSelected(false);
     }
+    // Mark as "not required" to enable Continue
     setIsNotRequired(true);
   };
 
-  // Handle continue
+  // Handle continue - only works if addon selected OR not required
   const handleContinue = () => {
-    router.push('/hosebuilder/trac360/hose-protection');
+    // Navigate to addons page (Step 5)
+    router.push('/suite360/trac360/tractor-hose-kit');
   };
 
-  // Handle back
+  // Handle back - check if we came from circuits or operation-type
   const handleBack = () => {
-    router.push('/hosebuilder/trac360/valve-adaptors');
+    // If circuits are selected, we came from circuits page
+    if (config.circuits) {
+      router.push('/suite360/trac360/circuits');
+    } else {
+      // Otherwise, we came directly from operation-type
+      router.push('/suite360/trac360/operation-type');
+    }
   };
 
-  // Redirect if no valve setup or operation type selected
+  // Redirect if no valve setup or operation type selected (client-side only)
   React.useEffect(() => {
     if (!valveSetup || !operationType) {
-      router.push('/hosebuilder/trac360/tractor-info');
+      router.push('/suite360/trac360/tractor-info');
     }
   }, [valveSetup, operationType, router]);
+
+  // Determine current step based on whether circuits are selected
+  const currentStepNumber = config.circuits ? 5 : 4;
 
   // Continue button is enabled if addon is selected OR "not required" is clicked
   const canContinue = isAddonSelected || isNotRequired;
@@ -98,7 +125,7 @@ export default function TractorHoseKit() {
   }
 
   return (
-    <Trac360Layout currentStep={6} totalSteps={11}>
+    <Trac360Layout currentStep={currentStepNumber} totalSteps={10}>
       {/* Back Button */}
       <BackButton onClick={handleBack} />
       <SetupReminder />
@@ -136,11 +163,11 @@ export default function TractorHoseKit() {
               background: COLORS.grey.dark,
             }}
           >
-            {addonData.name.toUpperCase()}
+            VALVE WITH ADAPTORS
           </div>
         </motion.div>
 
-        {/* Addon Card */}
+        {/* Valve Adaptors Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -160,20 +187,19 @@ export default function TractorHoseKit() {
             {/* Title */}
             <div className="p-6 text-center border-b border-gray-200">
               <h3 className="text-lg font-semibold" style={{ color: COLORS.grey.dark }}>
-                {addonData.description}
+                {currentVariant.title}
               </h3>
             </div>
 
             {/* Image */}
             <div className="flex justify-center p-8 bg-gray-50">
-              <div style={{ opacity: 1 }}>
-                <Image
-                  src={addonData.image}
-                  alt={addonData.name}
-                  width={300}
-                  height={300}
-                />
-              </div>
+              <Image
+                src={currentVariant.image}
+                alt="Valve with Adaptors"
+                width={200}
+                height={200}
+                className="object-contain"
+              />
             </div>
 
             {/* Price and Toggle - RESPONSIVE LAYOUT */}
@@ -206,6 +232,7 @@ export default function TractorHoseKit() {
                     boxShadow: isAddonSelected 
                       ? '0 4px 15px rgba(250, 204, 21, 0.4)' 
                       : '0 4px 10px rgba(0, 0, 0, 0.2)',
+                    opacity: isAddonSelected ? 1 : 1,
                   }}
                   whileHover={!isAddonSelected ? { 
                     scale: 1.05,
@@ -252,10 +279,7 @@ export default function TractorHoseKit() {
                     }}
                   >
                     <div style={{ width: "20px", height: "20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                      </svg>
+                      <FiX style={{ width: "100%", height: "100%", minWidth: "20px", minHeight: "20px" }} />
                     </div>
                   </motion.button>
                 )}
@@ -265,8 +289,8 @@ export default function TractorHoseKit() {
             {/* Components List */}
             <div className="p-6 bg-gray-50">
               <ul className="space-y-2">
-                {addonData.components.map((component, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-sm" style={{ color: COLORS.grey.medium }}>
+                {currentVariant.components.map((component, index) => (
+                  <li key={index} className="flex items-start gap-2 text-sm" style={{ color: COLORS.grey.medium }}>
                     <span style={{ color: COLORS.yellow.primary }}>•</span>
                     <span>{component}</span>
                   </li>
@@ -274,7 +298,7 @@ export default function TractorHoseKit() {
               </ul>
             </div>
 
-            {/* Not Required Button */}
+            {/* Not Required Button - Only show when addon is NOT selected */}
             {!isAddonSelected && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -287,7 +311,7 @@ export default function TractorHoseKit() {
                   className="px-8 py-3 rounded-full font-semibold transition-all duration-300"
                   style={{
                     background: isNotRequired 
-                      ? 'rgba(107, 114, 128, 0.85)' 
+                      ? 'rgba(107, 114, 128, 0.85)' // Darker when selected
                       : 'rgba(74, 74, 74, 0.85)',
                     backdropFilter: 'blur(10px)',
                     WebkitBackdropFilter: 'blur(10px)',
@@ -310,17 +334,10 @@ export default function TractorHoseKit() {
                 </motion.button>
               </motion.div>
             )}
-
-            {/* Note */}
-            {addonData.note && (
-              <div className="px-6 pb-4 text-center text-xs italic" style={{ color: COLORS.grey.medium }}>
-                {addonData.note}
-              </div>
-            )}
           </div>
         </motion.div>
 
-        {/* Continue Button */}
+        {/* Continue Button - Centered */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

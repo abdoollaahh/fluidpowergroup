@@ -168,7 +168,7 @@ export default function OrderConfirmation() {
         totalPrice: config.totalPrice,
         quantity: 1,
         stock: 999,
-        image: '/Trac360_Cart.png',
+        image: 'https://cdn.swell.store/fluidpowergroup/6954d8e3e8ab550012cbca57/8b530e036be3f21dcda1add5c7e592db/Trac360_Cart.png',
         pdfDataUrl: pdfDataUrl,
         tractorConfig: convertConfigForCart(config),
         cartId: Date.now(),

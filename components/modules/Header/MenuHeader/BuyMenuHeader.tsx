@@ -21,7 +21,7 @@ const buyOptions: BuyOption[] = [
     id: "hose360",
     title: "Hose360",
     description: "Custom Hose Assembly Builder",
-    href: "/hosebuilder/hose360",
+    href: "/suite360/hose360",  // ← CHANGED from /hosebuilder/hose360
     image: "/Hose360.png",
     isActive: true,
   },
@@ -29,17 +29,17 @@ const buyOptions: BuyOption[] = [
     id: "trac360",
     title: "Trac360",
     description: "Custom Tractor Configurator",
-    href: "/hosebuilder/trac360/start",
+    href: "/suite360/trac360/start",  // ← CHANGED from /hosebuilder/trac360/start
     image: "/Trac360_Cart.png",
     isActive: true,
   },
   {
     id: "function360",
     title: "Function360",
-    description: "Coming Soon",
-    href: "/hosebuilder/function360",
-    image: "/logo.png",
-    isActive: false,
+    description: "Custom Tractor Function Configurator",
+    href: "/suite360/function360/start",  // ← CHANGED from /hosebuilder/function360
+    image: "/Function360.png",
+    isActive: true,
   },
 ];
 
@@ -151,7 +151,7 @@ const BuyMenuHeader = ({ onClose }: BuyMenuHeaderProps) => {
                           color: "#fff",
                         }}
                       >
-                        COMING SOON
+                        Custom Tractor Fucntion Configurator
                       </div>
                     )}
                       {/* Thumbnail - exactly like SubCategories */}

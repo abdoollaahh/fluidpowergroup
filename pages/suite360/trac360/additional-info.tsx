@@ -66,18 +66,18 @@ export default function AdditionalInfo() {
   // Handle continue - only enabled after ADD+ or NOT REQUIRED
   const handleContinue = () => {
     if (!hasConfirmed) return;
-    router.push('/hosebuilder/trac360/trac360-order-confirmation');
+    router.push('/suite360/trac360/trac360-order-confirmation');
   };
 
   // Handle back
   const handleBack = () => {
-    router.push('/hosebuilder/trac360/mounting-brackets');
+    router.push('/suite360/trac360/mounting-brackets');
   };
 
   // Redirect if no valve setup or operation type selected
   useEffect(() => {
     if (!config.valveSetup || !config.operationType) {
-      router.push('/hosebuilder/trac360/tractor-info');
+      router.push('/suite360/trac360/tractor-info');
     }
   }, [config.valveSetup, config.operationType, router]);
 
