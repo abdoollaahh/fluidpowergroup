@@ -40,7 +40,7 @@ const InAppChat: React.FC<InAppChatProps> = ({
   hideWhenCartOpen = false
 }) => {
   const router = useRouter();
-  const isPWAPage = router.pathname === '/suite360/hose360';
+  const isPWAPage = router.pathname === '/suite360';
   
   const [scale, setScale] = useState(1);
   const [modalOpacity, setModalOpacity] = useState(0);
