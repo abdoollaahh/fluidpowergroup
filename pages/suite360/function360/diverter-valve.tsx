@@ -4,7 +4,6 @@
  */
 
 import React, { useState, useEffect } from 'react';
-
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
@@ -13,14 +12,43 @@ import ContinueButton from '../../../components/Trac360/Shared/ContinueButton';
 import BackButton from '../../../components/Trac360/Shared/BackButton';
 import { useFunction360 } from '../../../context/Function360Context';
 import { COLORS } from '../../../components/Trac360/styles';
-import componentData from '../../../data/function360/diverter-valve.json';
+import componentDataFile from '../../../data/function360/diverter-valve.json';
+
+// Helper to get the right variant
+const getVariantKey = (horsepower: string | null, functionType: string | null): string => {
+  if (!horsepower || !functionType) {
+    return 'electric_3rd_below_50hp';
+  }
+  
+  const hpSuffix = horsepower === 'below_50hp' ? 'below_50hp' : 'above_50hp';
+  
+  if (functionType === 'live_3rd') {
+    return `live_3rd_${hpSuffix}`;
+  }
+  
+  if (functionType === 'electric_3rd_4th') {
+    return `electric_3rd_4th_${hpSuffix}`;
+  }
+  
+  return `electric_3rd_${hpSuffix}`;
+};
 
 export default function DiverterValve() {
   const router = useRouter();
   const { config, toggleComponent } = useFunction360();
 
+  // ✅ Get the correct variant based on equipment selection
+  const variantKey = getVariantKey(config.equipment.horsepower, config.equipment.functionType);
+  const componentData = {
+    ...(componentDataFile.variants as any)[variantKey],
+    price: componentDataFile.price,
+    currency: componentDataFile.currency,
+    fallbackImage: componentDataFile.fallbackImage,
+    name: componentDataFile.name,
+  };
+
   const [isSelected, setIsSelected] = useState(config.selectedComponents.diverterValve);
-  const [isSkipped, setIsSkipped] = useState(false);  // ← Start as false
+  const [isSkipped, setIsSkipped] = useState(false);
 
   useEffect(() => {
     setIsSelected(config.selectedComponents.diverterValve);
@@ -119,12 +147,12 @@ export default function DiverterValve() {
               boxShadow: '0 8px 20px rgba(0, 0, 0, 0.1)',
             }}
           >
-            {/* Title */}
+            {/* Title 
             <div className="p-6 text-center border-b border-gray-200">
               <h3 className="text-lg font-semibold" style={{ color: COLORS.grey.dark }}>
                 {componentData.description}
               </h3>
-            </div>
+            </div>*/}
 
             {/* Image */}
             <div className="flex justify-center p-8 bg-gray-50">

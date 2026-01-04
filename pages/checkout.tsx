@@ -664,7 +664,7 @@ export default function CheckoutPage() {
               <div className="flex items-center gap-3 flex-1">
                 {item.image && (
                   <Image 
-                    src={item.image} 
+                    src='/Hose360.png'
                     alt={item.name} 
                     width={50} 
                     height={50}
@@ -672,7 +672,7 @@ export default function CheckoutPage() {
                   />
                 )}
                 <div>
-                  <p className="font-medium text-gray-800">{item.name}</p>
+                  <p className="font-medium text-gray-800">HOSE360 Custom Order</p>
                   <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
                   {item.pdfDataUrl && (
                     <button
@@ -807,11 +807,11 @@ export default function CheckoutPage() {
           <div className="mb-4">
             <h3 className="font-semibold text-gray-700 mb-2">Custom Hydraulic Function Kits</h3>
             {function360Items.map((item, index) => (
-              <div key={index} className="flex justify-between items-center py-2 border-b border-gray-200 bg-blue-50 px-2 rounded">
+              <div key={index} className="flex justify-between items-center py-2 border-b border-gray-200 bg-yellow-50 px-2 rounded">
                 <div className="flex items-center gap-3 flex-1">
                   {item.image && (
                     <Image 
-                      src={item.image} 
+                      src='/Function360.png' 
                       alt={item.name} 
                       width={50} 
                       height={50}
@@ -819,7 +819,7 @@ export default function CheckoutPage() {
                     />
                   )}
                   <div>
-                    <p className="font-medium text-gray-800">{item.name}</p>
+                    <p className="font-medium text-gray-800">FUNCTION360 Custom Order</p>
                     <p className="text-sm text-gray-600">
                       {(item as any).configuration?.equipment?.functionType?.replace(/_/g, ' ')?.toUpperCase() || 'Custom Kit'}
                     </p>

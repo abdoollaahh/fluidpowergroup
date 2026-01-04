@@ -12,11 +12,7 @@
       }
     ],
     "functionTypes": [
-      {
-        "id": "live_3rd",
-        "name": "Live 3rd Function",
-        "description": "Live hydraulic 3rd function"
-      },
+
       {
         "id": "electric_3rd",
         "name": "Electric 3rd Function",
@@ -26,6 +22,11 @@
         "id": "electric_3rd_4th",
         "name": "Electric 3rd & 4th Function",
         "description": "Electric control for 3rd and 4th hydraulic functions"
+      },
+      {
+        "id": "live_3rd",
+        "name": "Live 3rd Function (CETOP)",
+        "description": "Live hydraulic 3rd function"
       }
     ]
   }

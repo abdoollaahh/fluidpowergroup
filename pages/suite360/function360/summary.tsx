@@ -17,6 +17,12 @@ import { useFunction360 } from '../../../context/Function360Context';
 import { CartContext } from '../../../context/CartWrapper';
 import { COLORS } from '../../../components/Trac360/styles';
 import type { Function360Config, SelectedComponents } from '../../../types/function360';
+import diverterValveData from '../../../data/function360/diverter-valve.json';
+import quickCouplingsData from '../../../data/function360/quick-couplings.json';
+import adaptorsData from '../../../data/function360/adaptors.json';
+import hydraulicHosesData from '../../../data/function360/hydraulic-hoses.json';
+import electricalData from '../../../data/function360/electrical.json';
+import mountingBracketsData from '../../../data/function360/mounting-brackets.json';
 
 export default function Function360OrderConfirmation() {
   const router = useRouter();
@@ -52,39 +58,77 @@ export default function Function360OrderConfirmation() {
     router.push('/suite360/function360/additional-notes');
   };
 
+  // Helper functions to get variant keys (same as component pages)
+const getDiverterValveVariant = (horsepower: string | null, functionType: string | null): string => {
+  if (!horsepower || !functionType) return 'electric_3rd_below_50hp';
+  const hpSuffix = horsepower === 'below_50hp' ? 'below_50hp' : 'above_50hp';
+  if (functionType === 'live_3rd') return `live_3rd_${hpSuffix}`;
+  if (functionType === 'electric_3rd_4th') return `electric_3rd_4th_${hpSuffix}`;
+  return `electric_3rd_${hpSuffix}`;
+};
+
+const getQuickCouplingsVariant = (horsepower: string | null, functionType: string | null): string => {
+  if (!horsepower || !functionType) return 'default_below_50hp';
+  const hpSuffix = horsepower === 'below_50hp' ? 'below_50hp' : 'above_50hp';
+  if (functionType === 'electric_3rd_4th') return `electric_3rd_4th_${hpSuffix}`;
+  return `default_${hpSuffix}`;
+};
+
+const getAdaptorsVariant = (functionType: string | null): string => {
+  if (!functionType) return 'default';
+  return functionType === 'electric_3rd_4th' ? 'electric_3rd_4th' : 'default';
+};
+
+const getHydraulicHosesVariant = (functionType: string | null): string => {
+  if (!functionType) return 'default';
+  return functionType === 'live_3rd' ? 'live_3rd' : 'default';
+};
+
+const getElectricalVariant = (functionType: string | null): string => {
+  if (!functionType) return 'electric_3rd';
+  return functionType === 'electric_3rd_4th' ? 'electric_3rd_4th' : 'electric_3rd';
+};
+
   // Component data for display with images
-  const componentDetails: Record<keyof SelectedComponents, { name: string; price: number; image: string }> = {
-    diverterValve: { 
-      name: 'Solenoid Diverter Valve', 
-      price: 500,
-      image: '/function360/diverter-valve.png'
-    },
-    quickCouplings: { 
-      name: 'Quick Couplings', 
-      price: 500,
-      image: '/function360/quick-couplings.png'
-    },
-    adaptors: { 
-      name: 'Adaptors', 
-      price: 500,
-      image: '/function360/adaptors.png'
-    },
-    hydraulicHoses: { 
-      name: 'Hydraulic Hoses', 
-      price: 500,
-      image: '/function360/hydraulic-hoses.png'
-    },
-    electrical: { 
-      name: 'Electrical Wiring & Joystick', 
-      price: 500,
-      image: '/function360/electrical.png'
-    },
-    mountingBrackets: { 
-      name: 'Mounting Brackets', 
-      price: 500,
-      image: '/function360/mounting-bracket.png'
-    },
+  // Get dynamic component details based on equipment selection
+  const getComponentDetails = (): Record<keyof SelectedComponents, { name: string; price: number; image: string }> => {
+    const { horsepower, functionType } = config.equipment;
+    
+    return {
+      diverterValve: {
+        name: 'Solenoid Diverter Valve',
+        price: 500,
+        image: (diverterValveData.variants as any)[getDiverterValveVariant(horsepower, functionType)]?.image || '/function360/diverter-valve.png'
+      },
+      quickCouplings: {
+        name: 'Quick Couplings',
+        price: 500,
+        image: (quickCouplingsData.variants as any)[getQuickCouplingsVariant(horsepower, functionType)]?.image || '/function360/quick-couplings.png'
+      },
+      adaptors: {
+        name: 'Adaptors',
+        price: 500,
+        image: (adaptorsData.variants as any)[getAdaptorsVariant(functionType)]?.image || '/function360/adaptors.png'
+      },
+      hydraulicHoses: {
+        name: 'Hydraulic Hoses',
+        price: 500,
+        image: (hydraulicHosesData.variants as any)[getHydraulicHosesVariant(functionType)]?.image || '/function360/hydraulic-hoses.png'
+      },
+      electrical: {
+        name: 'Electrical Wiring & Joystick',
+        price: 500,
+        image: (electricalData.variants as any)[getElectricalVariant(functionType)]?.image || '/function360/electrical.png'
+      },
+      mountingBrackets: {
+        name: 'Mounting Brackets',
+        price: 500,
+        image: mountingBracketsData.image || '/function360/mounting-bracket.png'
+      },
+    };
   };
+
+  const componentDetails = getComponentDetails();
 
   // Get selected components list
   const selectedComponents = Object.entries(config.selectedComponents)
@@ -195,7 +239,7 @@ export default function Function360OrderConfirmation() {
         totalPrice: config.totalPrice,
         quantity: 1,
         stock: 999,
-        image: 'https://cdn.swell.store/fluidpowergroup/6954d92e6e6da70012d04612/f90022a0b91766db1123d39e5439852e/Function360.png',
+        image: 'https://cdn.swell.store/fluidpowergroup/6957bb3c051b2b001230beb7/64c31c423d0e72f488e9f09c3bd687a2/Function360.png',
         pdfDataUrl: pdfDataUrl,
         configuration: config,
         cartId: Date.now(),

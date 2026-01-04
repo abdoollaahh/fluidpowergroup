@@ -13,11 +13,27 @@ import ContinueButton from '../../../components/Trac360/Shared/ContinueButton';
 import BackButton from '../../../components/Trac360/Shared/BackButton';
 import { useFunction360 } from '../../../context/Function360Context';
 import { COLORS } from '../../../components/Trac360/styles';
-import componentData from '../../../data/function360/electrical.json';
+import componentDataFile from '../../../data/function360/electrical.json';
+
+// Helper to get the right variant
+const getElectricalVariant = (functionType: string | null): string => {
+  if (!functionType) return 'electric_3rd';
+  return functionType === 'electric_3rd_4th' ? 'electric_3rd_4th' : 'electric_3rd';
+};
 
 export default function Electrical() {
   const router = useRouter();
   const { config, toggleComponent } = useFunction360();
+
+  // ✅ Get the correct variant
+  const variantKey = getElectricalVariant(config.equipment.functionType);
+  const componentData = {
+    ...(componentDataFile.variants as any)[variantKey],
+    price: componentDataFile.price,
+    currency: componentDataFile.currency,
+    fallbackImage: componentDataFile.fallbackImage,
+    name: componentDataFile.name,
+  };
 
   const [isSelected, setIsSelected] = useState(config.selectedComponents.electrical);
   const [isSkipped, setIsSkipped] = useState(false);
@@ -171,13 +187,22 @@ export default function Electrical() {
             {/* Specifications List */}
               <div className="p-6 bg-gray-50">
                 <ul className="space-y-2">
-                  {componentData.specifications.components.map((component, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm" style={{ color: COLORS.grey.medium }}>
-                      <span style={{ color: COLORS.yellow.primary }}>•</span>
-                      <span>{component}</span>
-                    </li>
-                  ))}
+                {componentData.specifications.components.map((component: string, index: number) => (
+                  <li key={index} className="flex items-start gap-2 text-sm" style={{ color: COLORS.grey.medium }}>
+                    <span style={{ color: COLORS.yellow.primary }}>•</span>
+                    <span>{component}</span>
+                  </li>
+                ))}
                 </ul>
+
+                {/* Note at the bottom */}
+                {componentData.note && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <p className="text-xs italic" style={{ color: COLORS.grey.medium }}>
+                      {componentData.note}
+                    </p>
+                  </div>
+                )}
               </div>
 
             {/* NOT REQUIRED Button - Only show when NOT selected */}

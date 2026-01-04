@@ -1,15 +1,85 @@
 {
-    "id": "diverter_valve",
-    "name": "Solenoid Diverter Valve",
-    "description": "12V, 80L/min, 185bar (3000psi)",
-    "specifications": {
-      "volts": "12V",
-      "flowrate": "80 litres/min",
-      "workingPressure": "185bar (3000psi)"
+  "id": "diverter_valve",
+  "name": "Solenoid Diverter Valve",
+  "variants": {
+    "live_3rd_below_50hp": {
+      "description": "Cetop-3, 12V, 40L/min, 210bar (3000psi)",
+      "specifications": {
+        "Type": "Cetop-3",
+        "Qty": 1,
+        "Volts": "12V",
+        "Flowrate": "40 litres/min",
+        "WorkingPressure": "210bar (3000psi)",
+        "MaximumPressure": "315bar (4500psi)"
+      },
+      "image": "/function360/live-diverter-valve.png",
+      "swellProductId": "function360-diverter-valve-live-cetop3"
     },
-    "price": 500,
-    "currency": "AUD",
-    "image": "/function360/diverter-valve.png",
-    "fallbackImage": "/fluidpower_logo_transparent.gif",
-    "swellProductId": "function360-diverter-valve"
-  }
+    "live_3rd_above_50hp": {
+      "description": "Cetop-5, 12V, 60L/min, 210bar (3000psi)",
+      "specifications": {
+        "Type": "Cetop-5",
+        "Qty": 1,
+        "Volts": "12V",
+        "Flowrate": "60 litres/min",
+        "WorkingPressure": "210bar (3000psi)",
+        "MaximumPressure": "315bar (4500psi)"
+      },
+      "image": "/function360/live-diverter-valve.png",
+      "swellProductId": "function360-diverter-valve-live-cetop5"
+    },
+    "electric_3rd_below_50hp": {
+      "description": "Cetop-3, 12V, 40L/min, 210bar (3000psi)",
+      "specifications": {
+        "Type": "Cetop-3",
+        "Qty": 1,
+        "Volts": "12V",
+        "Flowrate": "40 litres/min",
+        "WorkingPressure": "210bar (3000psi)",
+        "MaximumPressure": "315bar (4500psi)"
+      },
+      "image": "/function360/diverter-valve.png",
+      "swellProductId": "function360-diverter-valve-cetop3"
+    },
+    "electric_3rd_above_50hp": {
+      "description": "Cetop-5, 12V, 60L/min, 210bar (3000psi)",
+      "specifications": {
+        "Type": "Cetop-5",
+        "Qty": 1,
+        "Volts": "12V",
+        "Flowrate": "60 litres/min",
+        "WorkingPressure": "210bar (3000psi)",
+        "MaximumPressure": "315bar (4500psi)"
+      },
+      "image": "/function360/diverter-valve.png",
+      "swellProductId": "function360-diverter-valve-cetop5"
+    },
+    "electric_3rd_4th_below_50hp": {
+      "description": "Qty=2, 12V, 40L/min, 210bar (3000psi)",
+      "specifications": {
+        "Qty": 2,
+        "Volts": "12V",
+        "Flowrate": "40 litres/min",
+        "WorkingPressure": "210bar (3000psi)",
+        "MaximumPressure": "315bar (4500psi)"
+      },
+      "image": "/function360/diverter-valve-2.png",
+      "swellProductId": "function360-diverter-valve-dual-below50"
+    },
+    "electric_3rd_4th_above_50hp": {
+      "description": "Qty=2, 12V, 60L/min, 210bar (3000psi)",
+      "specifications": {
+        "Qty": 2,
+        "Volts": "12V",
+        "Flowrate": "60 litres/min",
+        "WorkingPressure": "210bar (3000psi)",
+        "MaximumPressure": "315bar (4500psi)"
+      },
+      "image": "/function360/diverter-valve-2.png",
+      "swellProductId": "function360-diverter-valve-dual-above50"
+    }
+  },
+  "price": 500,
+  "currency": "AUD",
+  "fallbackImage": "/fluidpower_logo_transparent.gif"
+}

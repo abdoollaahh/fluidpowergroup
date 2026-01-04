@@ -20,7 +20,7 @@ const buyOptions: BuyOption[] = [
   {
     id: "hose360",
     title: "Hose360",
-    description: "Custom Hose Assembly Builder",
+    description: "Hydraulic Hose Builder",
     href: "/suite360/hose360",  // ← CHANGED from /hosebuilder/hose360
     image: "/Hose360.png",
     isActive: true,
@@ -28,7 +28,7 @@ const buyOptions: BuyOption[] = [
   {
     id: "trac360",
     title: "Trac360",
-    description: "Custom Tractor Configurator",
+    description: "Tractor Hydraulics Configurator",
     href: "/suite360/trac360/start",  // ← CHANGED from /hosebuilder/trac360/start
     image: "/Trac360_Cart.png",
     isActive: true,
@@ -36,7 +36,7 @@ const buyOptions: BuyOption[] = [
   {
     id: "function360",
     title: "Function360",
-    description: "Custom Tractor Function Configurator",
+    description: "Hydraulic Functions Configurator",
     href: "/suite360/function360/start",  // ← CHANGED from /hosebuilder/function360
     image: "/Function360.png",
     isActive: true,

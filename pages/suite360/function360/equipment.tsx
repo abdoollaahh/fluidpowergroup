@@ -75,7 +75,7 @@ export default function Equipment() {
               background: COLORS.grey.dark,
             }}
           >
-            EQUIPMENT SELECTION
+            FUNCTION SELECTION
           </div>
         </motion.div>
 

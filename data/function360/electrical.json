@@ -1,17 +1,33 @@
 {
-    "id": "electrical_wiring_joystick",
-    "name": "Electrical Wiring & Joystick",
-    "description": "Complete Electrical Control System",
-    "specifications": {
-      "components": [
-        "Joystick with One Button",
-        "Electrical Wiring Harness",
-        "Toggle Switch Button"
-      ]
+  "id": "electrical_wiring_joystick",
+  "name": "Electrical Wiring & Joystick",
+  "variants": {
+    "electric_3rd": {
+      "description": "Complete Electrical Control System",
+      "specifications": {
+        "components": [
+          "Joystick with One Button",
+          "Electrical Wiring Harness",
+          "Toggle Switch Button"
+        ]
+      },
+      "image": "/function360/electrical.png",
+      "swellProductId": "function360-electrical-single"
     },
-    "price": 500,
-    "currency": "AUD",
-    "image": "/function360/electrical.png",
-    "fallbackImage": "/fluidpower_logo_transparent.gif",
-    "swellProductId": "function360-electrical"
-  }
+    "electric_3rd_4th": {
+      "description": "Complete Electrical Control System",
+      "specifications": {
+        "components": [
+          "Joystick with Two Buttons",
+          "Electrical Wiring Harness",
+          "Toggle Switch Button"
+        ]
+      },
+      "image": "/function360/electrical.png",
+      "swellProductId": "function360-electrical-dual"
+    }
+  },
+  "price": 500,
+  "currency": "AUD",
+  "fallbackImage": "/fluidpower_logo_transparent.gif"
+}

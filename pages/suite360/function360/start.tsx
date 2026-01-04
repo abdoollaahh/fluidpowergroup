@@ -162,7 +162,7 @@ export default function Start() {
                   src="/Function360.png"  // ← USE LOGO DIRECTLY
                   alt="Hydraulic Function Kit"
                   width={340}
-                  height={300}
+                  height={340}
                   unoptimized
                 />
                 </div>

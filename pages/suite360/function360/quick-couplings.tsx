@@ -13,11 +13,38 @@ import ContinueButton from '../../../components/Trac360/Shared/ContinueButton';
 import BackButton from '../../../components/Trac360/Shared/BackButton';
 import { useFunction360 } from '../../../context/Function360Context';
 import { COLORS } from '../../../components/Trac360/styles';
-import componentData from '../../../data/function360/quick-couplings.json';
+import componentDataFile from '../../../data/function360/quick-couplings.json';
+
+// Helper to get the right variant
+const getQuickCouplingsVariant = (horsepower: string | null, functionType: string | null): string => {
+  // Default fallback
+  if (!horsepower || !functionType) {
+    return 'default_below_50hp';
+  }
+  
+  const hpSuffix = horsepower === 'below_50hp' ? 'below_50hp' : 'above_50hp';
+  
+  if (functionType === 'electric_3rd_4th') {
+    return `electric_3rd_4th_${hpSuffix}`;
+  }
+  
+  // default for electric_3rd and live_3rd
+  return `default_${hpSuffix}`;
+};
 
 export default function QuickCouplings() {
   const router = useRouter();
   const { config, toggleComponent } = useFunction360();
+
+  // ✅ Get the correct variant
+  const variantKey = getQuickCouplingsVariant(config.equipment.horsepower, config.equipment.functionType);
+  const componentData = {
+    ...(componentDataFile.variants as any)[variantKey],
+    price: componentDataFile.price,
+    currency: componentDataFile.currency,
+    fallbackImage: componentDataFile.fallbackImage,
+    name: componentDataFile.name,
+  };
 
   const [isSelected, setIsSelected] = useState(config.selectedComponents.quickCouplings);
   const [isSkipped, setIsSkipped] = useState(false);

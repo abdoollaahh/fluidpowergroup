@@ -36,7 +36,7 @@ const products: Product[] = [
   {
     id: "function360",
     title: "Function360",
-    description: "Tractor Function Configurator",
+    description: "Hydraulic Functions Configurator",
     href: "/suite360/function360/start",  // ← CHANGED from /hosebuilder/function360 (even though not active yet)
     image: "/Function360.png",
     isActive: true,

@@ -13,11 +13,28 @@ import ContinueButton from '../../../components/Trac360/Shared/ContinueButton';
 import BackButton from '../../../components/Trac360/Shared/BackButton';
 import { useFunction360 } from '../../../context/Function360Context';
 import { COLORS } from '../../../components/Trac360/styles';
-import componentData from '../../../data/function360/adaptors.json';
+import componentDataFile from '../../../data/function360/adaptors.json';
+
+// Helper to get the right variant
+const getAdaptorsVariant = (functionType: string | null): string => {
+  if (!functionType) return 'default';
+  return functionType === 'electric_3rd_4th' ? 'electric_3rd_4th' : 'default';
+};
 
 export default function Adaptors() {
   const router = useRouter();
   const { config, toggleComponent } = useFunction360();
+
+  // ✅ Get the correct variant
+  const variantKey = getAdaptorsVariant(config.equipment.functionType);
+  const componentData = {
+    ...(componentDataFile.variants as any)[variantKey],
+    price: componentDataFile.price,
+    currency: componentDataFile.currency,
+    fallbackImage: componentDataFile.fallbackImage,
+    name: componentDataFile.name,
+    note: componentDataFile.note,
+  };
 
   const [isSelected, setIsSelected] = useState(config.selectedComponents.adaptors);
   const [isSkipped, setIsSkipped] = useState(false);
@@ -171,12 +188,12 @@ export default function Adaptors() {
             {/* Specifications List */}
               <div className="p-6 bg-gray-50">
                 <ul className="space-y-2">
-                  {componentData.specifications.components.map((component, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm" style={{ color: COLORS.grey.medium }}>
-                      <span style={{ color: COLORS.yellow.primary }}>•</span>
-                      <span>{component}</span>
-                    </li>
-                  ))}
+                {componentData.specifications.components.map((component: string, index: number) => (
+                  <li key={index} className="flex items-start gap-2 text-sm" style={{ color: COLORS.grey.medium }}>
+                    <span style={{ color: COLORS.yellow.primary }}>•</span>
+                    <span>{component}</span>
+                  </li>
+                ))}
                 </ul>
                 
                 {/* Note at the bottom */}

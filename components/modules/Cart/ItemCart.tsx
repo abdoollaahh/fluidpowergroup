@@ -96,7 +96,7 @@ const ItemCart = ({ item }: IItemCartProps) => {
           <div className="relative w-full h-full">
             <Image
               layout="fill"
-              src={isTrac360 ? '/Trac360_Cart.png' : (item.image || '/cartImage.jpeg')}
+              src={isTrac360 ? '/Trac360_Cart.png' : isPWA ? '/Hose360.png': (item.image || '/cartImage.jpeg')}
               alt={item.name || "product"}
               objectFit="contain"
             />
