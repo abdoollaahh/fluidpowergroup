@@ -12,6 +12,7 @@ import { CartContext } from "context/CartWrapper";
 import { Category } from "types/products";
 import { BsSearch } from "react-icons/bs";
 import Link from "next/link";
+import BuyMenuHeader from "./MenuHeader/BuyMenuHeader";
 
 const Header = ({ categories }: { categories: Category[] }) => {
   const [hover, setHover] = useState<string | null>(null);
@@ -34,6 +35,16 @@ const Header = ({ categories }: { categories: Category[] }) => {
     router.pathname.startsWith('/product') ||   // Catch other product-related routes
     (router.asPath.includes('products') && !router.asPath.includes('search')) || // Any URL containing 'products' but not search
     (router.pathname === '/products' && !!router.query.subcategory); // Subcategory pages
+
+    // ========================================
+    // PHASE 1: URL MIGRATION - Active State Detection
+    // ========================================
+    const isBuyActive: boolean = 
+    router.pathname === '/suite360' ||
+    router.pathname === '/buy' ||  // ← ADD THIS
+    router.pathname.startsWith('/suite360/hose360') ||
+    router.pathname.startsWith('/suite360/trac360') ||
+    router.pathname.startsWith('/suite360/function360');
 
   // Handle mobile search press with animation
   const handleMobileSearchPress = () => {
@@ -124,12 +135,13 @@ const Header = ({ categories }: { categories: Category[] }) => {
     }} />
     <HoverWrapper hook={{ hover, setHover }}>
       <div className="w-full fixed top-0 bg-white z-50" 
-  style={{
-    background: 'linear-gradient(to bottom, white 0%, white 50%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 0) 100%)',
-    borderBottom: 'none',
-    paddingBottom: '30px',
-    transition: 'all 0.3s ease-in-out' // Add smooth transition
-  }}onMouseLeave={() => setHover(null)}>
+        style={{
+          background: 'linear-gradient(to bottom, white 0%, white 50%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 0) 100%)',
+          borderBottom: 'none',
+          paddingBottom: '30px',
+          transition: 'all 0.3s ease-in-out' // Add smooth transition
+        }}
+        onMouseLeave={() => setHover(null)}>
         <div className="wrapper relative w-full px-6 z-30">
           <div className="flex items-center gap-6 py-2 overflow-hidden ">
             {/* Mobile Left Section - ONLY applies on mobile */}
@@ -211,7 +223,7 @@ const Header = ({ categories }: { categories: Category[] }) => {
 
             {/* Desktop Navigation - Pass isProductsActive to NavHeader */}
             <div className="w-full justify-center hidden lg:flex z-30">
-              <NavHeader isProductsActive={isProductsActive} />
+            <NavHeader isProductsActive={isProductsActive} isBuyActive={isBuyActive} />
             </div>
 
             {/* Mobile Right Section - ONLY applies on mobile */}
@@ -399,10 +411,17 @@ const Header = ({ categories }: { categories: Category[] }) => {
         </div>
 
         <AnimatePresence>
-          {hover === "Products" && (
+          {hover === "products" && (
             <ProductMenuHeader categories={categories} />
           )}
         </AnimatePresence>
+
+        <AnimatePresence>
+          {hover === "buy" && (
+            <BuyMenuHeader onClose={() => setHover(null)} />
+          )}
+        </AnimatePresence>
+
       </div>
     </HoverWrapper>
       <div style={{ height: "90px", width: "100%" }} />

@@ -137,42 +137,29 @@ const CartWrapper = ({ children }: ICartWrapperProps) => {
     };
   }, []);
 
-  // 🆕 NEW: Monitor sessionStorage for order confirmation state (UI display only)
-  useEffect(() => {
-    const checkOrderConfirmation = () => {
-      const viewing = sessionStorage.getItem('viewingOrderConfirmation') === 'true';
-      if (viewing !== isViewingOrderConfirmation) {
-        setIsViewingOrderConfirmation(viewing);
-        console.log('[Website Cart] Order confirmation viewing state:', viewing);
-      }
-    };
-    
-    // Check immediately
-    checkOrderConfirmation();
-    
-    // Check periodically (poll every 200ms)
-    const interval = setInterval(checkOrderConfirmation, 200);
-    
-    return () => clearInterval(interval);
-  }, [isViewingOrderConfirmation]);
-
   // Save cart to localStorage whenever it changes (but only after hydration)
   useEffect(() => {
     if (isHydrated) {
-      // 🔧 CRITICAL FIX: Check localStorage, not React state
-      // React state might be stale when PWA adds items
-      const isViewingOrderConfirmation = sessionStorage.getItem('viewingOrderConfirmation') === 'true';
+      // 🔧 Only block saves if we're ACTUALLY on the order-confirmation page
+      // Check both sessionStorage flag AND current pathname
+      const isViewingOrderConfirmation = 
+        typeof window !== 'undefined' &&
+        sessionStorage.getItem('viewingOrderConfirmation') === 'true' &&
+        window.location.pathname === '/order-confirmation';
       
       if (isViewingOrderConfirmation) {
-        // Check actual localStorage content, not React state
+        // We're on order-confirmation page - check if cart is genuinely empty
         const currentStorage = localStorage.getItem('shopping-cart');
         const currentData = currentStorage ? JSON.parse(currentStorage) : { items: [] };
         
-        if (currentData.items?.length === 0) {
+        // Only block if BOTH conditions are true:
+        // 1. We're on order-confirmation page
+        // 2. Cart is empty
+        if (currentData.items?.length === 0 && cart.items.length === 0) {
           console.log('[Website Cart] Not saving empty cart - viewing order confirmation');
           return;
         }
-        // If localStorage has items, continue with save (don't block)
+        // If cart has items (new order being added), allow save to proceed
       }
 
       // 🔧 NEW FIX: Debounce save to avoid race conditions with PWA
@@ -288,22 +275,26 @@ const CartWrapper = ({ children }: ICartWrapperProps) => {
 
   // 🆕 NEW: Compute display items (hide cart items when viewing order confirmation)
   // This only affects the UI - actual cart data remains in state and localStorage
-  const displayItems = isViewingOrderConfirmation ? [] : cart.items;
+  const isOnOrderConfirmationPage = 
+  typeof window !== 'undefined' && 
+  window.location.pathname === '/order-confirmation';
+
+  const displayItems = isOnOrderConfirmationPage ? [] : cart.items;
 
   return (
-    <CartContext.Provider
-      value={{
-        toggleCart,
-        items: displayItems, // 🆕 CHANGED: Use displayItems instead of cart.items
-        addItem,
-        deleteItem,
-        updateItem,
-        setCart,
-        clearCart,
-        open: cart.open,
-      }}>
-      {children}
-    </CartContext.Provider>
+  <CartContext.Provider
+    value={{
+      toggleCart,
+      items: displayItems,
+      addItem,
+      deleteItem,
+      updateItem,
+      setCart,
+      clearCart,
+      open: cart.open,
+    }}>
+    {children}
+  </CartContext.Provider>
   );
 };
 

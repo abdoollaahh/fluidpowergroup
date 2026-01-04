@@ -1,0 +1,63 @@
+{
+    "brands": [
+      "John Deere",
+      "Kubota",
+      "Massey Ferguson",
+      "New Holland"
+    ],
+    "models": {
+      "John Deere": [
+        "4066R",
+        "5055E",
+        "5065E",
+        "5075E",
+        "5085E",
+        "5090E",
+        "5100E"
+      ],
+      "Kubota": [
+        "M5-091",
+        "M5-111",
+        "M6-131",
+        "M6-141",
+        "M7-151",
+        "M7-172"
+      ],
+      "Massey Ferguson": [
+        "4707",
+        "4708",
+        "4709",
+        "5710",
+        "5711",
+        "5712",
+        "5713"
+      ],
+      "New Holland": [
+        "T4.75",
+        "T4.85",
+        "T4.95",
+        "T4.105",
+        "T5.100",
+        "T5.110",
+        "T5.120"
+      ]
+    },
+    "driveTypes": [
+      "2WD",
+      "4WD"
+    ],
+    "protectionTypes": [
+      {
+        "id": "cab",
+        "name": "CAB",
+        "description": "Enclosed cabin tractor",
+        "image": "/trac360/cab-tractor.png"
+      },
+      {
+        "id": "rops",
+        "name": "ROPS",
+        "description": "Roll-Over Protection Structure",
+        "image": "/trac360/rops-tractor.png"
+      }
+    ]
+  }

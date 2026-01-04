@@ -131,7 +131,7 @@ const Services = () => {
             {/* Header Section */}
             <div className="flex flex-col gap-4 p-8 pt-16">
               <div className="font-bold text-5xl sm:text-6xl text-black-500 mb-8">
-                Services We Offer
+                Services
               </div>
             </div>
 

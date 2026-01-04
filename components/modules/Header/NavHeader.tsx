@@ -1,28 +1,28 @@
 import clsx from "clsx";
 import siteLinks from "constants/site-links";
 import { HoverContext } from "context/HoverWrapper";
-import React, { useContext, useMemo } from "react";
+import React, { useContext } from "react";
 import { useRouter } from "next/router";
-import { v4 as uuid } from "uuid";
 
 interface NavHeaderProps {
   isProductsActive?: boolean;
+  isBuyActive?: boolean;
 }
 
-const NavHeader = ({ isProductsActive }: NavHeaderProps) => {
+const NavHeader = ({ isProductsActive, isBuyActive }: NavHeaderProps) => {
   const { hover, setHover } = useContext(HoverContext);
   const router = useRouter();
 
-  const pages = useMemo(
-    () => siteLinks.map((page) => ({ ...page, id: uuid() })),
-    []
-  );
-
-  // Function to check if a tab is active
-  const isActiveTab = (href: string, title: string) => {
+  // ✅ FIXED: Function to check if a tab is active (now uses ID)
+  const isActiveTab = (href: string, id: string) => {
     // Special handling for Products tab - use the passed prop
-    if (title === "Products" && isProductsActive !== undefined) {
+    if (id === "products" && isProductsActive !== undefined) {
       return isProductsActive;
+    }
+    
+    // Special handling for Buy tab - use the passed prop
+    if (id === "buy" && isBuyActive !== undefined) {
+      return isBuyActive;
     }
     
     // Handle home page specifically
@@ -43,19 +43,24 @@ const NavHeader = ({ isProductsActive }: NavHeaderProps) => {
         backdropFilter: "blur(20px)",
         border: "1px solid rgba(255, 255, 255, 0.2)",
         borderRadius: "50px",
-        padding: "8px 12px 12px 12px", // Added bottom padding
+        padding: "8px 12px 12px 12px",
         boxShadow: "0 8px 25px rgba(0, 0, 0, 0.1)"
       }}
     >
-      <div className="flex items-center gap-1">
-        {pages.map((page) => {
-          const isActive = isActiveTab(page.href, page.title);
+    <div className="flex items-center gap-1">
+      {siteLinks.map((page) => {
+        const isActive = isActiveTab(page.href, page.id);
           
           return (
             <div
               onMouseEnter={() => {
-                if (page.title !== "About" && page.title !== "Contact Us") {
-                  setHover(page.title);
+                
+                if (page.id !== "about" && page.id !== "contact" && page.id !== "buy") {
+                  setHover(page.id);  // ← Now sets "products" ✅
+                }
+                // Trigger Buy dropdown on hover
+                if (page.id === "buy") {
+                  setHover(page.id);  // ← Now sets "buy" ✅
                 }
               }}
               key={page.id}
@@ -64,11 +69,10 @@ const NavHeader = ({ isProductsActive }: NavHeaderProps) => {
                 href={page.href}
                 className="relative text-sm capitalize font-semibold overflow-hidden"
                 style={{
-                  // Override global button/anchor styles
                   all: "unset",
                   cursor: "pointer",
                   display: "inline-block",
-                  padding: page.title === "Contact Us" ? "8px 10px" : "8px 16px",
+                  padding: page.id === "contact" ? "8px 10px" : "8px 16px",
                   borderRadius: "40px",
                   fontSize: "0.85rem",
                   fontWeight: "600",
@@ -76,9 +80,8 @@ const NavHeader = ({ isProductsActive }: NavHeaderProps) => {
                   textDecoration: "none",
                   transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
                   position: "relative",
-                  whiteSpace: "nowrap", // Prevent line breaks
-                  minWidth: "max-content", // Ensure button expands to fit content
-                  // Base background with gradients
+                  whiteSpace: "nowrap",
+                  minWidth: "max-content",
                   background: isActive 
                     ? `radial-gradient(ellipse at center, rgba(250, 204, 21, 0.9) 20%, rgba(250, 204, 21, 0.7) 60%, rgba(255, 215, 0, 0.8) 100%), rgba(250, 204, 21, 0.6)`
                     : `radial-gradient(ellipse at center, rgba(255, 255, 255, 0.3) 20%, rgba(255, 255, 255, 0.15) 70%, rgba(240, 240, 240, 0.2) 100%), rgba(255, 255, 255, 0.15)`,
