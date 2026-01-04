@@ -79,6 +79,25 @@ export default function Equipment() {
           </div>
         </motion.div>
 
+        {/* Function360 Hero GIF */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="flex justify-center mb-8"
+        >
+          <div className="relative w-full max-w-md">
+            <Image
+              src="/function360/Function360.gif"
+              alt="Function360 Hydraulic Kit"
+              width={400}
+              height={400}
+              className="object-contain"
+              unoptimized
+            />
+          </div>
+        </motion.div>
+
         {/* Form Fields */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
