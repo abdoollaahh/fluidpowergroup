@@ -1,7 +1,5 @@
-// pages/api/paypal/capture-order.js - BLOB + QSTASH VERSION
-// This version captures payment + updates inventory, uploads PDFs to Vercel Blob, then uses QStash
-// ✅ Works within Vercel Hobby plan 10-second timeout limit
-// ✅ No message size limits - PDFs stored in Blob
+// pages/api/paypal/capture-order.js - TRAC 360 VERSION
+// This version supports: Website Products, PWA Orders, and Trac 360 Orders
 
 import fetch from 'node-fetch';
 import swell from 'swell-node';
@@ -17,15 +15,12 @@ const TESTING_MODE = process.env.TESTING_MODE === 'true';
 // ========================================
 // IDEMPOTENCY TRACKING
 // ========================================
-// Tracks PayPal orderIDs that have been processed to prevent duplicate captures
 const processedPayPalOrders = new Map();
 
-// Check if PayPal order was already processed
 function isPayPalOrderProcessed(paypalOrderId) {
     return processedPayPalOrders.has(paypalOrderId);
 }
 
-// Mark PayPal order as processed
 function markPayPalOrderProcessed(paypalOrderId, internalOrderNumber) {
     processedPayPalOrders.set(paypalOrderId, {
         internalOrderNumber,
@@ -34,7 +29,6 @@ function markPayPalOrderProcessed(paypalOrderId, internalOrderNumber) {
     console.log(`🔒 Marked PayPal order ${paypalOrderId} as processed`);
 }
 
-// Cleanup old processed orders (older than 24 hours)
 setInterval(() => {
     const dayAgo = Date.now() - (24 * 60 * 60 * 1000);
     for (const [orderId, data] of processedPayPalOrders.entries()) {
@@ -44,32 +38,30 @@ setInterval(() => {
             processedPayPalOrders.delete(orderId);
         }
     }
-}, 60 * 60 * 1000); // Run every hour
+}, 60 * 60 * 1000);
 
 // ========================================
 // HELPER FUNCTIONS
 // ========================================
 
-// --- Helper: Upload PDFs to Vercel Blob ---
-async function uploadPDFsToBlob(pwaOrders, orderNumber) {
+async function uploadPDFsToBlob(ordersWithPDFs, orderNumber) {
     const blobUrls = [];
     
-    for (let i = 0; i < pwaOrders.length; i++) {
-        const order = pwaOrders[i];
+    for (let i = 0; i < ordersWithPDFs.length; i++) {
+        const order = ordersWithPDFs[i];
         
         if (!order.pdfDataUrl) continue;
         
         try {
-            // Extract base64 data and convert to Buffer
             const base64Data = order.pdfDataUrl.split(',')[1];
             const buffer = Buffer.from(base64Data, 'base64');
             
-            // Generate unique filename
-            const filename = `orders/${orderNumber}/assembly-${order.cartId || i}.pdf`;
+            // Determine filename based on order type
+            const orderType = order.type === 'trac360_order' ? 'tractor' : 'assembly';
+            const filename = `orders/${orderNumber}/${orderType}-${order.cartId || i}.pdf`;
             
             console.log(`📤 Uploading PDF to Blob: ${filename} (${(buffer.length / 1024).toFixed(2)}KB)`);
             
-            // Upload to Vercel Blob with 1 hour expiration
             const blob = await put(filename, buffer, {
                 access: 'public',
                 addRandomSuffix: true,
@@ -80,20 +72,21 @@ async function uploadPDFsToBlob(pwaOrders, orderNumber) {
             
             blobUrls.push({
                 url: blob.url,
-                name: `Custom-Hose-Assembly-${order.cartId || 'order'}.pdf`,
-                cartId: order.cartId
+                name: order.type === 'trac360_order' 
+                    ? `Tractor-Configuration-${order.cartId || 'order'}.pdf`
+                    : `Custom-Hose-Assembly-${order.cartId || 'order'}.pdf`,
+                cartId: order.cartId,
+                type: order.type
             });
             
         } catch (error) {
             console.error(`❌ Failed to upload PDF for order ${order.cartId}:`, error);
-            // Continue with other PDFs - don't fail entire order
         }
     }
     
     return blobUrls;
 }
 
-// --- Helper: Get PayPal Access Token ---
 async function getPayPalAccessToken(PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_API_BASE) {
     const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString('base64');
     const url = `${PAYPAL_API_BASE}/v1/oauth2/token`;
@@ -118,16 +111,15 @@ async function getPayPalAccessToken(PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYP
     }
 }
 
-// --- Helper: Update Swell Inventory ---
-async function updateSwellInventory(websiteProducts, orderId) {
-    if (!websiteProducts || websiteProducts.length === 0) {
-        console.log('No website products to update inventory for.');
+async function updateSwellInventory(products, orderId) {
+    if (!products || products.length === 0) {
+        console.log('No products to update inventory for.');
         return { success: true, message: 'No inventory to update' };
     }
 
     const results = [];
 
-    for (const item of websiteProducts) {
+    for (const item of products) {
         try {
             console.log(`\n📦 Processing: ${item.name} (${item.id})`);
             console.log(`   Quantity sold: ${item.quantity}`);
@@ -219,10 +211,8 @@ export default async function handler(req, res) {
         return res.status(405).json({ success: false, error: `Method ${req.method} Not Allowed` }); 
     }
 
-    // Initialize Swell
     swell.init(process.env.SWELL_STORE_ID, process.env.SWELL_SECRET_KEY);
 
-    // PayPal credentials configuration
     const isVercelPreview = process.env.VERCEL_ENV === 'preview';
     let PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PAYPAL_API_BASE;
 
@@ -258,7 +248,7 @@ export default async function handler(req, res) {
     console.log("📥 Received capture-order request");
     if (TESTING_MODE) console.log("🧪 Running in TESTING MODE");
 
-    // Extract order data
+    // NEW: Extract trac360Orders from request body
     const {
         orderID,
         payerID,
@@ -266,10 +256,18 @@ export default async function handler(req, res) {
         userDetails,
         websiteProducts = [],
         pwaOrders = [],
+        trac360Orders = [],
+        function360Orders = [],
         totals
     } = req.body;
 
-    // Validation
+    // NEW: Log order composition
+    console.log('📊 Order Composition:');
+    console.log(`   Website products: ${websiteProducts.length}`);
+    console.log(`   PWA orders: ${pwaOrders.length}`);
+    console.log(`   Trac 360 orders: ${trac360Orders.length}`);
+    console.log(`   Function 360 orders: ${function360Orders.length}`)
+
     if (!orderID) {
         console.error("❌ Missing PayPal orderID");
         return res.status(400).json({ success: false, error: 'Missing required PayPal orderID.' });
@@ -277,7 +275,7 @@ export default async function handler(req, res) {
 
     try {
         // ============================================================================
-        // STEP 1: Check for duplicate processing (Idempotency)
+        // STEP 1: Check for duplicate processing
         // ============================================================================
         
         if (isPayPalOrderProcessed(orderID)) {
@@ -324,7 +322,6 @@ export default async function handler(req, res) {
             error_text: await captureResponse.text() 
         }));
 
-        // Handle capture response
         if (!captureResponse.ok) {
             console.error(`❌ PayPal capture failed: ${captureResponse.status}`, captureData);
             
@@ -333,7 +330,6 @@ export default async function handler(req, res) {
                                 captureData?.error_text || 
                                 'Payment capture failed.';
             
-            // Handle already captured orders
             if (captureData.name === 'ORDER_ALREADY_CAPTURED' || 
                 (captureData?.details?.[0]?.issue === 'ORDER_ALREADY_CAPTURED')) {
                 console.warn(`⚠️ Order ${orderID} already captured`);
@@ -348,7 +344,6 @@ export default async function handler(req, res) {
                 });
             }
             
-            // Update order status to failed
             setOrderStatus(orderNumber, 'failed', {
                 error: errorMessage,
                 paypalStatus: captureResponse.status
@@ -362,7 +357,6 @@ export default async function handler(req, res) {
 
         console.log(`✅ PayPal order captured: ${orderID}`);
 
-        // Extract capture details
         let finalCaptureStatus = captureData.status;
         let captureId = null;
 
@@ -372,7 +366,6 @@ export default async function handler(req, res) {
             console.log(`📋 Capture ID: ${captureId}, Status: ${finalCaptureStatus}`);
         }
 
-        // Verify capture status
         if (finalCaptureStatus !== 'COMPLETED' && finalCaptureStatus !== 'PENDING') {
             console.warn(`⚠️ Unexpected capture status: ${finalCaptureStatus}`);
             setOrderStatus(orderNumber, 'failed', {
@@ -387,37 +380,123 @@ export default async function handler(req, res) {
         }
 
         // ============================================================================
-        // STEP 4: Mark order as processed (prevent duplicates)
+        // STEP 4: Mark order as processed
         // ============================================================================
         
         markPayPalOrderProcessed(orderID, orderNumber);
 
         // ============================================================================
-        // STEP 5: Update inventory (SYNCHRONOUS - must complete before response)
+        // STEP 5: Update inventory for all product types
         // ============================================================================
         
         let inventoryResult = { success: true };
+        
+        // Update website product inventory
         if (websiteProducts && websiteProducts.length > 0) {
-            console.log(`📦 Updating inventory for ${websiteProducts.length} products...`);
-            inventoryResult = await updateSwellInventory(
-                websiteProducts, 
-                captureId
-            );
-            console.log(`✅ Inventory update result:`, inventoryResult.success);
-            updateOrderStatus(orderNumber, { 
-                inventoryUpdated: inventoryResult.success 
+            console.log(`📦 Updating inventory for ${websiteProducts.length} website products...`);
+            inventoryResult = await updateSwellInventory(websiteProducts, captureId);
+            console.log(`✅ Website inventory update result:`, inventoryResult.success);
+        }
+        
+        // NEW: Update Trac 360 inventory
+        if (trac360Orders && trac360Orders.length > 0) {
+            console.log(`🚜 Processing inventory for ${trac360Orders.length} Trac 360 orders...`);
+            
+            // Extract Swell product IDs from tractor configurations
+            const trac360Products = trac360Orders.flatMap(order => {
+                const productIds = order.tractorConfig?.productIds || [];
+                return productIds.map(productId => ({
+                    id: productId,
+                    quantity: 1,  // Each tractor config uses 1 of each component
+                    name: `${order.name} - ${productId}`
+                }));
             });
+            
+            if (trac360Products.length > 0) {
+                console.log(`📦 Updating inventory for ${trac360Products.length} Trac 360 components...`);
+                const trac360InventoryResult = await updateSwellInventory(trac360Products, captureId);
+                console.log(`✅ Trac 360 inventory update result:`, trac360InventoryResult.success);
+                
+                updateOrderStatus(orderNumber, { 
+                    trac360InventoryUpdated: trac360InventoryResult.success 
+                });
+            }
         }
 
+        // NEW: Update Function 360 inventory
+        if (function360Orders && function360Orders.length > 0) {
+            console.log(`🔧 Processing inventory for ${function360Orders.length} Function 360 orders...`);
+            
+            // Extract Swell product IDs from configuration
+            const function360Products = function360Orders.flatMap(order => {
+            const productIds = order.configuration?.swellProductIds || [];
+            return productIds.map(productId => ({
+                id: productId,
+                quantity: 1,
+                name: `${order.name} - ${productId}`
+            }));
+            });
+            
+            if (function360Products.length > 0) {
+            console.log(`📦 Updating inventory for ${function360Products.length} Function 360 components...`);
+            const function360InventoryResult = await updateSwellInventory(function360Products, captureId);
+            console.log(`✅ Function 360 inventory update result:`, function360InventoryResult.success);
+            
+            updateOrderStatus(orderNumber, { 
+                function360InventoryUpdated: function360InventoryResult.success 
+            });
+            }
+        }
+        
+        updateOrderStatus(orderNumber, { 
+            inventoryUpdated: inventoryResult.success 
+        });
+
         // ============================================================================
-        // STEP 6: Upload PDFs to Vercel Blob (if any)
+        // STEP 6: Upload PDFs to Vercel Blob (handles both PWA and Trac 360)
         // ============================================================================
         
         let blobUrls = [];
-        if (pwaOrders && pwaOrders.length > 0 && pwaOrders.some(o => o.pdfDataUrl)) {
-            console.log(`📤 Uploading ${pwaOrders.filter(o => o.pdfDataUrl).length} PDF(s) to Vercel Blob...`);
-            blobUrls = await uploadPDFsToBlob(pwaOrders, orderNumber);
+        
+        // NEW: Combine both order types for PDF upload
+        const allOrdersWithPDFs = [
+            ...pwaOrders,
+            ...trac360Orders,
+            ...function360Orders
+        ].filter(order => order.pdfDataUrl);
+
+        // Determine callback URL first (needed for isLocalMode check)
+        const callbackUrl = (() => {
+            if (process.env.VERCEL_URL) {
+                return `https://${process.env.VERCEL_URL}/api/send-email`;
+            }
+            
+            if (process.env.API_BASE_URL) {
+                return `${process.env.API_BASE_URL}/api/send-email`;
+            }
+            
+            if (TESTING_MODE) {
+                return process.env.API_BASE_URL_TEST 
+                    ? `${process.env.API_BASE_URL_TEST}/api/send-email`
+                    : 'http://localhost:3001/api/send-email';
+            }
+            
+            return 'https://fluidpowergroup.com.au/api/send-email';
+        })();
+
+        const isLocalMode = callbackUrl.includes('localhost') || callbackUrl.includes('127.0.0.1');
+        
+        if (allOrdersWithPDFs.length > 0) {
+            if (isLocalMode) {
+                // Local mode: Skip Blob upload, PDFs will be attached directly
+                console.log(`📎 LOCAL MODE: Skipping Blob upload for ${allOrdersWithPDFs.length} PDF(s)`);
+                console.log(`📎 PDFs will be attached directly to emails from base64 data`);
+            } else {
+                // Production mode: Upload to Vercel Blob
+            console.log(`📤 Uploading ${allOrdersWithPDFs.length} PDF(s) to Vercel Blob...`);
+            blobUrls = await uploadPDFsToBlob(allOrdersWithPDFs, orderNumber);
             console.log(`✅ Uploaded ${blobUrls.length} PDF(s) to Blob`);
+            }
         }
 
         // ============================================================================
@@ -426,13 +505,15 @@ export default async function handler(req, res) {
         
         console.log(`📧 Preparing order ${orderNumber} for QStash...`);
         
-        // ✅ Generate email templates BEFORE creating payload
+        // Generate email templates (updated to include trac360Orders)
         console.log('📧 Generating email templates...');
         const emailTemplates = generateEmailTemplates(
             orderNumber,
             userDetails,
             websiteProducts,
             pwaOrders,
+            trac360Orders,
+            function360Orders,
             totals,
             captureId,
             TESTING_MODE
@@ -445,105 +526,139 @@ export default async function handler(req, res) {
             businessLength: emailTemplates.businessEmailContent?.length || 0
         });
         
-        // Prepare email data WITHOUT PDF base64 data (use Blob URLs instead)
+        // NEW: Prepare email data with Trac 360 orders
         const emailData = {
             orderNumber,
             paypalCaptureID: captureId,
             userDetails,
             websiteProducts,
-            pwaOrders: pwaOrders.map(order => ({
-                ...order,
-                pdfDataUrl: undefined // Remove large base64 data
-            })),
-            blobUrls, // Include Blob URLs instead
+            pwaOrders,
+            trac360Orders,
+            function360Orders,
+            blobUrls,
             totals,
             testingMode: TESTING_MODE,
-            emailTemplates: emailTemplates // ✅ NOW INCLUDED!
+            emailTemplates: emailTemplates
         };
 
-        // Check payload size
         const payloadSize = JSON.stringify(emailData).length;
         const sizeMB = (payloadSize / 1024 / 1024).toFixed(2);
         console.log(`📊 Email payload size: ${sizeMB}MB (with Blob URLs)`);
-
-        // Determine callback URL
-        const callbackUrl = (() => {
-            // Priority 1: Use VERCEL_URL (works for both test and production deployments)
-            if (process.env.VERCEL_URL) {
-                return `https://${process.env.VERCEL_URL}/api/send-email`;
-            }
-            
-            // Priority 2: Use explicit API_BASE_URL if set (for manual overrides)
-            if (process.env.API_BASE_URL) {
-                return `${process.env.API_BASE_URL}/api/send-email`;
-            }
-            
-            // Priority 3: Fallback based on mode
-            if (TESTING_MODE) {
-                return process.env.API_BASE_URL_TEST 
-                    ? `${process.env.API_BASE_URL_TEST}/api/send-email`
-                    : 'http://localhost:3001/api/send-email';
-            }
-            
-            // Priority 4: Production domain fallback (when nothing else is set)
-            return 'https://fluidpowergroup.com.au/api/send-email';
-        })();
         
         console.log(`🔍 QStash will call: ${callbackUrl}`);
         console.log(`📍 Deployment: ${process.env.VERCEL_URL || 'local/custom'}`);
-        console.log('🔍 DEBUG Environment Variables:');
-        console.log('   VERCEL_URL:', process.env.VERCEL_URL || 'UNDEFINED');
-        console.log('   VERCEL_ENV:', process.env.VERCEL_ENV || 'UNDEFINED');
-        console.log('   API_BASE_URL:', process.env.API_BASE_URL ? 'SET' : 'UNDEFINED');
-        console.log('   API_BASE_URL_TEST:', process.env.API_BASE_URL_TEST ? 'SET' : 'UNDEFINED');
-        console.log(`🧪 Testing Mode: ${TESTING_MODE}`);
 
-        // Push to QStash
-        const qstashResult = await pushToQStash(emailData, callbackUrl);
+        // ============================================================================
+        // 🆕 LOCAL MODE: Bypass QStash and send emails directly
+        // ============================================================================
 
-        if (qstashResult.success) {
-            console.log(`✅ Order ${orderNumber} email processing initiated`);
-            updateOrderStatus(orderNumber, { 
-                emailsQueued: true,
-                qstashMessageId: qstashResult.messageId,
-                blobUrls: blobUrls.length > 0 ? blobUrls.map(b => b.url) : [],
-                queuedAt: new Date().toISOString()
+        if (isLocalMode) {
+            console.log('📧 LOCAL MODE: Bypassing QStash, calling send-email directly...');
+            
+            try {
+                // Call our own email API directly
+                const emailResponse = await fetch(callbackUrl, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-server-key': process.env.VALID_SERVER_KEY  // ADD THIS LINE
+                    },
+                    body: JSON.stringify(emailData)  // Use emailData, not emailPayload
+                });
+                
+                if (emailResponse.ok) {
+                    const emailResult = await emailResponse.json();
+                    console.log('✅ Emails sent successfully in local mode:', emailResult);
+                    
+                    // Update order status
+                    updateOrderStatus(orderNumber, { 
+                        emailsSent: true,
+                        sentDirectly: true,
+                        sentAt: new Date().toISOString()
+                    });
+                } else {
+                    const errorText = await emailResponse.text();
+                    console.error('❌ Email sending failed:', errorText);
+                    
+                    updateOrderStatus(orderNumber, { 
+                        emailsSent: false,
+                        emailError: errorText
+                    });
+                }
+            } catch (emailError) {
+                console.error('❌ Error calling email API:', emailError);
+                updateOrderStatus(orderNumber, { 
+                    emailsSent: false,
+                    emailError: emailError.message
+                });
+            }
+            
+            // Mark order as completed
+            console.log(`✅ Order ${orderNumber} processed successfully (local mode)`);
+            setOrderStatus(orderNumber, 'processing', {
+                paymentCaptured: true,
+                inventoryUpdated: inventoryResult.success,
+                emailsSent: true,
+                completedAt: new Date().toISOString()
             });
+            
+            return res.status(200).json({
+                success: true,
+                message: 'Payment captured and emails sent directly (local mode).',
+                paypalOrderStatus: captureData.status,
+                paypalCaptureStatus: finalCaptureStatus,
+                paypalCaptureID: captureId,
+                orderNumber: orderNumber,
+                emailsSent: true,
+                localMode: true
+            });
+            
         } else {
-            console.error(`❌ Failed to process order ${orderNumber} emails:`, qstashResult.error);
-            updateOrderStatus(orderNumber, { 
-                emailsQueued: false,
-                qstashError: qstashResult.error
+            // Production mode - use QStash as normal
+            console.log('🚀 PRODUCTION MODE: Using QStash...');
+            
+            const qstashResult = await pushToQStash(emailData, callbackUrl);
+
+            if (qstashResult.success) {
+                console.log(`✅ Order ${orderNumber} email processing initiated`);
+                updateOrderStatus(orderNumber, { 
+                    emailsQueued: true,
+                    qstashMessageId: qstashResult.messageId,
+                    blobUrls: blobUrls.length > 0 ? blobUrls.map(b => b.url) : [],
+                    queuedAt: new Date().toISOString()
+                });
+            } else {
+                console.error(`❌ Failed to process order ${orderNumber} emails:`, qstashResult.error);
+                updateOrderStatus(orderNumber, { 
+                    emailsQueued: false,
+                    qstashError: qstashResult.error
+                });
+            }
+            
+            // Mark as completed
+            console.log(`✅ Order ${orderNumber} processed successfully`);
+            setOrderStatus(orderNumber, 'processing', {
+                paymentCaptured: true,
+                inventoryUpdated: inventoryResult.success,
+                emailsQueued: qstashResult.success,
+                completedAt: new Date().toISOString()
+            });
+
+            console.log(`✅ Returning success response for ${orderNumber}`);
+            return res.status(200).json({
+                success: true,
+                message: 'Payment captured and order queued for email processing via QStash.',
+                paypalOrderStatus: captureData.status,
+                paypalCaptureStatus: finalCaptureStatus,
+                paypalCaptureID: captureId,
+                orderNumber: orderNumber,
+                emailsQueued: qstashResult.success
             });
         }
-
-        // ============================================================================
-        // STEP 7: Mark as completed and return response (FAST - under 5 seconds)
-        // ============================================================================
-        
-        console.log(`✅ Order ${orderNumber} processed successfully (payment + inventory)`);
-        setOrderStatus(orderNumber, 'processing', {
-            paymentCaptured: true,
-            inventoryUpdated: inventoryResult.success,
-            emailsQueued: qstashResult.success,
-            completedAt: new Date().toISOString()
-        });
-
-        console.log(`✅ Returning success response for ${orderNumber}`);
-        return res.status(200).json({
-            success: true,
-            message: 'Payment captured and order queued for email processing via QStash.',
-            paypalOrderStatus: captureData.status,
-            paypalCaptureStatus: finalCaptureStatus,
-            paypalCaptureID: captureId,
-            orderNumber: orderNumber,
-            emailsQueued: qstashResult.success
-        });
 
     } catch (error) {
         console.error(`❌ Unhandled error for order ${orderID}:`, error);
         
-        // Update order status
         if (orderNumber) {
             setOrderStatus(orderNumber, 'failed', {
                 error: error.message,

@@ -221,6 +221,9 @@ export default async function handler(req, res) {
                 orderNumber,
                 userDetails,
                 pdfAttachments,
+                pwaOrders,
+                trac360Orders,
+                function360Orders, 
                 blobUrls,
                 emailTemplates,
                 userEmail,
@@ -295,6 +298,42 @@ export default async function handler(req, res) {
             } else if (pdfAttachments) {
                 actualPdfAttachments = pdfAttachments;
                 console.log(`📎 Using direct PDF attachments (${pdfAttachments.length})`);
+            } else {
+                // LOCAL MODE - Extract PDFs from order data when Blob unavailable
+                console.log('📎 Extracting PDFs from order data (local mode)...');
+                
+                if (trac360Orders && trac360Orders.length > 0) {
+                    const trac360Pdfs = trac360Orders
+                        .filter(order => order.pdfDataUrl)
+                        .map(order => ({
+                            name: `TRAC360-${order.cartId || Date.now()}.pdf`,
+                            contentBytes: order.pdfDataUrl.split(',')[1]
+                        }));
+                    actualPdfAttachments.push(...trac360Pdfs);
+                    console.log(`📎 Extracted ${trac360Pdfs.length} Trac360 PDF(s)`);
+                }
+                
+                if (pwaOrders && pwaOrders.length > 0) {
+                    const pwaPdfs = pwaOrders
+                        .filter(order => order.pdfDataUrl)
+                        .map(order => ({
+                            name: `HOSE360-${order.cartId || Date.now()}.pdf`,
+                            contentBytes: order.pdfDataUrl.split(',')[1]
+                        }));
+                    actualPdfAttachments.push(...pwaPdfs);
+                    console.log(`📎 Extracted ${pwaPdfs.length} PWA PDF(s)`);
+                }
+
+                if (function360Orders && function360Orders.length > 0) {
+                    const function360Pdfs = function360Orders
+                      .filter(order => order.pdfDataUrl)
+                      .map(order => ({
+                        name: `FUNCTION360-${order.cartId || Date.now()}.pdf`,
+                        contentBytes: order.pdfDataUrl.split(',')[1]
+                      }));
+                    actualPdfAttachments.push(...function360Pdfs);
+                    console.log(`🔎 Extracted ${function360Pdfs.length} Function360 PDF(s)`);
+                }
             }
 
             if (actualPdfAttachments && actualPdfAttachments.length > 0) {
