@@ -73,8 +73,10 @@ async function uploadPDFsToBlob(ordersWithPDFs, orderNumber) {
             blobUrls.push({
                 url: blob.url,
                 name: order.type === 'trac360_order' 
-                    ? `Tractor-Configuration-${order.cartId || 'order'}.pdf`
-                    : `Custom-Hose-Assembly-${order.cartId || 'order'}.pdf`,
+                    ? `TRAC360-${order.cartId || 'order'}.pdf`
+                    : order.type === 'function360_order'
+                    ? `FUNCTION360-${order.cartId || 'order'}.pdf`
+                    : `HOSE360-${order.cartId || 'order'}.pdf`,
                 cartId: order.cartId,
                 type: order.type
             });
