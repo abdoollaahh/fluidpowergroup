@@ -527,6 +527,10 @@ export default async function handler(req, res) {
             customerLength: emailTemplates.customerEmailContent?.length || 0,
             businessLength: emailTemplates.businessEmailContent?.length || 0
         });
+
+        const sanitizedPwaOrders = pwaOrders.map(({ pdfDataUrl, ...rest }) => rest);
+        const sanitizedTrac360Orders = trac360Orders.map(({ pdfDataUrl, ...rest }) => rest);
+        const sanitizedFunction360Orders = function360Orders.map(({ pdfDataUrl, ...rest }) => rest);
         
         // NEW: Prepare email data with Trac 360 orders
         const emailData = {
@@ -534,9 +538,9 @@ export default async function handler(req, res) {
             paypalCaptureID: captureId,
             userDetails,
             websiteProducts,
-            pwaOrders,
-            trac360Orders,
-            function360Orders,
+            pwaOrders: sanitizedPwaOrders,
+            trac360Orders: sanitizedTrac360Orders,
+            function360Orders: sanitizedFunction360Orders,
             blobUrls,
             totals,
             testingMode: TESTING_MODE,
