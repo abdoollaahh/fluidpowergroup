@@ -47,8 +47,15 @@ setInterval(() => {
 async function uploadPDFsToBlob(ordersWithPDFs, orderNumber) {
     const blobUrls = [];
     
+    console.log('📦 uploadPDFsToBlob received:', ordersWithPDFs.map(o => ({
+        type: o.type,
+        cartId: o.cartId
+    })));
+    
     for (let i = 0; i < ordersWithPDFs.length; i++) {
         const order = ordersWithPDFs[i];
+
+        console.log(`🔍 Processing order ${i}: type="${order.type}", cartId="${order.cartId}"`);
         
         if (!order.pdfDataUrl) continue;
         
@@ -477,6 +484,12 @@ export default async function handler(req, res) {
             ...trac360Orders,
             ...function360Orders
         ].filter(order => order.pdfDataUrl);
+
+        console.log('🔍 Orders before Blob upload:', allOrdersWithPDFs.map(o => ({
+            type: o.type,
+            cartId: o.cartId,
+            hasType: !!o.type
+        })));
 
         // Determine callback URL first (needed for isLocalMode check)
         const callbackUrl = (() => {
