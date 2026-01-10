@@ -57,8 +57,13 @@ async function uploadPDFsToBlob(ordersWithPDFs, orderNumber) {
             const buffer = Buffer.from(base64Data, 'base64');
             
             // Determine filename based on order type
-            const orderType = order.type === 'trac360_order' ? 'tractor' : 'assembly';
+            const orderType = order.type === 'trac360_order' ? 'tractor' : 
+                  order.type === 'pwa_order' ? 'assembly' : 
+                  order.type === 'function360_order' ? 'function' : 'unknown';
             const filename = `orders/${orderNumber}/${orderType}-${order.cartId || i}.pdf`;
+
+            // Add debug logging:
+            console.log(`📄 Uploading PDF - Type: ${order.type}, Filename: ${filename}`);
             
             console.log(`📤 Uploading PDF to Blob: ${filename} (${(buffer.length / 1024).toFixed(2)}KB)`);
             
@@ -70,13 +75,19 @@ async function uploadPDFsToBlob(ordersWithPDFs, orderNumber) {
             
             console.log(`✅ PDF uploaded: ${blob.url}`);
             
+            const pdfName = order.type === 'trac360_order' 
+                ? `TRAC360-${order.cartId || 'order'}.pdf`
+                : order.type === 'pwa_order'
+                ? `HOSE360-${order.cartId || 'order'}.pdf`
+                : order.type === 'function360_order'
+                ? `FUNCTION360-${order.cartId || 'order'}.pdf`
+                : `Order-${order.cartId || 'order'}.pdf`;
+
+            console.log(`✅ PDF uploaded - Type: ${order.type}, Name: ${pdfName}`);
+
             blobUrls.push({
                 url: blob.url,
-                name: order.type === 'trac360_order' 
-                    ? `TRAC360-${order.cartId || 'order'}.pdf`
-                    : order.type === 'function360_order'
-                    ? `FUNCTION360-${order.cartId || 'order'}.pdf`
-                    : `HOSE360-${order.cartId || 'order'}.pdf`,
+                name: pdfName,
                 cartId: order.cartId,
                 type: order.type
             });
@@ -528,9 +539,19 @@ export default async function handler(req, res) {
             businessLength: emailTemplates.businessEmailContent?.length || 0
         });
 
-        const sanitizedPwaOrders = pwaOrders.map(({ pdfDataUrl, ...rest }) => rest);
-        const sanitizedTrac360Orders = trac360Orders.map(({ pdfDataUrl, ...rest }) => rest);
-        const sanitizedFunction360Orders = function360Orders.map(({ pdfDataUrl, ...rest }) => rest);
+        const sanitizedPwaOrders = isLocalMode 
+            ? pwaOrders  // Keep PDFs in local mode
+            : pwaOrders.map(({ pdfDataUrl, ...rest }) => rest);  // Strip in production
+
+        const sanitizedTrac360Orders = isLocalMode 
+            ? trac360Orders  // Keep PDFs in local mode
+            : trac360Orders.map(({ pdfDataUrl, ...rest }) => rest);  // Strip in production
+
+        const sanitizedFunction360Orders = isLocalMode 
+            ? function360Orders  // Keep PDFs in local mode
+            : function360Orders.map(({ pdfDataUrl, ...rest }) => rest);  // Strip in production
+
+        console.log(`📎 PDF sanitization - Local mode: ${isLocalMode}, PDFs ${isLocalMode ? 'KEPT' : 'STRIPPED'}`);
         
         // NEW: Prepare email data with Trac 360 orders
         const emailData = {
