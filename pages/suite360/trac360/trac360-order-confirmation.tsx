@@ -224,7 +224,7 @@ export default function OrderConfirmation() {
     // Reset context (clears localStorage)
     resetConfig();
     
-    router.push('/hosebuilder/trac360/tractor-info');
+    router.push('/suite360');
   };
 
   // Handle "Browse Products"
@@ -460,16 +460,30 @@ export default function OrderConfirmation() {
                   />
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-sm mb-2" style={{ color: COLORS.grey.dark }}>
-                    {config.operationType.name}
-                  </p>
-                  <div className="space-y-0.5">
-                    {config.operationType.components.map((component, index) => (
-                      <div key={index} className="text-xs flex items-start gap-1.5" style={{ color: COLORS.grey.medium }}>
-                        <span style={{ color: COLORS.yellow.primary }}>•</span>
-                        <span>{component}</span>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <p className="font-semibold text-sm mb-2" style={{ color: COLORS.grey.dark }}>
+                        {config.operationType.name}
+                      </p>
+                      <div className="space-y-0.5">
+                        {config.operationType.components.map((component, index) => (
+                          <div key={index} className="text-xs flex items-start gap-1.5" style={{ color: COLORS.grey.medium }}>
+                            <span style={{ color: COLORS.yellow.primary }}>•</span>
+                            <span>{component}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+                    {config.circuits && (
+                      <div className="text-right flex-shrink-0 ml-3">
+                        <p className="font-bold text-sm" style={{ color: COLORS.yellow.primary }}>
+                          {formatPrice(circuitsPrice)}
+                        </p>
+                        <p className="text-xs mt-0.5" style={{ color: COLORS.grey.medium }}>
+                          Base Price
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -809,7 +823,9 @@ export default function OrderConfirmation() {
               </motion.button>
 
               <motion.button
-                onClick={handleBrowseProducts}
+                onClick={() => {
+                  window.location.href = '/suite360';
+                }}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 }}

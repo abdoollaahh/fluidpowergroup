@@ -16,9 +16,9 @@ import { COLORS } from '../../../components/Trac360/styles';
 import componentDataFile from '../../../data/function360/adaptors.json';
 
 // Helper to get the right variant
-const getAdaptorsVariant = (functionType: string | null): string => {
-  if (!functionType) return 'default';
-  return functionType === 'electric_3rd_4th' ? 'electric_3rd_4th' : 'default';
+const getAdaptorsVariant = (horsepower: string | null): string => {
+  if (!horsepower) return 'below_50hp';
+  return horsepower === 'above_50hp' ? 'above_50hp' : 'below_50hp';
 };
 
 export default function Adaptors() {
@@ -26,14 +26,14 @@ export default function Adaptors() {
   const { config, toggleComponent } = useFunction360();
 
   // ✅ Get the correct variant
-  const variantKey = getAdaptorsVariant(config.equipment.functionType);
+  const variantKey = getAdaptorsVariant(config.equipment.horsepower);
+  const variantData = (componentDataFile.variants as any)[variantKey];
   const componentData = {
-    ...(componentDataFile.variants as any)[variantKey],
-    price: componentDataFile.price,
+    ...variantData,
+    price: variantData.price,  // ✅ NEW: Uses variant-specific price
     currency: componentDataFile.currency,
     fallbackImage: componentDataFile.fallbackImage,
     name: componentDataFile.name,
-    note: componentDataFile.note,
   };
 
   const [isSelected, setIsSelected] = useState(config.selectedComponents.adaptors);
@@ -45,21 +45,21 @@ export default function Adaptors() {
 
   const handleSelect = () => {
     if (!isSelected) {
-      toggleComponent('adaptors');  // ← Use correct key for each page
+      toggleComponent('adaptors', componentData.price);  // ← Use correct key for each page
       setIsSelected(true);
       setIsSkipped(false);
     }
   };
   
   const handleDeselect = () => {
-    toggleComponent('adaptors');  // ← Use correct key for each page
+    toggleComponent('adaptors' , 0);  // ← Use correct key for each page
     setIsSelected(false);
     setIsSkipped(false);
   };
   
   const handleSkip = () => {
     if (isSelected) {
-      toggleComponent('adaptors');  // ← Use correct key for each page
+      toggleComponent('adaptors' , 0);  // ← Use correct key for each page
       setIsSelected(false);
     }
     setIsSkipped(true);

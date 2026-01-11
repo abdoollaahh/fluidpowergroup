@@ -2,33 +2,29 @@
   "id": "hydraulic_hoses",
   "name": "Hydraulic Hoses",
   "variants": {
-    "default": {
-      "description": "6 x Hydraulic Hoses with JIC Female Threads",
+    "below_50hp": {
+      "description": "5 x Hydraulic Hoses with JIC Female Threads (Below 50HP)",
+      "price": 140,
+      "specifications": {
+        "quantity": 5,
+        "threads": "1/2\" JIC Female Threads"
+      },
+      "note": "NOTE: Customized Hoses can be supplied as per your requirements (With No Extra Cost).",
+      "image": "/function360/hydraulic-hoses.png",
+      "swellProductId": "function360-hydraulic-hoses-below50hp"
+    },
+    "above_50hp": {
+      "description": "6 x Hydraulic Hoses with JIC Female Threads (Above 50HP)",
+      "price": 180,
       "specifications": {
         "quantity": 6,
         "threads": "3/4\" JIC Female Threads"
       },
       "note": "NOTE: Customized Hoses can be supplied as per your requirements (With No Extra Cost).",
       "image": "/function360/hydraulic-hoses.png",
-      "swellProductId": "function360-hydraulic-hoses-standard"
-    },
-    "live_3rd": {
-      "description": "5 x Hydraulic Hoses with JIC Female Threads",
-      "specifications": {
-        "components": [
-          "1 x Supply Hose",
-          "1 x High Pressure Carry-Over Hose",
-          "1 x Tank/Dump Hose",
-          "2 x Front Remote Hoses"
-        ],
-        "threads": "3/4\" JIC Female Threads"
-      },
-      "note": "NOTE: Customized Hoses can be supplied as per your requirements (With No Extra Cost).",
-      "image": "/function360/hydraulic-hoses.png",
-      "swellProductId": "function360-hydraulic-hoses-live3rd"
+      "swellProductId": "function360-hydraulic-hoses-above50hp"
     }
   },
-  "price": 500,
   "currency": "AUD",
   "fallbackImage": "/fluidpower_logo_transparent.gif"
 }

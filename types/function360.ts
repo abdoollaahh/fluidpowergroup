@@ -58,6 +58,15 @@ export interface EquipmentOption {
     
     // Steps 2-7 - Component Selection
     selectedComponents: SelectedComponents;
+
+    componentPrices: {
+      diverterValve: number;
+      quickCouplings: number;
+      adaptors: number;
+      hydraulicHoses: number;
+      electrical: number;
+      mountingBrackets: number;
+    };
     
     // Step 8 - Additional Details
     additionalNotes: string;
@@ -108,7 +117,7 @@ export interface EquipmentOption {
     
     // Actions
     updateEquipment: (equipment: Partial<EquipmentSelection>) => void;
-    toggleComponent: (componentId: keyof SelectedComponents) => void;
+    toggleComponent: (componentId: keyof SelectedComponents, price?: number) => void;  // ✅ Added price parameter
     updateAdditionalNotes: (notes: string) => void;
     
     // Navigation helpers

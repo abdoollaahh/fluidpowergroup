@@ -74,19 +74,24 @@ const getQuickCouplingsVariant = (horsepower: string | null, functionType: strin
   return `default_${hpSuffix}`;
 };
 
-const getAdaptorsVariant = (functionType: string | null): string => {
-  if (!functionType) return 'default';
-  return functionType === 'electric_3rd_4th' ? 'electric_3rd_4th' : 'default';
+const getAdaptorsVariant = (horsepower: string | null): string => {
+  if (!horsepower) return 'below_50hp';
+  return horsepower === 'above_50hp' ? 'above_50hp' : 'below_50hp';
 };
 
-const getHydraulicHosesVariant = (functionType: string | null): string => {
-  if (!functionType) return 'default';
-  return functionType === 'live_3rd' ? 'live_3rd' : 'default';
+const getHydraulicHosesVariant = (horsepower: string | null): string => {
+  if (!horsepower) return 'below_50hp';
+  return horsepower === 'above_50hp' ? 'above_50hp' : 'below_50hp';
 };
 
 const getElectricalVariant = (functionType: string | null): string => {
   if (!functionType) return 'electric_3rd';
   return functionType === 'electric_3rd_4th' ? 'electric_3rd_4th' : 'electric_3rd';
+};
+
+const getMountingBracketsVariant = (functionType: string | null): string => {
+  if (!functionType) return 'default';
+  return functionType === 'electric_3rd_4th' ? 'electric_3rd_4th' : 'default';
 };
 
   // Component data for display with images
@@ -97,33 +102,33 @@ const getElectricalVariant = (functionType: string | null): string => {
     return {
       diverterValve: {
         name: 'Solenoid Diverter Valve',
-        price: 500,
+        price: config.componentPrices.diverterValve || 0,  // ✅ Dynamic from context
         image: (diverterValveData.variants as any)[getDiverterValveVariant(horsepower, functionType)]?.image || '/function360/diverter-valve.png'
       },
       quickCouplings: {
         name: 'Quick Couplings',
-        price: 500,
+        price: config.componentPrices.quickCouplings || 0,  // ✅ Dynamic from context
         image: (quickCouplingsData.variants as any)[getQuickCouplingsVariant(horsepower, functionType)]?.image || '/function360/quick-couplings.png'
       },
       adaptors: {
         name: 'Adaptors',
-        price: 500,
-        image: (adaptorsData.variants as any)[getAdaptorsVariant(functionType)]?.image || '/function360/adaptors.png'
+        price: config.componentPrices.adaptors || 0,  // ✅ Dynamic from context
+        image: (adaptorsData.variants as any)[getAdaptorsVariant(horsepower)]?.image || '/function360/adaptors.png'
       },
       hydraulicHoses: {
         name: 'Hydraulic Hoses',
-        price: 500,
-        image: (hydraulicHosesData.variants as any)[getHydraulicHosesVariant(functionType)]?.image || '/function360/hydraulic-hoses.png'
+        price: config.componentPrices.hydraulicHoses || 0,  // ✅ Dynamic from context
+        image: (hydraulicHosesData.variants as any)[getHydraulicHosesVariant(horsepower)]?.image || '/function360/hydraulic-hoses.png'
       },
       electrical: {
         name: 'Electrical Wiring & Joystick',
-        price: 500,
+        price: config.componentPrices.electrical || 0,  // ✅ Dynamic from context
         image: (electricalData.variants as any)[getElectricalVariant(functionType)]?.image || '/function360/electrical.png'
       },
       mountingBrackets: {
         name: 'Mounting Brackets',
-        price: 500,
-        image: mountingBracketsData.image || '/function360/mounting-bracket.png'
+        price: config.componentPrices.mountingBrackets || 0,
+        image: (mountingBracketsData.variants as any)[getMountingBracketsVariant(functionType)]?.image || '/function360/mounting-bracket.png'
       },
     };
   };
@@ -235,7 +240,7 @@ const getElectricalVariant = (functionType: string | null): string => {
       const cartItem = {
         id: 'function-360',
         type: 'function360_order' as const,
-        name: 'FUNCTION360 Hydraulic Kit',
+        name: 'FUNCTION360 Custom Order',
         totalPrice: config.totalPrice,
         quantity: 1,
         stock: 999,
@@ -278,13 +283,6 @@ const getElectricalVariant = (functionType: string | null): string => {
     } finally {
       setIsAddingToCart(false);
     }
-  };
-
-  // Handle "Place New Order"
-  const handlePlaceNewOrder = () => {
-    console.log('🔄 Resetting FUNCTION360 configuration...');
-    resetConfig();
-    router.push('/suite360/function360/equipment');
   };
 
   // Handle "Browse Products"
@@ -597,7 +595,9 @@ const getElectricalVariant = (functionType: string | null): string => {
           ) : (
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <motion.button
-                onClick={handlePlaceNewOrder}
+                onClick={() => {
+                  window.location.href = '/suite360';
+                }}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="relative overflow-hidden transition-all duration-300 ease-out"

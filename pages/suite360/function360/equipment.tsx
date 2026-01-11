@@ -20,8 +20,16 @@ export default function Equipment() {
 
   const [horsepower, setHorsepower] = useState<string | null>(config.equipment.horsepower);
   const [functionType, setFunctionType] = useState<string | null>(config.equipment.functionType);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   const isValid = Boolean(horsepower && functionType);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsHydrated(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleContinue = () => {
     if (!isValid) return;
@@ -37,6 +45,19 @@ export default function Equipment() {
   const handleBack = () => {
     router.push('/suite360/function360/start');
   };
+
+  if (!isHydrated) {
+    return (
+      <Function360Layout currentStep={1} totalSteps={9}>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto mb-4"></div>
+            <p style={{ color: COLORS.grey.medium }}>Loading...</p>
+          </div>
+        </div>
+      </Function360Layout>
+    );
+  }
 
   return (
     <Function360Layout currentStep={1} totalSteps={9}>

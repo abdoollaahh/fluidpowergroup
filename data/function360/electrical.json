@@ -4,6 +4,7 @@
   "variants": {
     "electric_3rd": {
       "description": "Complete Electrical Control System",
+      "price": 160,
       "specifications": {
         "components": [
           "Joystick with One Button",
@@ -16,6 +17,7 @@
     },
     "electric_3rd_4th": {
       "description": "Complete Electrical Control System",
+      "price": 240,
       "specifications": {
         "components": [
           "Joystick with Two Buttons",
@@ -27,7 +29,6 @@
       "swellProductId": "function360-electrical-dual"
     }
   },
-  "price": 500,
   "currency": "AUD",
   "fallbackImage": "/fluidpower_logo_transparent.gif"
 }

@@ -39,9 +39,10 @@ export default function DiverterValve() {
 
   // ✅ Get the correct variant based on equipment selection
   const variantKey = getVariantKey(config.equipment.horsepower, config.equipment.functionType);
+  const variantData = (componentDataFile.variants as any)[variantKey];
   const componentData = {
-    ...(componentDataFile.variants as any)[variantKey],
-    price: componentDataFile.price,
+    ...variantData,
+    price: variantData.price,
     currency: componentDataFile.currency,
     fallbackImage: componentDataFile.fallbackImage,
     name: componentDataFile.name,
@@ -57,14 +58,15 @@ export default function DiverterValve() {
 
   const handleSelect = () => {
     if (!isSelected) {
-      toggleComponent('diverterValve');
+      
+      toggleComponent('diverterValve', componentData.price); 
       setIsSelected(true);
       setIsSkipped(false);
     }
   };
 
   const handleDeselect = () => {
-    toggleComponent('diverterValve');
+    toggleComponent('diverterValve', 0);
     setIsSelected(false);
     // When deselecting, also clear the skipped state
     setIsSkipped(false);

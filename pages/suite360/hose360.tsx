@@ -15,8 +15,8 @@ const HoseBuilder = () => {
     window.__PUBLIC_PATH__ = publicRuntimeConfig.staticFolder || '/suite360/static/';
     
     const scripts = [
-      '/suite360/static/js/453.eebfc8b8.js',
-      '/suite360/static/js/main.e49a1751.js'
+      '/suite360/static/js/453.10421dcd.js',
+      '/suite360/static/js/main.5ca3afdb.js'
     ];
 
     const loadScriptSequentially = async (scripts: string[]) => {
