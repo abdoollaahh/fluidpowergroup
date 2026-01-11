@@ -28,10 +28,11 @@ export function calculateTotalPrice(config: Function360Config): number {
 
   Object.entries(config.selectedComponents).forEach(([key, isSelected]) => {
     if (isSelected) {
-      total += COMPONENT_PRICES[key as keyof SelectedComponents];
+      const componentKey = key as keyof typeof config.componentPrices;
+      total += config.componentPrices[componentKey];  // ✅ Use real price
     }
   });
-
+  
   return total;
 }
 

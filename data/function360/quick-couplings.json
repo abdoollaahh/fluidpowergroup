@@ -4,6 +4,7 @@
   "variants": {
     "default_below_50hp": {
       "description": "Male & Female Couplings with Dust Protection",
+      "price": 60,
       "specifications": {
         "MaleCouplings": 2,
         "FemaleCouplings": 2,
@@ -19,6 +20,7 @@
     },
     "default_above_50hp": {
       "description": "Male & Female Couplings with Dust Protection",
+      "price": 80,
       "specifications": {
         "MaleCouplings": 2,
         "FemaleCouplings": 2,
@@ -34,6 +36,7 @@
     },
     "electric_3rd_4th_below_50hp": {
       "description": "4 Male & 4 Female Couplings with Dust Protection",
+      "price": 120,
       "specifications": {
         "MaleCouplings": 4,
         "FemaleCouplings": 4,
@@ -49,6 +52,7 @@
     },
     "electric_3rd_4th_above_50hp": {
       "description": "4 Male & 4 Female Couplings with Dust Protection",
+      "price": 160,
       "specifications": {
         "MaleCouplings": 4,
         "FemaleCouplings": 4,
@@ -63,7 +67,6 @@
       "swellProductId": "function360-quick-couplings-quad-1-2"
     }
   },
-  "price": 500,
   "currency": "AUD",
   "fallbackImage": "/fluidpower_logo_transparent.gif"
 }

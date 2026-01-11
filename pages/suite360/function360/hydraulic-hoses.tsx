@@ -16,9 +16,9 @@ import { COLORS } from '../../../components/Trac360/styles';
 import componentDataFile from '../../../data/function360/hydraulic-hoses.json';
 
 // Helper to get the right variant
-const getHydraulicHosesVariant = (functionType: string | null): string => {
-  if (!functionType) return 'default';
-  return functionType === 'live_3rd' ? 'live_3rd' : 'default';
+const getHydraulicHosesVariant = (horsepower: string | null): string => {
+  if (!horsepower) return 'below_50hp';
+  return horsepower === 'above_50hp' ? 'above_50hp' : 'below_50hp';
 };
 
 export default function HydraulicHoses() {
@@ -26,15 +26,15 @@ export default function HydraulicHoses() {
   const { config, toggleComponent } = useFunction360();
 
   // ✅ Get the correct variant
-  const variantKey = getHydraulicHosesVariant(config.equipment.functionType);
+  const variantKey = getHydraulicHosesVariant(config.equipment.horsepower);
+  const variantData = (componentDataFile.variants as any)[variantKey];
   const componentData = {
-    ...(componentDataFile.variants as any)[variantKey],
-    price: componentDataFile.price,
+    ...variantData,
+    price: variantData.price,  // ✅ NEW: Use variant-specific price
     currency: componentDataFile.currency,
     fallbackImage: componentDataFile.fallbackImage,
     name: componentDataFile.name,
   };
-
   const [isSelected, setIsSelected] = useState(config.selectedComponents.hydraulicHoses);
   const [isSkipped, setIsSkipped] = useState(false);
 
@@ -44,21 +44,21 @@ export default function HydraulicHoses() {
 
   const handleSelect = () => {
     if (!isSelected) {
-      toggleComponent('hydraulicHoses');
+      toggleComponent('hydraulicHoses', componentData.price);
       setIsSelected(true);
       setIsSkipped(false);
     }
   };
   
   const handleDeselect = () => {
-    toggleComponent('hydraulicHoses');
+    toggleComponent('hydraulicHoses', 0);
     setIsSelected(false);
     setIsSkipped(false);
   };
   
   const handleSkip = () => {
     if (isSelected) {
-      toggleComponent('hydraulicHoses');
+      toggleComponent('hydraulicHoses', 0);
       setIsSelected(false);
     }
     setIsSkipped(true);
@@ -75,7 +75,7 @@ export default function HydraulicHoses() {
   const canContinue = isSelected || isSkipped;
 
   // Check if this is the live_3rd variant (has components array)
-  const hasComponentsList = componentData.specifications && 'components' in componentData.specifications;
+  const hasComponentsList = false;
 
   return (
     <Function360Layout currentStep={5} totalSteps={9}>
@@ -187,37 +187,16 @@ export default function HydraulicHoses() {
           </div>
         </div>
 
-        {/* Specifications - DYNAMIC BASED ON VARIANT */}
+        {/* Specifications - SIMPLIFIED */}
         <div className="p-6 bg-gray-50 text-center">
-          {hasComponentsList ? (
-            /* Live 3rd - Show components list */
-            <>
-              <div className="mb-4">
-                <p className="text-sm" style={{ color: COLORS.grey.medium }}>
-                  All Hydraulic Hoses are supplied with {componentData.specifications.threads}
-                </p>
-              </div>
-              
-              <ul className="space-y-2 text-left max-w-md mx-auto">
-                {componentData.specifications.components.map((component: string, index: number) => (
-                  <li key={index} className="flex items-start gap-2 text-sm" style={{ color: COLORS.grey.medium }}>
-                    <span style={{ color: COLORS.yellow.primary }}>•</span>
-                    <span>{component}</span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : (
-            /* Default - Show quantity and threads */
-            <div className="mb-4">
-              <p className="text-base font-semibold mb-2" style={{ color: COLORS.grey.dark }}>
-                {componentData.specifications.quantity} x Hydraulic Hoses
-              </p>
-              <p className="text-sm" style={{ color: COLORS.grey.medium }}>
-                All Hydraulic Hoses are supplied with {componentData.specifications.threads}
-              </p>
-            </div>
-          )}
+          <div className="mb-4">
+            <p className="text-base font-semibold mb-2" style={{ color: COLORS.grey.dark }}>
+              {componentData.specifications.quantity} x Hydraulic Hoses
+            </p>
+            <p className="text-sm" style={{ color: COLORS.grey.medium }}>
+              All Hydraulic Hoses are supplied with {componentData.specifications.threads}
+            </p>
+          </div>
           
           {/* Note at the bottom */}
           {componentData.note && (

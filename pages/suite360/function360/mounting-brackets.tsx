@@ -13,11 +13,28 @@ import ContinueButton from '../../../components/Trac360/Shared/ContinueButton';
 import BackButton from '../../../components/Trac360/Shared/BackButton';
 import { useFunction360 } from '../../../context/Function360Context';
 import { COLORS } from '../../../components/Trac360/styles';
-import componentData from '../../../data/function360/mounting-brackets.json';
+import componentDataFile from '../../../data/function360/mounting-brackets.json';
+
+// Helper to get the right variant
+const getMountingBracketsVariant = (functionType: string | null): string => {
+  if (!functionType) return 'default';
+  return functionType === 'electric_3rd_4th' ? 'electric_3rd_4th' : 'default';
+};
 
 export default function MountingBrackets() {
   const router = useRouter();
   const { config, toggleComponent } = useFunction360();
+
+  // ✅ Get the correct variant
+  const variantKey = getMountingBracketsVariant(config.equipment.functionType);
+  const variantData = (componentDataFile.variants as any)[variantKey];
+  const componentData = {
+    ...variantData,
+    price: variantData.price,
+    currency: componentDataFile.currency,
+    fallbackImage: componentDataFile.fallbackImage,
+    name: componentDataFile.name,
+  };
 
   const [isSelected, setIsSelected] = useState(config.selectedComponents.mountingBrackets);
   const [isSkipped, setIsSkipped] = useState(false);
@@ -28,21 +45,21 @@ export default function MountingBrackets() {
 
   const handleSelect = () => {
     if (!isSelected) {
-      toggleComponent('mountingBrackets');  // ← Use correct key for each page
+      toggleComponent('mountingBrackets', componentData.price);  // ← Use correct key for each page
       setIsSelected(true);
       setIsSkipped(false);
     }
   };
   
   const handleDeselect = () => {
-    toggleComponent('mountingBrackets');  // ← Use correct key for each page
+    toggleComponent('mountingBrackets', 0);  // ← Use correct key for each page
     setIsSelected(false);
     setIsSkipped(false);
   };
   
   const handleSkip = () => {
     if (isSelected) {
-      toggleComponent('mountingBrackets');  // ← Use correct key for each page
+      toggleComponent('mountingBrackets', 0);  // ← Use correct key for each page
       setIsSelected(false);
     }
     setIsSkipped(true);
@@ -170,14 +187,14 @@ export default function MountingBrackets() {
 
             {/* Specifications List */}
               <div className="p-6 bg-gray-50">
-                <ul className="space-y-2">
-                  {componentData.specifications.components.map((component, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm" style={{ color: COLORS.grey.medium }}>
-                      <span style={{ color: COLORS.yellow.primary }}>•</span>
-                      <span>{component}</span>
-                    </li>
-                  ))}
-                </ul>
+              <ul className="space-y-2">
+                {componentData.specifications.components.map((component: string, index: number) => (
+                  <li key={index} className="flex items-start gap-2 text-sm" style={{ color: COLORS.grey.medium }}>
+                    <span style={{ color: COLORS.yellow.primary }}>•</span>
+                    <span>{component}</span>
+                  </li>
+                ))}
+              </ul>
                 
                 {/* Note at the bottom (if exists) */}
                 {componentData.note && (

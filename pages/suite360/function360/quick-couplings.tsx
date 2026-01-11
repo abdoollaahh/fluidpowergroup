@@ -38,9 +38,10 @@ export default function QuickCouplings() {
 
   // ✅ Get the correct variant
   const variantKey = getQuickCouplingsVariant(config.equipment.horsepower, config.equipment.functionType);
+  const variantData = (componentDataFile.variants as any)[variantKey];
   const componentData = {
-    ...(componentDataFile.variants as any)[variantKey],
-    price: componentDataFile.price,
+    ...variantData,
+    price: variantData.price,  // ✅ NEW: Uses variant-specific price
     currency: componentDataFile.currency,
     fallbackImage: componentDataFile.fallbackImage,
     name: componentDataFile.name,
@@ -55,21 +56,21 @@ export default function QuickCouplings() {
 
   const handleSelect = () => {
     if (!isSelected) {
-      toggleComponent('quickCouplings');  // ← Use correct key for each page
+      toggleComponent('quickCouplings', componentData.price);  // ← Use correct key for each page
       setIsSelected(true);
       setIsSkipped(false);
     }
   };
   
   const handleDeselect = () => {
-    toggleComponent('quickCouplings');  // ← Use correct key for each page
+    toggleComponent('quickCouplings' , 0);  // ← Use correct key for each page
     setIsSelected(false);
     setIsSkipped(false);
   };
   
   const handleSkip = () => {
     if (isSelected) {
-      toggleComponent('quickCouplings');  // ← Use correct key for each page
+      toggleComponent('quickCouplings' , 0);  // ← Use correct key for each page
       setIsSelected(false);
     }
     setIsSkipped(true);

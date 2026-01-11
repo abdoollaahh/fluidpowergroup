@@ -252,6 +252,7 @@ export default function CheckoutPage() {
         })),
         pwaOrders: pwaItems.map(item => ({
           id: item.id,
+          type: item.type, 
           name: 'HOSE360 Custom Order',
           totalPrice: item.totalPrice || 0,
           quantity: 1,
@@ -263,6 +264,7 @@ export default function CheckoutPage() {
         })),
         trac360Orders: trac360Items.map(item => ({
           id: item.id,
+          type: item.type, 
           name: item.name,
           totalPrice: item.totalPrice || 0,
           quantity: 1,
@@ -274,6 +276,7 @@ export default function CheckoutPage() {
         })),
         function360Orders: function360Items.map(item => ({
           id: item.id,
+          type: item.type, 
           name: item.name,
           totalPrice: item.totalPrice || 0,
           quantity: 1,

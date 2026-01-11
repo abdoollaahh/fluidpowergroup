@@ -178,7 +178,7 @@ export default function PriceBar() {
                 {/* Expand Icon */}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="ml-2">
                   <path
-                    d="M6 9L12 15L18 9"
+                    d="M18 15L12 9L6 15"
                     stroke="#ffffff"
                     strokeWidth="2"
                     strokeLinecap="round"
@@ -237,7 +237,7 @@ export default function PriceBar() {
                       </span>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path
-                          d="M18 15L12 9L6 15"
+                          d="M6 9L12 15L18 9"
                           stroke="#ffffff"
                           strokeWidth="2"
                           strokeLinecap="round"
@@ -318,7 +318,7 @@ export default function PriceBar() {
                   </motion.span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path
-                      d="M6 9L12 15L18 9"
+                      d="M18 15L12 9L6 15"
                       stroke="#ffffff"
                       strokeWidth="2"
                       strokeLinecap="round"
@@ -376,7 +376,7 @@ export default function PriceBar() {
                       </span>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path
-                          d="M18 15L12 9L6 15"
+                          d="M6 9L12 15L18 9"
                           stroke="#ffffff"
                           strokeWidth="2"
                           strokeLinecap="round"

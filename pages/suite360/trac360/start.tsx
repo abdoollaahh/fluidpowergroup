@@ -3,10 +3,11 @@
  * Landing page with hero, features, and call-to-action
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
+import { useTrac360 } from '../../../context/Trac360Context';
 
 // Animation variants
 const fadeInUp = {
@@ -24,6 +25,17 @@ const staggerContainer = {
 
 export default function Start() {
   const router = useRouter();
+  const { resetConfig } = useTrac360();
+
+  useEffect(() => {
+    console.log('🧹 [TRAC360] Clearing context - user starting fresh');
+    resetConfig();
+    
+    // Clear any session flags
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('trac360-setup-reminder-position');
+    }
+  }, [resetConfig]);
 
   const handleGetStarted = () => {
     router.push('/hosebuilder/trac360/tractor-info');

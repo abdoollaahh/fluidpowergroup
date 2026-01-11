@@ -55,9 +55,10 @@ export default function Function360PriceBar() {
 
     Object.entries(config.selectedComponents).forEach(([key, isSelected]) => {
       if (isSelected) {
+        const componentKey = key as keyof typeof config.componentPrices;  // ✅ Type cast
         items.push({
           name: componentNames[key],
-          price: 500,
+          price: config.componentPrices[componentKey] || 0,  // ✅ Now TypeScript knows the type
         });
       }
     });
@@ -123,7 +124,7 @@ export default function Function360PriceBar() {
                 {/* Expand Icon */}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="ml-2">
                   <path
-                    d="M6 9L12 15L18 9"
+                    d="M18 15L12 9L6 15"
                     stroke="#ffffff"
                     strokeWidth="2"
                     strokeLinecap="round"
@@ -182,7 +183,7 @@ export default function Function360PriceBar() {
                       </span>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path
-                          d="M18 15L12 9L6 15"
+                          d="M6 9L12 15L18 9"
                           stroke="#ffffff"
                           strokeWidth="2"
                           strokeLinecap="round"
@@ -263,7 +264,7 @@ export default function Function360PriceBar() {
                   </motion.span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path
-                      d="M6 9L12 15L18 9"
+                      d="M18 15L12 9L6 15"
                       stroke="#ffffff"
                       strokeWidth="2"
                       strokeLinecap="round"
@@ -321,7 +322,7 @@ export default function Function360PriceBar() {
                       </span>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path
-                          d="M18 15L12 9L6 15"
+                          d="M6 9L12 15L18 9"
                           stroke="#ffffff"
                           strokeWidth="2"
                           strokeLinecap="round"

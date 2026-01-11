@@ -4,6 +4,7 @@
   "variants": {
     "live_3rd_below_50hp": {
       "description": "Cetop-3, 12V, 40L/min, 210bar (3000psi)",
+      "price": 390,
       "specifications": {
         "Type": "Cetop-3",
         "Qty": 1,
@@ -17,6 +18,7 @@
     },
     "live_3rd_above_50hp": {
       "description": "Cetop-5, 12V, 60L/min, 210bar (3000psi)",
+      "price": 480,
       "specifications": {
         "Type": "Cetop-5",
         "Qty": 1,
@@ -30,6 +32,7 @@
     },
     "electric_3rd_below_50hp": {
       "description": "Cetop-3, 12V, 40L/min, 210bar (3000psi)",
+      "price": 390,
       "specifications": {
         "Type": "Cetop-3",
         "Qty": 1,
@@ -43,6 +46,7 @@
     },
     "electric_3rd_above_50hp": {
       "description": "Cetop-5, 12V, 60L/min, 210bar (3000psi)",
+      "price": 480,
       "specifications": {
         "Type": "Cetop-5",
         "Qty": 1,
@@ -56,6 +60,7 @@
     },
     "electric_3rd_4th_below_50hp": {
       "description": "Qty=2, 12V, 40L/min, 210bar (3000psi)",
+      "price": 780,
       "specifications": {
         "Qty": 2,
         "Volts": "12V",
@@ -68,6 +73,7 @@
     },
     "electric_3rd_4th_above_50hp": {
       "description": "Qty=2, 12V, 60L/min, 210bar (3000psi)",
+      "price": 960,
       "specifications": {
         "Qty": 2,
         "Volts": "12V",
@@ -79,7 +85,6 @@
       "swellProductId": "function360-diverter-valve-dual-above50"
     }
   },
-  "price": 500,
   "currency": "AUD",
   "fallbackImage": "/fluidpower_logo_transparent.gif"
 }

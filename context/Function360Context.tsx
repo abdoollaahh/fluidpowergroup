@@ -40,6 +40,14 @@ const initialConfig: Function360Config = {
     electrical: false,
     mountingBrackets: false,
   },
+  componentPrices: {
+    diverterValve: 0,
+    quickCouplings: 0,
+    adaptors: 0,
+    hydraulicHoses: 0,
+    electrical: 0,
+    mountingBrackets: 0,
+  },
   additionalNotes: '',
   totalPrice: 0,
   swellProductIds: [],
@@ -156,12 +164,19 @@ export function Function360Provider({ children }: Function360ProviderProps) {
     }));
   }, []);
 
-  const toggleComponent = useCallback((componentId: keyof SelectedComponents) => {
+  const toggleComponent = useCallback((
+    componentKey: keyof SelectedComponents, 
+    price: number = 0  // ✅ Add price parameter
+  ) => {
     setConfig(prev => ({
       ...prev,
       selectedComponents: {
         ...prev.selectedComponents,
-        [componentId]: !prev.selectedComponents[componentId],
+        [componentKey]: !prev.selectedComponents[componentKey],
+      },
+      componentPrices: {  // ✅ Store the price
+        ...prev.componentPrices,
+        [componentKey]: !prev.selectedComponents[componentKey] ? price : 0,
       },
     }));
   }, []);

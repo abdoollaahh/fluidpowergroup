@@ -27,9 +27,10 @@ export default function Electrical() {
 
   // ✅ Get the correct variant
   const variantKey = getElectricalVariant(config.equipment.functionType);
+  const variantData = (componentDataFile.variants as any)[variantKey];
   const componentData = {
-    ...(componentDataFile.variants as any)[variantKey],
-    price: componentDataFile.price,
+    ...variantData,
+    price: variantData.price,  // ✅ NEW: Uses variant-specific price
     currency: componentDataFile.currency,
     fallbackImage: componentDataFile.fallbackImage,
     name: componentDataFile.name,
@@ -44,21 +45,21 @@ export default function Electrical() {
 
   const handleSelect = () => {
     if (!isSelected) {
-      toggleComponent('electrical');  // ← Use correct key for each page
+      toggleComponent('electrical', componentData.price);  // ← Use correct key for each page
       setIsSelected(true);
       setIsSkipped(false);
     }
   };
   
   const handleDeselect = () => {
-    toggleComponent('electrical');  // ← Use correct key for each page
+    toggleComponent('electrical', 0);  // ← Use correct key for each page
     setIsSelected(false);
     setIsSkipped(false);
   };
   
   const handleSkip = () => {
     if (isSelected) {
-      toggleComponent('electrical');  // ← Use correct key for each page
+      toggleComponent('electrical', 0);  // ← Use correct key for each page
       setIsSelected(false);
     }
     setIsSkipped(true);
