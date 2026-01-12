@@ -123,7 +123,6 @@ const CartWrapper = ({ children }: ICartWrapperProps) => {
   // ✅ NEW: Listen for PWA cart item additions (custom event)
   useEffect(() => {
     const handlePWACartAdd = (event: CustomEvent) => {
-      console.log('[Website Cart] PWA item added via custom event, opening cart');
       setCart(prevCart => ({
         ...prevCart,
         open: true  // ✅ Open cart when PWA adds item
@@ -188,8 +187,7 @@ const CartWrapper = ({ children }: ICartWrapperProps) => {
           
           // 🔧 If localStorage has MORE items, sync FROM it (PWA added items)
           if (stateItemCount < storageItemCount) {
-            console.log('[Website Cart] localStorage has more items:', storageItemCount, 'vs state:', stateItemCount, '- syncing from localStorage');
-            setCart({
+              setCart({
               open: cart.open,
               items: currentStorageData.items || []
             });
@@ -200,7 +198,6 @@ const CartWrapper = ({ children }: ICartWrapperProps) => {
           if (stateItemCount >= storageItemCount) {
             localStorage.setItem('shopping-cart', JSON.stringify(cart));
             localStorage.setItem('cart-timestamp', Date.now().toString());
-            console.log('[Website Cart] Saved to localStorage:', stateItemCount, 'items');
             
             // ✅ NEW: Notify PWA of cart change (only if we actually saved)
             window.dispatchEvent(new CustomEvent('website-cart-changed', {

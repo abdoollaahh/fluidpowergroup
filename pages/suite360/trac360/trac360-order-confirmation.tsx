@@ -18,6 +18,17 @@ import { COLORS } from '../../../components/Trac360/styles';
 import type { Trac360Config, Addon, SubOption } from '../../../types/trac360';
 import type { ITrac360Config } from '../../../types/cart';
 
+const getStepNumbers = (hasCircuits: boolean) => {
+  return {
+    tractorInfo: 1,
+    valveSetup: 2,
+    operationType: 3,
+    circuits: 4,  // Only shown if hasCircuits is true
+    addons: hasCircuits ? 5 : 4,  // Shifts to 4 if no circuits
+    additionalInfo: hasCircuits ? 10 : 9,  // Shifts down
+  };
+};
+
 export default function OrderConfirmation() {
   const router = useRouter();
   const { config, resetConfig, removeAddon } = useTrac360();
@@ -271,7 +282,9 @@ export default function OrderConfirmation() {
     };
   };
 
-  const circuitsPrice = config.circuits?.price || 0;
+  const hasCircuits = Boolean(config.circuits);
+  const stepNumbers = getStepNumbers(hasCircuits);
+
   const addonsTotal = config.addons.reduce((total, addon) => {
     let addonPrice = addon.basePrice || 0;
     if (addon.selectedSubOption && addon.subOptions) {
@@ -282,6 +295,8 @@ export default function OrderConfirmation() {
     }
     return total + addonPrice;
   }, 0);
+
+  const circuitsPrice = config.circuits?.price || (config.totalPrice - addonsTotal);
 
   // Redirect if configuration incomplete - BUT allow custom brands/models
   useEffect(() => {
@@ -446,7 +461,7 @@ export default function OrderConfirmation() {
             {/* ========== STEP 3: OPERATION TYPE ========== */}
             <div className="p-5 border-b border-gray-200">
               <h3 className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: COLORS.yellow.primary }}>
-                Step 3: Operation Type
+                Step {stepNumbers.operationType}: Operation Type
               </h3>
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0" style={{ width: '90px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -474,7 +489,8 @@ export default function OrderConfirmation() {
                         ))}
                       </div>
                     </div>
-                    {config.circuits && (
+                    {/* ✅ Always show base price */}
+                    {circuitsPrice > 0 && (
                       <div className="text-right flex-shrink-0 ml-3">
                         <p className="font-bold text-sm" style={{ color: COLORS.yellow.primary }}>
                           {formatPrice(circuitsPrice)}
@@ -489,11 +505,11 @@ export default function OrderConfirmation() {
               </div>
             </div>
 
-            {/* ========== STEP 4: CIRCUITS ========== */}
+            {/* ========== STEP 4: CIRCUITS (Conditional - only if selected) ========== */}
             {config.circuits && (
               <div className="p-5 border-b border-gray-200">
                 <h3 className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: COLORS.yellow.primary }}>
-                  Step 4: Circuits
+                  Step {stepNumbers.circuits}: Circuits
                 </h3>
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
@@ -517,7 +533,7 @@ export default function OrderConfirmation() {
             {config.addons.length > 0 && (
               <div className="p-5 border-b border-gray-200">
                 <h3 className="text-xs font-bold uppercase tracking-wide mb-3" style={{ color: COLORS.yellow.primary }}>
-                  Steps 5-9: Add-ons
+                  Steps {stepNumbers.addons}-{stepNumbers.addons + 4}: Add-ons
                 </h3>
                 <div className="space-y-2.5">
                   {config.addons.map((addon) => {

@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.4c47a88f.css",
-    "main.js": "/static/js/main.5ca3afdb.js",
+    "main.js": "/static/js/main.7bc54cc2.js",
     "static/js/331.d16c3da6.chunk.js": "/static/js/331.d16c3da6.chunk.js",
     "static/js/159.6cd2578e.chunk.js": "/static/js/159.6cd2578e.chunk.js",
     "static/js/453.10421dcd.js": "/static/js/453.10421dcd.js",
@@ -27,6 +27,7 @@
     "static/media/plastic_spiral.png": "/static/media/plastic_spiral.85f7df1d57122426fa58.png",
     "static/media/pressure_testing_diagram.png": "/static/media/pressure_testing_diagram.83b36996404409dd76e2.png",
     "static/media/metal_spiral.png": "/static/media/metal_spiral.e78daadc5d9751c2f31f.png",
+    "static/media/logo.png": "/static/media/logo.0d9d3db8f1cb51c399ce.png",
     "static/media/feedback2.png": "/static/media/feedback2.6a6565cae94991f4e85c.png",
     "static/media/bsp_female_45.png": "/static/media/bsp_female_45.d8a9c41ae44b6fcf3c80.png",
     "static/media/bsp_female_90.png": "/static/media/bsp_female_90.9e6db798f816ea1cc0af.png",
@@ -71,7 +72,7 @@
     "serve.json": "/serve.json",
     "config.js": "/config.js",
     "main.4c47a88f.css.map": "/static/css/main.4c47a88f.css.map",
-    "main.5ca3afdb.js.map": "/static/js/main.5ca3afdb.js.map",
+    "main.7bc54cc2.js.map": "/static/js/main.7bc54cc2.js.map",
     "331.d16c3da6.chunk.js.map": "/static/js/331.d16c3da6.chunk.js.map",
     "159.6cd2578e.chunk.js.map": "/static/js/159.6cd2578e.chunk.js.map",
     "453.10421dcd.js.map": "/static/js/453.10421dcd.js.map"
@@ -79,6 +80,6 @@
   "entrypoints": [
     "static/js/453.10421dcd.js",
     "static/css/main.4c47a88f.css",
-    "static/js/main.5ca3afdb.js"
+    "static/js/main.7bc54cc2.js"
   ]
 }
