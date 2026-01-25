@@ -1,4 +1,4 @@
-import { IItemCart, INormalizedCartItem } from '../../../Backend/Secure-endpoint/types/cart';
+import { IItemCart, INormalizedCartItem } from '../types/cart';
 
 /**
  * Check if an item is a PWA order (Custom Hose Assembly)
@@ -80,21 +80,21 @@ export const separateCartItems = (items: IItemCart[]) => {
   const pwaItems: IItemCart[] = [];
   const websiteItems: IItemCart[] = [];
   const trac360Items: IItemCart[] = [];
-  const function360Items: IItemCart[] = [];  // ← ADD THIS
+  const function360Items: IItemCart[] = [];  // â† ADD THIS
 
   items.forEach((item) => {
     if (item.type === 'pwa_order') {
       pwaItems.push(item);
     } else if (item.type === 'trac360_order') {
       trac360Items.push(item);
-    } else if (item.type === 'function360_order') {  // ← ADD THIS
+    } else if (item.type === 'function360_order') {  // â† ADD THIS
       function360Items.push(item);
     } else {
       websiteItems.push(item);
     }
   });
 
-  return { pwaItems, websiteItems, trac360Items, function360Items };  // ← ADD THIS
+  return { pwaItems, websiteItems, trac360Items, function360Items };  // â† ADD THIS
 };
 
 /**
