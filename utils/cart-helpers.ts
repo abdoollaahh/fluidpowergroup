@@ -1,4 +1,4 @@
-import { IItemCart, INormalizedCartItem } from '../types/cart';
+import { IItemCart, INormalizedCartItem } from '../../../Backend/Secure-endpoint/types/cart';
 
 /**
  * Check if an item is a PWA order (Custom Hose Assembly)
