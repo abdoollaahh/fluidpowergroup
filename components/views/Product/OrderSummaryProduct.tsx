@@ -22,7 +22,7 @@ const OrderSummaryProduct = ({
   const { addItem } = useContext(CartContext);
 
   const totalPrice = useMemo(
-    () => items.reduce((prev, curr) => prev + curr.price * curr.quantity, 0),
+    () => items.reduce((prev, curr) => prev + (curr.price ?? 0) * curr.quantity, 0),
     [items]
   );
 
@@ -87,7 +87,7 @@ const OrderSummaryProduct = ({
                       <div>
                         {item.quantity} x {item.name}
                       </div>
-                      <div>${(item.quantity * item.price).toFixed(2)}</div>
+                      <div>${(item.quantity * (item.price ?? 0)).toFixed(2)}</div>
                     </div>
                   ))}
 
