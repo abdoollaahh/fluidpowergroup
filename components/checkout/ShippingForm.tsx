@@ -1,12 +1,14 @@
 // components/checkout/ShippingForm.tsx
 // REFACTOR PHASE 3 - EXTRACTED FROM checkout.tsx
-// Shipping details form with validation and developer mode trigger
+// Shipping details form with validation and activation code triggers
 
 import { useState } from 'react';
 import { 
   STATES, 
   DEVELOPER_MODE_CODE, 
-  DEVELOPER_MODE_DEMO_DATA 
+  DEVELOPER_MODE_DEMO_DATA,
+  INVOICE_BUILDER_CODE,
+  CART_EMAIL_CODE
 } from '../../lib/checkout/checkout-config';
 import {
   ShippingDetails,
@@ -24,14 +26,20 @@ interface ShippingFormProps {
   initialDetails?: ShippingDetails;
   /** Callback when developer mode is activated */
   onDeveloperModeActivated?: () => void;
+  /** Callback when invoice builder mode is activated */
+  onInvoiceBuilderActivated?: () => void;
+  /** Callback when cart email mode is activated */
+  onCartEmailActivated?: () => void;
 }
 
 export default function ShippingForm({ 
   onContinue, 
   initialDetails,
-  onDeveloperModeActivated 
+  onDeveloperModeActivated,
+  onInvoiceBuilderActivated,
+  onCartEmailActivated
 }: ShippingFormProps) {
-  // Form state - PHASE 3: Moved from parent checkout.tsx
+  // Form state
   const [shippingDetails, setShippingDetails] = useState<ShippingDetails>(
     initialDetails || createEmptyShippingDetails()
   );
@@ -40,27 +48,58 @@ export default function ShippingForm({
   const [formSubmitAttempted, setFormSubmitAttempted] = useState(false);
 
   // ============================================================================
-  // FIELD CHANGE HANDLERS
+  // FIELD CHANGE HANDLERS WITH ACTIVATION CODE DETECTION
   // ============================================================================
 
   const handleFieldChange = (name: keyof ShippingDetails, value: string) => {
-    // PHASE 3: Developer mode trigger (kept in form component)
+    // ============================================================================
+    // ACTIVATION CODE 1: Developer Mode (20162025)
+    // ============================================================================
     if (name === 'name' && value === DEVELOPER_MODE_CODE) {
-      // Auto-fill demo data
       setShippingDetails(DEVELOPER_MODE_DEMO_DATA);
       
-      // Notify parent that developer mode was activated
       if (onDeveloperModeActivated) {
         onDeveloperModeActivated();
       }
       
-      // Show popup
       alert('🔧 Developer Mode Activated!\n\nPayment amount overridden to A$0.20\nDemo shipping details auto-filled');
-      
       return;
     }
     
-    // Update field value
+    // ============================================================================
+    // ACTIVATION CODE 2: Invoice Builder (20162026)
+    // ============================================================================
+    if (name === 'name' && value === INVOICE_BUILDER_CODE) {
+      if (onInvoiceBuilderActivated) {
+        onInvoiceBuilderActivated();
+      }
+      
+      // Open invoice builder in new window
+      window.open('/invoice-builder', '_blank');
+      
+      alert('📄 Invoice Builder Mode Activated!\n\nInvoice builder opened in new window.\nYou can now create custom invoices for customers.');
+      
+      // Clear the field
+      setShippingDetails(prev => ({ ...prev, name: '' }));
+      return;
+    }
+    
+    // ============================================================================
+    // ACTIVATION CODE 3: Cart Email (FPG or fpg)
+    // ============================================================================
+    if (name === 'name' && value.toUpperCase() === CART_EMAIL_CODE) {
+      if (onCartEmailActivated) {
+        onCartEmailActivated();
+      }
+      
+      alert('📧 Cart Email Mode Activated!\n\nFill in your details and click "Send Cart to Supplier" to send your cart for assistance.');
+      
+      // Clear the field
+      setShippingDetails(prev => ({ ...prev, name: '' }));
+      return;
+    }
+    
+    // Regular field update
     setShippingDetails(prev => ({
       ...prev,
       [name]: value

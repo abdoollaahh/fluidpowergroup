@@ -150,3 +150,23 @@ export const DEVELOPER_MODE_DEMO_DATA = {
  * Developer mode test payment amount (AUD)
  */
 export const DEVELOPER_MODE_PAYMENT_AMOUNT = '0.20';
+
+// ============================================================================
+// SUPPLIER FEATURES - ACTIVATION CODES
+// ============================================================================
+
+/**
+ * Invoice builder activation code
+ * Enter this in the name field to:
+ * - Open invoice builder in new window
+ * - Pre-load cart items for invoice generation
+ */
+export const INVOICE_BUILDER_CODE = '20162026';
+
+/**
+ * Cart email activation code
+ * Enter "FPG" or "fpg" in the name field to:
+ * - Replace "Proceed to Payment" with "Send Cart to Supplier"
+ * - Send cart details to supplier email
+ */
+export const CART_EMAIL_CODE = 'FPG';

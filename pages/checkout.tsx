@@ -25,6 +25,8 @@ import PDFModal from '../components/shared/PDFModal';
 // PHASE 3 - ShippingForm component
 import ShippingForm from '../components/checkout/ShippingForm';
 
+import CartEmailButton from '../components/checkout/CartEmailButton';
+
 // PHASE 2 - Configuration imports
 import {
   TESTING_MODE,
@@ -54,6 +56,10 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState<string>('');
   const [paymentSuccessful, setPaymentSuccessful] = useState(false);
+
+  const [isCartEmailMode, setIsCartEmailMode] = useState(false);
+
+  const handleCartEmailActivated = () => { setIsCartEmailMode(true); };
   
   // Order processing state
   const [orderStatus, setOrderStatus] = useState<OrderStatus>('idle');
@@ -1000,46 +1006,64 @@ export default function CheckoutPage() {
         </div>
       )}
       
-      {/* PayPal Button */}
-      {!isProcessing && paypalOptions.clientId && (
-        <div className="mb-6 flex justify-center">
-          <div style={{ width: "100%", maxWidth: "450px" }}>
-            <PayPalScriptProvider options={paypalOptions}>
-              <PayPalButtons
-                style={{
-                  layout: 'vertical',
-                  color: 'gold',
-                  shape: 'pill',
-                  label: 'paypal',
-                  height: 55
-                }}
-                className="paypal-buttons-custom"
-                createOrder={(data, actions) => {
-                  // PHASE 2: Use config value for developer override price
-                  const orderAmount = isDeveloperMode ? DEVELOPER_MODE_PAYMENT_AMOUNT : totals.total.toFixed(2);
-                  
-                  console.log(isDeveloperMode ? '🔧 Developer Mode: Using test amount $0.20' : `Creating order for $${orderAmount}`);
-                  
-                  return actions.order.create({
-                    intent: 'CAPTURE',
-                    purchase_units: [{
-                      description: isDeveloperMode 
-                        ? `FluidPower Order - DEVELOPER TEST - A$${orderAmount}`
-                        : `FluidPower Order - A$${orderAmount}`,
-                      amount: {
-                        currency_code: 'AUD',
-                        value: orderAmount
-                      }
-                    }]
-                  });
-                }}
-                onApprove={handlePayPalApprove}
-                onCancel={handlePayPalCancel}
-                onError={handlePayPalError}
-              />
-            </PayPalScriptProvider>
-          </div>
-        </div>
+      {/* Conditional: Cart Email Button OR PayPal Button */}
+      {isCartEmailMode ? (
+        <CartEmailButton
+          items={items}
+          userDetails={{
+            name: shippingDetails.name,
+            email: shippingDetails.email,
+            phone: shippingDetails.contactNumber,
+            address: shippingDetails.address,
+            suburb: shippingDetails.suburb,
+            state: shippingDetails.state,
+            postcode: shippingDetails.postcode,
+            companyName: shippingDetails.companyName
+          }}
+        />
+      ) : (
+        <>
+          {/* PayPal Button */}
+          {!isProcessing && paypalOptions.clientId && (
+            <div className="mb-6 flex justify-center">
+              <div style={{ width: "100%", maxWidth: "450px" }}>
+                <PayPalScriptProvider options={paypalOptions}>
+                  <PayPalButtons
+                    style={{
+                      layout: 'vertical',
+                      color: 'gold',
+                      shape: 'pill',
+                      label: 'paypal',
+                      height: 55
+                    }}
+                    className="paypal-buttons-custom"
+                    createOrder={(data, actions) => {
+                      const orderAmount = isDeveloperMode ? DEVELOPER_MODE_PAYMENT_AMOUNT : totals.total.toFixed(2);
+                      
+                      console.log(isDeveloperMode ? '🔧 Developer Mode: Using test amount $0.20' : `Creating order for $${orderAmount}`);
+                      
+                      return actions.order.create({
+                        intent: 'CAPTURE',
+                        purchase_units: [{
+                          description: isDeveloperMode 
+                            ? `FluidPower Order - DEVELOPER TEST - A$${orderAmount}`
+                            : `FluidPower Order - A$${orderAmount}`,
+                          amount: {
+                            currency_code: 'AUD',
+                            value: orderAmount
+                          }
+                        }]
+                      });
+                    }}
+                    onApprove={handlePayPalApprove}
+                    onCancel={handlePayPalCancel}
+                    onError={handlePayPalError}
+                  />
+                </PayPalScriptProvider>
+              </div>
+            </div>
+          )}
+        </>
       )}
       
       {/* No Client ID Warning */}
@@ -1202,10 +1226,11 @@ export default function CheckoutPage() {
               {/* PHASE 3: Conditional Content Based on Step */}
               {step === 'shipping' ? (
                 <ShippingForm
-                  onContinue={handleShippingComplete}
-                  onDeveloperModeActivated={handleDeveloperModeActivated}
-                  initialDetails={shippingDetails || undefined}
-                />
+                onContinue={handleShippingComplete}
+                onDeveloperModeActivated={handleDeveloperModeActivated}
+                onCartEmailActivated={handleCartEmailActivated}  // NEW
+                initialDetails={shippingDetails || undefined}
+              />
               ) : (
                 renderPaymentSection()
               )}
