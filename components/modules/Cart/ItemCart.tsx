@@ -11,7 +11,7 @@ const ItemCart = ({ item }: IItemCartProps) => {
   const { updateItem, deleteItem } = useContext(CartContext);
 
   // Calculate the total price for the item based on its quantity
-  const totalPrice = item.price * item.quantity;
+  const totalPrice = (item.price ?? 0) * item.quantity;
 
   return (
     <div className="p-5 border-b flex gap-4 justify-between select-none">
