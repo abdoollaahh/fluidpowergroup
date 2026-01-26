@@ -24,12 +24,12 @@ export const generateInvoicePDF = (invoiceData: SupplierInvoiceData): jsPDF => {
   // ============================================================================
   
   // Left side - Logo + Company Info
-  const logoSize = 30;
-  // Add actual logo
-  doc.addImage(COMPANY_LOGO_BASE64, 'PNG', margin, 8, logoSize, logoSize);
-  
+  const logoWidth = 30;
+  const logoHeight = 34; // Correct aspect ratio (150/132 * 30 ≈ 34)
+  doc.addImage(COMPANY_LOGO_BASE64, 'PNG', margin, 8, logoWidth, logoHeight);
+
   // Company details next to logo
-  const companyX = margin + logoSize + 5;
+  const companyX = margin + logoWidth + 5;
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.text(COMPANY_INFO.name, companyX, 15);

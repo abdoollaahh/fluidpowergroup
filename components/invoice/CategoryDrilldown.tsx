@@ -31,64 +31,7 @@ const CategoryDrilldown: React.FC<CategoryDrilldownProps> = ({ categories, onAdd
   const [tableProducts, setTableProducts] = useState<any[]>([]);
   const [tableSeries, setTableSeries] = useState<string>("");
   const [loadingSeries, setLoadingSeries] = useState<boolean>(false);
-
-  // Fetch Level 3 data when subcategory is selected (for 4-level products)
-  useEffect(() => {
-    const fetchLevel3Data = async () => {
-      if (!selectedCategory.subCategories) {
-        setLevel3Data([]);
-        return;
-      }
-
-      try {
-        console.log('[CategoryDrilldown] Fetching Level 3 data for:', selectedCategory.subCategories);
-        
-        const response = await axios.post('/api/getAllSeries', {
-          seriesSlug: selectedCategory.subCategories
-        });
-        
-        console.log('[CategoryDrilldown] Level 3 response:', response.data);
-        
-        if (response.data && response.data.products) {
-          setLevel3Data(response.data.products);
-          console.log('[CategoryDrilldown] Level 3 products loaded:', response.data.products.length);
-        } else {
-          setLevel3Data([]);
-        }
-        
-      } catch (error) {
-        console.error('[CategoryDrilldown] Error fetching Level 3 data:', error);
-        setLevel3Data([]);
-      }
-    };
-
-    fetchLevel3Data();
-  }, [selectedCategory.subCategories]);
-
-  // Filter products based on selected category
-  useEffect(() => {
-    let newFilteredProducts: any[] = [];
-
-    if (selectedCategory.title && selectedCategory.categories && categories.length > 0) {
-      console.log('[CategoryDrilldown] Filtering for:', selectedCategory);
-      
-      categories.forEach((product: any) => {
-        if (product.title === selectedCategory.title) {
-          product.subCategories?.forEach((cat: any) => {
-            if (cat.title.toLowerCase().includes(selectedCategory.categories!.toLowerCase())) {
-              if (cat.series && cat.series.length > 0) {
-                newFilteredProducts = [...newFilteredProducts, ...cat.series];
-              }
-            }
-          });
-        }
-      });
-      
-      console.log('[CategoryDrilldown] Filtered products:', newFilteredProducts.length);
-    }
-    
-    setFilteredProducts(newFilteredProducts);
-  }, [selectedCategory, categories]);
+  const [level3IsFinalProducts, setLevel3IsFinalProducts] = useState<boolean>(false);
 
   // Handle category selection
   const handleCategorySelect = (title: string) => {
@@ -112,7 +55,20 @@ const CategoryDrilldown: React.FC<CategoryDrilldownProps> = ({ categories, onAdd
   };
 
   // Handle subcategory selection
-  const handleSubCategorySelect = (catTitle: string) => {
+  const handleSubCategorySelect = async (catTitle: string) => {
+    console.log('[CategoryDrilldown] Subcategory selected:', catTitle);
+    
+    // Find the subcategory data
+    const category = categories.find((p: any) => p.title === expandedCategory);
+    const subcategory = category?.subCategories?.find((cat: any) => cat.title === catTitle);
+    
+    if (subcategory?.series && subcategory.series.length > 0) {
+      console.log('[CategoryDrilldown] Setting series from subcategory:', subcategory.series.length);
+      setFilteredProducts(subcategory.series);
+    } else {
+      setFilteredProducts([]);
+    }
+    
     setSelectedCategory({
       ...selectedCategory,
       categories: catTitle,
@@ -127,68 +83,64 @@ const CategoryDrilldown: React.FC<CategoryDrilldownProps> = ({ categories, onAdd
     
     setLoadingSeries(true);
     
-    // CRITICAL: Fetch products for this series to check if it has table products
     try {
-      console.log('[CategoryDrilldown] Fetching products for series:', series.slug || series.id);
+      console.log('[CategoryDrilldown] Fetching data for series:', series.slug || series.id);
       
-      const response = await axios.post('/api/getProducts', {
-        data: {
-          id: series.id,
-          loadAll: true
-        }
+      // First try getAllSeries to check if this has more subcategories
+      const seriesResponse = await axios.post('/api/getAllSeries', {
+        data: { slug: series.slug }
       });
       
-      console.log('[CategoryDrilldown] Products response:', response.data);
+      console.log('[CategoryDrilldown] Series response:', seriesResponse.data);
       
-      if (response.data.products && response.data.products.length > 0) {
-        // Has products - check if they're table products
-        const products = response.data.products;
-        const firstProduct = products[0];
-        
-        console.log('[CategoryDrilldown] First product:', firstProduct);
-        console.log('[CategoryDrilldown] Has attributes?', !!firstProduct.attributes);
-        
-        const isTableProduct = firstProduct.attributes && Object.keys(firstProduct.attributes).length > 0;
-        
-        if (isTableProduct) {
-          // TABLE PRODUCT: Show table view in sidebar
-          console.log('[CategoryDrilldown] TABLE PRODUCT: Showing table view with', products.length, 'products');
-          setTableProducts(products);
-          setTableSeries(series.title || series.name);
-          setViewingTable(true);
-        } else {
-          // CARD PRODUCT: Show as card list (Level 3 data)
-          console.log('[CategoryDrilldown] CARD PRODUCT: Setting Level 3 data');
-          setLevel3Data(products);
-          setSelectedCategory({
-            ...selectedCategory,
-            subCategories: series.slug,
-          });
-        }
-      } else if (response.data.series && response.data.series.length > 0) {
-        // Has sub-series - navigate deeper
+      if (seriesResponse.data.series && seriesResponse.data.series.length > 0) {
         console.log('[CategoryDrilldown] Has sub-series, setting Level 3 data');
-        setLevel3Data(response.data.series);
+        setLevel3Data(seriesResponse.data.series);
+        setLevel3IsFinalProducts(false);
         setSelectedCategory({
           ...selectedCategory,
           subCategories: series.slug,
         });
       } else {
-        // No products found - might be a final product itself
-        console.log('[CategoryDrilldown] No products found, checking if series is product');
+        // No more series - check for products
+        const productsResponse = await axios.post('/api/getProducts', {
+          data: {
+            id: series.id,
+            loadAll: true
+          }
+        });
         
-        if (series.price && series.price > 0) {
-          // Has price - is a product
-          console.log('[CategoryDrilldown] Series has price, adding as product');
-          onAddProduct(series);
+        console.log('[CategoryDrilldown] Products response:', productsResponse.data);
+        
+        if (productsResponse.data.products && productsResponse.data.products.length > 0) {
+          const products = productsResponse.data.products;
+          const firstProduct = products[0];
+          
+          console.log('[CategoryDrilldown] First product:', firstProduct);
+          
+          const isTableProduct = firstProduct.attributes && Object.keys(firstProduct.attributes).length > 0;
+          
+          if (isTableProduct) {
+            console.log('[CategoryDrilldown] TABLE PRODUCT: Showing table view with', products.length, 'products');
+            setTableProducts(products);
+            setTableSeries(series.title || series.name);
+            setViewingTable(true);
+          } else {
+            console.log('[CategoryDrilldown] CARD PRODUCT: Setting Level 3 data');
+            setLevel3Data(products);
+            setSelectedCategory({
+              ...selectedCategory,
+              subCategories: series.slug,
+            });
+          }
         } else {
-          console.warn('[CategoryDrilldown] Series has no products and no price');
-          alert('This series has no products available.');
+          console.warn('[CategoryDrilldown] No products or series found');
+          alert('This category has no products available.');
         }
       }
       
     } catch (error) {
-      console.error('[CategoryDrilldown] Error fetching series products:', error);
+      console.error('[CategoryDrilldown] Error fetching data:', error);
       alert('Error loading products. Please try again.');
     } finally {
       setLoadingSeries(false);
@@ -196,9 +148,55 @@ const CategoryDrilldown: React.FC<CategoryDrilldownProps> = ({ categories, onAdd
   };
 
   // Handle Level 3 product selection (final product in 4-level hierarchy)
-  const handleLevel3Select = (product: any) => {
+  const handleLevel3Select = async (product: any) => {
     console.log('[CategoryDrilldown] Level 3 product selected:', product);
-    onAddProduct(product);
+    
+    setLoadingSeries(true);
+    
+    try {
+      const productsResponse = await axios.post('/api/getProducts', {
+        data: {
+          id: product.id,
+          loadAll: true
+        }
+      });
+      
+      console.log('[CategoryDrilldown] Level 3 products response:', productsResponse.data);
+      
+      if (productsResponse.data.series && productsResponse.data.series.length > 0) {
+        console.log('[CategoryDrilldown] Level 3 has MORE series, showing as cards');
+        setLevel3Data(productsResponse.data.series);
+        setLevel3IsFinalProducts(false);
+        setSelectedCategory({
+          ...selectedCategory,
+          subCategories: product.slug,
+        });
+      } else if (productsResponse.data.products && productsResponse.data.products.length > 0) {
+        const products = productsResponse.data.products;
+        const firstProduct = products[0];
+        
+        const isTableProduct = firstProduct.attributes && Object.keys(firstProduct.attributes).length > 0;
+        
+        if (isTableProduct) {
+          console.log('[CategoryDrilldown] TABLE PRODUCT: Showing table view');
+          setTableProducts(products);
+          setTableSeries(product.title || product.name);
+          setViewingTable(true);
+        } else {
+          console.log('[CategoryDrilldown] CARD PRODUCTS: Showing as product list');
+          setLevel3Data(products);
+          setLevel3IsFinalProducts(true);
+        }
+      } else {
+        console.warn('[CategoryDrilldown] No products or series found');
+        alert('No products available.');
+      }
+    } catch (error) {
+      console.error('[CategoryDrilldown] Error fetching Level 3 products:', error);
+      alert('Error loading products.');
+    } finally {
+      setLoadingSeries(false);
+    }
   };
 
   // Handle back from table view
@@ -306,7 +304,7 @@ const CategoryDrilldown: React.FC<CategoryDrilldownProps> = ({ categories, onAdd
       )}
 
       {/* Level 3 Products (for 4-level hierarchy) */}
-      {selectedCategory.subCategories && level3Data.length > 0 && (
+      {!loadingSeries && selectedCategory.subCategories && level3Data.length > 0 && (
         <div>
           <span className="text-sm font-bold text-gray-700 block mb-2">Product Types</span>
           <div className="space-y-2">
@@ -314,17 +312,17 @@ const CategoryDrilldown: React.FC<CategoryDrilldownProps> = ({ categories, onAdd
               <ProductListItem
                 key={index}
                 product={product}
-                onAddProduct={handleLevel3Select}
+                onAddProduct={level3IsFinalProducts ? onAddProduct : handleLevel3Select}
               />
             ))}
           </div>
         </div>
       )}
 
-      {/* Loading state for Level 3 */}
-      {selectedCategory.subCategories && level3Data.length === 0 && (
+      {/* Only show loading when not viewing table and subcategory is selected but no data yet */}
+      {!loadingSeries && selectedCategory.subCategories && level3Data.length === 0 && !viewingTable && (
         <div className="text-xs text-gray-500 text-center py-4">
-          Loading product types...
+          No products available in this category
         </div>
       )}
     </div>
