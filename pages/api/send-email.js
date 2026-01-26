@@ -373,19 +373,27 @@ export default async function handler(req, res) {
                 warnings: []
             };
 
-            // Step 1: Send customer email
-            try {
-                console.log('Sending customer email via Graph API...');
-                const customerResult = await sendEmailViaGraph(accessToken, customerEmailData, SENDER_EMAIL);
-                results.customerEmailSent = true;
-                console.log(`✓ Customer email sent successfully. ID: ${customerResult.messageId}`);
-            } catch (customerError) {
-                console.error('CRITICAL: Customer email failed:', customerError.message);
-                return res.status(500).json({ 
-                    success: false, 
-                    error: 'Failed to send order confirmation to customer',
-                    details: customerError.message 
-                });
+            // Check if this is a cart request without customer copy
+            const isCartRequestNoCustomerCopy = currentOrderNumber.startsWith('CART-') && !emailTemplates.customerEmailContent;
+
+            // Step 1: Send customer email (SKIP if cart request without copy)
+            if (!isCartRequestNoCustomerCopy) {
+                try {
+                    console.log('Sending customer email via Graph API...');
+                    const customerResult = await sendEmailViaGraph(accessToken, customerEmailData, SENDER_EMAIL);
+                    results.customerEmailSent = true;
+                    console.log(`✓ Customer email sent successfully. ID: ${customerResult.messageId}`);
+                } catch (customerError) {
+                    console.error('CRITICAL: Customer email failed:', customerError.message);
+                    return res.status(500).json({ 
+                        success: false, 
+                        error: 'Failed to send order confirmation to customer',
+                        details: customerError.message 
+                    });
+                }
+            } else {
+                console.log('⏭️ Skipping customer email (cart request without customer copy)');
+                results.customerEmailSent = true; // Mark as "sent" to avoid errors
             }
 
             // Step 2: Send business email
