@@ -20,21 +20,15 @@ export const TESTING_MODE = process.env.NEXT_PUBLIC_TESTING_MODE === 'true';
  * 3. Production (NEXT_PUBLIC_API_BASE_URL or fluidpowergroup.com.au)
  */
 export const API_BASE_URL = (() => {
-  // Priority 1: If on Vercel preview deployment, use preview API
-  if (process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview' && process.env.NEXT_PUBLIC_API_BASE_URL_PREVIEW) {
-    console.log('🔍 Using Preview API:', process.env.NEXT_PUBLIC_API_BASE_URL_PREVIEW);
-    return process.env.NEXT_PUBLIC_API_BASE_URL_PREVIEW;
+  // Always prioritize explicit API_BASE_URL (works for both prod and test)
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    console.log('🔌 Using NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
   }
   
-  // Priority 2: Use testing mode logic (for localhost development)
-  if (TESTING_MODE) {
-    console.log('🧪 Testing Mode - Using:', process.env.NEXT_PUBLIC_API_BASE_URL_TEST || 'fallback');
-    return process.env.NEXT_PUBLIC_API_BASE_URL_TEST || 'http://localhost:3001';
-  }
-  
-  // Priority 3: Production mode (live site)
-  console.log('🚀 Production Mode - Using:', process.env.NEXT_PUBLIC_API_BASE_URL || 'fallback');
-  return process.env.NEXT_PUBLIC_API_BASE_URL || 'https://fluidpowergroup.com.au';
+  // Fallback to localhost for local dev only
+  console.log('🔌 Falling back to localhost:3001');
+  return 'http://localhost:3001';
 })();
 
 console.log('📍 Final API_BASE_URL:', API_BASE_URL);
