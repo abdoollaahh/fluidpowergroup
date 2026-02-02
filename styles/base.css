@@ -9,14 +9,15 @@
     @apply bg-black text-white py-2.5 lg:py-4 px-3 text-lg  lg:text-xl rounded-full hover:bg-black/80 border-2 border-transparent   transition-all duration-300;
   }
 
-  /* Selective scrollbar hiding class */
-  .hide-scrollbar::-webkit-scrollbar {
+  *::-webkit-scrollbar {
     display: none;
   }
 
-  .hide-scrollbar {
+  /* Hide scrollbar for IE, Edge and Firefox */
+  * {
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
+    /* background: rgb(0, 0, 0, 0.01); */
   }
 
   td,
@@ -34,34 +35,4 @@
   input[type="number"] {
     -moz-appearance: textfield;
   }
-}
-
-/* PayPal Custom Styling */
-.paypal-buttons-custom {
-  position: relative;
-}
-
-.paypal-buttons-custom > div {
-  background: transparent !important;
-  border-radius: 0 !important;
-  overflow: visible !important;
-  backdrop-filter: none !important;
-  box-shadow: none !important;
-}
-
-.paypal-buttons-custom iframe {
-  border-radius: 0 !important;
-}
-
-/* Target the actual PayPal button elements for glassmorphism */
-.paypal-buttons-custom button,
-.paypal-buttons-custom [data-funding-source],
-.paypal-buttons-custom .paypal-button {
-  border-radius: 40px !important;
-  overflow: hidden !important;
-  backdrop-filter: blur(15px) !important;
-  box-shadow: 
-    0 4px 15px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    inset 0 2px 8px rgba(255, 255, 255, 0.1) !important;
 }

@@ -20,62 +20,12 @@ const Snackbar = () => {
   useLockBodyScroll(menu);
 
   return (
-    <div className="relative">
-      {/* FLOW FIX: Remove all absolute positioning, make it behave like normal content */}
-      <div
+    <div className="text-3xl  icon-btn ">
+      <FiMenu
         onClick={() => {
           setMenu(!menu);
         }}
-        className="cursor-pointer p-2 hover:bg-gray-100 rounded-lg transition-all duration-200 relative"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "4px",
-          width: "32px",
-          height: "32px",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <div
-          style={{
-            width: "24px",
-            height: "3px",
-            backgroundColor: "#333",
-            borderRadius: "2px",
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            position: "absolute",
-            top: menu ? "50%" : "calc(50% - 7px)",
-            transform: menu ? "translateY(-50%) rotate(45deg)" : "translateY(-50%) rotate(0)",
-          }}
-        />
-        <div
-          style={{
-            width: "24px",
-            height: "3px",
-            backgroundColor: "#333",
-            borderRadius: "2px",
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            position: "absolute",
-            top: "50%",
-            opacity: menu ? 0 : 1,
-            transform: menu ? "translateY(-50%) scale(0)" : "translateY(-50%) scale(1)",
-          }}
-        />
-        <div
-          style={{
-            width: "24px",
-            height: "3px",
-            backgroundColor: "#333",
-            borderRadius: "2px",
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            position: "absolute",
-            top: menu ? "50%" : "calc(50% + 7px)",
-            transform: menu ? "translateY(-50%) rotate(-45deg)" : "translateY(-50%) rotate(0)",
-          }}
-        />
-      </div>
-
+      />
       <AnimatePresence exitBeforeEnter>
         {menu && (
           <>
@@ -86,35 +36,11 @@ const Snackbar = () => {
                 transition: { duration: 0.8 },
               }}
               exit={{ opacity: 0, transition: { duration: 0 } }}
-              className="fixed inset-0 z-40 bg-black/10"
-              style={{ top: "90px" }} // Start below header
+              className="fixed mt-6 left-0 w-full h-screen -z-10 bg-black/10"
               onClick={() => setMenu(!menu)}
             ></motion.div>
             <motion.div
-              className="fixed left-0 right-0 z-50 p-6 border-b"
-              style={{
-                // FLOW FIX: Use fixed positioning that's viewport-based, not container-based
-                top: "90px", // Position right below header
-                width: "100%",
-                // Glass effect background with gradient towards bottom
-                background: `
-                  linear-gradient(180deg, 
-                    rgba(255, 255, 255, 0.25) 0%, 
-                    rgba(255, 255, 255, 0.2) 60%, 
-                    rgba(255, 255, 255, 0.35) 85%, 
-                    rgba(255, 255, 255, 0.4) 100%
-                  ),
-                  rgba(255, 255, 255, 0.3)
-                `,
-                backdropFilter: "blur(8px)",
-                border: "1px solid rgba(255, 255, 255, 0.25)",
-                borderRadius: "0 0 25px 25px",
-                boxShadow: `
-                  0 15px 35px rgba(0, 0, 0, 0.08),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.4),
-                  inset 0 -2px 8px rgba(255, 255, 255, 0.15)
-                `,
-              }}
+              className="absolute  left-0 mt-6 w-full p-8 -z-10  bg-white border-b"
               variants={variants}
               initial={"initial"}
               animate={"animate"}

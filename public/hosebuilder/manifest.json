@@ -1,0 +1,10 @@
+{
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "lang": "en",
+  "name": "Hose Calculator",
+  "short_name": "Hose Calculator",
+  "start_url": ".",
+  "theme_color": "#ffffff",
+  "orientation": "portrait"
+}

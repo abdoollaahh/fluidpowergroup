@@ -10,10 +10,10 @@ const ItemsContact = () => {
       title: "info@fluidpowergroup.com.au",
     },
     {
-      label: "Order Queries",
-      href: "mailto:orders@fluidpowergroup.com.au",
+      label: "Product Queries",
+      href: "mailto:parts@fluidpowergroup.com.au",
       icon: FiMail,
-      title: "orders@fluidpowergroup.com.au",
+      title: "parts@fluidpowergroup.com.au",
     },
     {
       label: "Sales",
@@ -24,22 +24,10 @@ const ItemsContact = () => {
   ];
 
   return (
-    <div className="relative">
-      
-      {/* Middle Layer: Subtle Faded Background Overlay - More contained */}
-      <div className="absolute left-0 right-0 bg-gradient-to-br from-white/70 via-gray-50/50 to-white/70 z-10"
-           style={{ 
-             top: '-2rem', 
-             height: 'calc(100% + 4rem)',
-             maxHeight: '80vh'
-           }}></div>
-      
-      {/* Top Layer: Contact Items Only */}
-      <div className="relative z-20 flex flex-col gap-8 max-w-2xl mx-auto py-8">
-        {contactOptions.map((item, i) => (
-          <ItemContact key={i} {...item} />
-        ))}
-      </div>
+    <div className="grid grid-cols-6 gap-4 sm:gap-8">
+      {contactOptions.map((item, i) => (
+        <ItemContact key={i} {...item} />
+      ))}
     </div>
   );
 };

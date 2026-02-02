@@ -1,65 +1,26 @@
 import withLayout from "@/hoc/withLayout";
 import { ProductSlider } from "@/views/Catalogue";
-import React from "react";
-import useSWR from 'swr';
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Category } from "types/products";
 import Loading from "@/modules/Loading";
 
-// Fetcher function for SWR
-const fetcher = async (url: string) => {
-  const response = await axios.get(url);
-  return response.data;
-};
-
 const CataloguePage = () => {
-  // SWR handles all the data fetching, caching, and revalidation
-  const { data, error, isLoading } = useSWR('/api/getCategories', fetcher, {
-    // SWR configuration options
-    revalidateOnFocus: false,    // Don't refetch when window regains focus
-    revalidateOnReconnect: true, // Refetch when connection is restored
-    dedupingInterval: 60000,     // Dedupe requests within 1 minute
-    errorRetryCount: 3,          // Retry 3 times on error
-    errorRetryInterval: 1000,    // Wait 1 second between retries
-  });
+  const [categories, setCategories] = useState<Category[]>([]);
 
-  // Handle loading state
-  if (isLoading) {
-    return <Loading />;
-  }
+  useEffect(() => {
+    const categories = async () => {
+      const cat = await axios.get(
+        `${process.env.NEXT_PUBLIC_BASEURL}/getCategories`
+      );
+      return cat;
+    };
 
-  // Handle error state
-  if (error) {
-    console.error('Error fetching categories:', error);
-    return (
-      <div className="wrapper px-8 md:px-12 py-12 min-h-screen flex flex-col items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Categories</h2>
-          <p className="text-gray-600 mb-4">Failed to load product categories. Please try again.</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Refresh Page
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Handle empty data
-  if (!data || !data.categories || data.categories.length === 0) {
-    return (
-      <div className="wrapper px-8 md:px-12 py-12 min-h-screen flex flex-col items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">No Categories Found</h2>
-          <p className="text-gray-600">No product categories are available at the moment.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const categories: Category[] = data.categories;
+    categories().then((result: any) => {
+      setCategories(result.data.categories);
+    });
+  }, []);
+  if (categories === null || categories === undefined) return <Loading />;
 
   return (
     <div className="wrapper px-8 md:px-12  flex flex-col gap-10 mb-32">
