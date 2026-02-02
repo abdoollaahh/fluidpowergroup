@@ -308,15 +308,19 @@ export default function CheckoutPage() {
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+      const serverKey = process.env.NEXT_PUBLIC_SERVER_KEY || '';
       
       let response;
       try {
         response = await fetch(`${API_BASE_URL}/api/paypal/capture-order`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          signal: controller.signal
-        });
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-server-key': serverKey
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
         clearTimeout(timeoutId);
       } catch (fetchError: any) {
         clearTimeout(timeoutId);
